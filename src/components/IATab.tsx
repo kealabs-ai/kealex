@@ -1,84 +1,13 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Settings, Database, Cloud, Bot, Users, Bell, Shield, Save, CheckCircle, ExternalLink, Eye, EyeOff } from 'lucide-react'
-import { Button, Input, Textarea } from '../components/UI'
+import { Save, CheckCircle, ExternalLink, Eye, EyeOff } from 'lucide-react'
+import { Button, Input, Select, Textarea } from '../components/UI'
 import { DataCard } from '../components/Cards'
 import { CEREBRAS_MODELS, GROQ_MODELS, type AIProvider } from '../api/ai'
-import { useConfigIa, useSaveConfigIa } from '../hooks/useConfiguracoes'
-import { useAuth } from '../context/AuthContext'
+import { useConfigIa } from '../hooks/useConfiguracoes'
 
-type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'usuarios' | 'seguranca' | 'notificacoes'
-
-const tabs: { id: Tab; label: string; icon: any }[] = [
-  { id: 'geral', label: 'Geral', icon: Settings },
-  { id: 'cdn', label: 'CDN & Arquivos', icon: Cloud },
-  { id: 'database', label: 'Banco de Dados', icon: Database },
-  { id: 'ia', label: 'Agentes IA', icon: Bot },
-  { id: 'usuarios', label: 'Usuários', icon: Users },
-  { id: 'seguranca', label: 'Segurança', icon: Shield },
-  { id: 'notificacoes', label: 'Notificações', icon: Bell },
-]
-
-export function AdminPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('ia')
-  const { user } = useAuth()
-
-  const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
-
-  return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-            {initials}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Configurações do Sistema</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Gerencie todas as configurações da plataforma</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex gap-6">
-        <div className="w-56 shrink-0">
-          <DataCard className="p-2">
-            <div className="space-y-0.5">
-              {tabs.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    activeTab === id
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon size={16} />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </DataCard>
-        </div>
-
-        <div className="flex-1">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'ia' && <IATab />}
-          </motion.div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function IATab() {
-  const { data: cfg, isLoading } = useConfigIa()
-  const { mutateAsync: save, isPending: isSaving } = useSaveConfigIa()
+export function IATab() {
+  const { data: cfg, save, isSaving, isLoading } = useConfigIa()
   const [saved, setSaved] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [fields, setFields] = useState({
@@ -90,6 +19,7 @@ function IATab() {
     ativo:         true,
   })
 
+  // Carregar configuração do backend
   useEffect(() => {
     if (cfg) {
       console.log('[Admin IA] Configuração carregada:', {
@@ -100,25 +30,22 @@ function IATab() {
         ativo: cfg.ativo
       })
       
-      const provider = (cfg.provider || 'cerebras') as AIProvider
-      const apiKey = provider === 'groq'
-        ? (cfg.groq_api_key || cfg.api_key || '')
-        : (cfg.cerebras_api_key || cfg.api_key || '')
-      
       setFields({
-        provider,
-        api_key: apiKey,
-        modelo: cfg.modelo || (provider === 'groq' ? 'llama-3.3-70b-versatile' : 'llama-3.3-70b'),
-        max_tokens: String(cfg.max_tokens || 8192),
+        provider:      (cfg.provider || 'cerebras') as AIProvider,
+        api_key:       cfg.api_key || '',  // Backend já retorna a correta
+        modelo:        cfg.modelo || 'llama-3.3-70b',
+        max_tokens:    String(cfg.max_tokens || 8192),
         system_prompt: cfg.system_prompt || '',
-        ativo: cfg.ativo ?? true,
+        ativo:         cfg.ativo ?? true,
       })
     }
   }, [cfg])
 
+  // Handler para trocar provider
   const handleProviderChange = (newProvider: AIProvider) => {
     console.log('[Admin IA] Trocando provider para:', newProvider)
     
+    // Carregar API Key do novo provider
     const apiKey = newProvider === 'groq'
       ? (cfg?.groq_api_key || '')
       : (cfg?.cerebras_api_key || '')
@@ -140,20 +67,13 @@ function IATab() {
       setFields((prev) => ({ ...prev, [k]: e.target.value }))
 
   const handleSave = async () => {
-    const payload: any = {
+    const payload = {
       provider: fields.provider,
+      api_key: fields.api_key,
       modelo: fields.modelo,
       max_tokens: parseInt(fields.max_tokens),
       system_prompt: fields.system_prompt || null,
       ativo: fields.ativo,
-    }
-    
-    if (fields.api_key) {
-      if (fields.provider === 'groq') {
-        payload.groq_api_key = fields.api_key
-      } else {
-        payload.cerebras_api_key = fields.api_key
-      }
     }
     
     try {
@@ -200,6 +120,7 @@ function IATab() {
         </div>
 
         <div className="space-y-4">
+          {/* Provider Selection */}
           <div>
             <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-2">
               Provider de IA
@@ -242,6 +163,7 @@ function IATab() {
             </div>
           </div>
 
+          {/* API Key */}
           <div className={`p-4 border-2 rounded-xl space-y-3 ${
             provider === 'groq' ? 'bg-orange-50 border-orange-200' : 'bg-indigo-50 border-indigo-200'
           }`}>
@@ -280,10 +202,11 @@ function IATab() {
               </button>
             </div>
             
+            {/* Toggle Ativo */}
             <div className="flex items-center justify-between pt-2 border-t border-gray-200">
               <div>
                 <p className="text-sm font-medium text-gray-900">Configuração Ativa</p>
-                <p className="text-xs text-gray-500">Apenas configurações ativas são usadas pelo Kealex AI</p>
+                <p className="text-xs text-gray-500">Esta API Key será usada pelo Kealex AI</p>
               </div>
               <button
                 type="button"
@@ -310,6 +233,7 @@ function IATab() {
             </p>
           </div>
 
+          {/* Modelo */}
           <div>
             <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
               Modelo
@@ -330,6 +254,7 @@ function IATab() {
             </p>
           </div>
 
+          {/* Max tokens */}
           <Input
             label="Max Tokens"
             type="number"
@@ -337,6 +262,7 @@ function IATab() {
             onChange={set('max_tokens')}
           />
 
+          {/* System prompt */}
           <Textarea
             label="System Prompt (Personalizado)"
             rows={6}

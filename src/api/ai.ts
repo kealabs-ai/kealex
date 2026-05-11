@@ -1,9 +1,19 @@
 import OpenAI from 'openai'
 
-const openai = new OpenAI({
-  apiKey: import.meta.env.VITE_OPENAI_API_KEY ?? '',
-  dangerouslyAllowBrowser: true,
-})
+export type AIProvider = 'cerebras' | 'groq'
+
+export const CEREBRAS_MODELS = [
+  'llama-3.3-70b',
+  'llama3.1-8b',
+  'llama3.1-70b',
+]
+
+export const GROQ_MODELS = [
+  'llama-3.3-70b-versatile',
+  'llama-3.1-70b-versatile',
+  'llama-3.1-8b-instant',
+  'mixtral-8x7b-32768',
+]
 
 export const SYSTEM_PROMPT = `Você é o **Kealex AI** — um advogado assistente inteligente especializado em direito brasileiro.
 
@@ -29,15 +39,35 @@ export interface ChatMessage {
   timestamp: Date
 }
 
+export interface AIConfig {
+  provider: AIProvider
+  apiKey: string
+  modelo: string
+  systemPrompt?: string
+}
+
 export async function sendMessage(
   messages: ChatMessage[],
+  config: AIConfig,
   onChunk: (chunk: string) => void
 ): Promise<void> {
-  const stream = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+  const baseURL = config.provider === 'groq'
+    ? 'https://api.groq.com/openai/v1'
+    : 'https://api.cerebras.ai/v1'
+
+  const client = new OpenAI({
+    apiKey: config.apiKey,
+    baseURL,
+    dangerouslyAllowBrowser: true,
+  })
+
+  const systemPrompt = config.systemPrompt || SYSTEM_PROMPT
+
+  const stream = await client.chat.completions.create({
+    model: config.modelo,
     stream: true,
     messages: [
-      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'system', content: systemPrompt },
       ...messages.map((m) => ({ role: m.role, content: m.content })),
     ],
   })

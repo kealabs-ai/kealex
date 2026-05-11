@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Sparkles, RotateCcw, Copy, Check, Bot, User, Lightbulb, ChevronRight, AlertCircle } from 'lucide-react'
-import { sendMessage, type ChatMessage } from '../api/ai'
+import { sendMessage, type ChatMessage, type AIConfig } from '../api/ai'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { useAuth } from '../context/AuthContext'
+import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
 
 const SUGGESTED_PROMPTS = [
   { icon: '⚖️', label: 'Prazos processuais', prompt: 'Quais são os principais prazos processuais no CPC para contestação, recurso de apelação e embargos de declaração?' },
@@ -28,15 +29,17 @@ function genId() { return Math.random().toString(36).slice(2) }
 
 export function IAPage() {
   const { user } = useAuth()
+  const { data: config, isLoading: configLoading, error: configError } = useConfigIaAtiva()
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
-  const [hasKey] = useState(() => !!import.meta.env.VITE_OPENAI_API_KEY)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<boolean>(false)
+
+  const hasConfig = config && config.api_key && config.ativo
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -51,7 +54,7 @@ export function IAPage() {
 
   const handleSend = useCallback(async (text?: string) => {
     const content = (text ?? input).trim()
-    if (!content || streaming) return
+    if (!content || streaming || !hasConfig) return
 
     setError(null)
     setInput('')
@@ -65,23 +68,30 @@ export function IAPage() {
     setStreaming(true)
     abortRef.current = false
 
+    const aiConfig: AIConfig = {
+      provider: config!.provider as any,
+      apiKey: config!.api_key!,
+      modelo: config!.modelo,
+      systemPrompt: config!.system_prompt || undefined,
+    }
+
     try {
-      await sendMessage([...messages, userMsg], (chunk) => {
+      await sendMessage([...messages, userMsg], aiConfig, (chunk) => {
         if (abortRef.current) return
         setMessages((prev) =>
           prev.map((m) => m.id === assistantId ? { ...m, content: m.content + chunk } : m)
         )
       })
     } catch (err: any) {
-      const msg = err?.message?.includes('API key')
-        ? 'Chave da API OpenAI não configurada. Adicione VITE_OPENAI_API_KEY no arquivo .env'
-        : 'Erro ao conectar com a IA. Verifique sua chave de API.'
+      const msg = err?.message?.includes('API key') || err?.message?.includes('401')
+        ? `Chave da API ${config?.provider === 'groq' ? 'Groq' : 'Cerebras'} inválida. Verifique as configurações.`
+        : 'Erro ao conectar com a IA. Verifique sua configuração.'
       setError(msg)
       setMessages((prev) => prev.filter((m) => m.id !== assistantId))
     } finally {
       setStreaming(false)
     }
-  }, [input, messages, streaming])
+  }, [input, messages, streaming, hasConfig, config])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
@@ -150,7 +160,7 @@ export function IAPage() {
               </p>
             </div>
 
-            {!hasKey && (
+            {!hasConfig && !configLoading && (
               <motion.div
                 className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6"
                 initial={{ opacity: 0 }}
@@ -158,9 +168,29 @@ export function IAPage() {
               >
                 <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-amber-800">Configure sua chave de API</p>
+                  <p className="text-sm font-semibold text-amber-800">Configure o Agente de IA</p>
                   <p className="text-xs text-amber-700 mt-0.5">
-                    Adicione <code className="bg-amber-100 px-1 rounded font-mono">VITE_OPENAI_API_KEY=sk-...</code> no arquivo <code className="bg-amber-100 px-1 rounded font-mono">.env</code> da raiz do projeto.
+                    {configError 
+                      ? 'Nenhuma configuração de IA ativa encontrada. Configure em Configurações > Agentes IA.'
+                      : 'Acesse Configurações > Agentes IA e configure sua chave de API (Cerebras ou Groq).'}
+                  </p>
+                </div>
+              </motion.div>
+            )}
+
+            {hasConfig && (
+              <motion.div
+                className="flex items-start gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl p-4 mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mt-1.5" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-800">
+                    Conectado ao {config.provider === 'groq' ? 'Groq' : 'Cerebras'}
+                  </p>
+                  <p className="text-xs text-emerald-700 mt-0.5">
+                    Modelo: {config.modelo} • Max Tokens: {config.max_tokens}
                   </p>
                 </div>
               </motion.div>
@@ -198,7 +228,12 @@ export function IAPage() {
                     whileHover={{ scale: 1.01 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => handleSend(s.prompt)}
-                    className="flex items-start gap-3 p-3.5 bg-white border border-gray-100 rounded-2xl text-left hover:border-indigo-200 hover:shadow-sm hover:shadow-indigo-50 transition-all group"
+                    disabled={!hasConfig}
+                    className={`flex items-start gap-3 p-3.5 border rounded-2xl text-left transition-all group ${
+                      hasConfig
+                        ? 'bg-white border-gray-100 hover:border-indigo-200 hover:shadow-sm hover:shadow-indigo-50'
+                        : 'bg-gray-50 border-gray-200 opacity-50 cursor-not-allowed'
+                    }`}
                   >
                     <span className="text-xl shrink-0">{s.icon}</span>
                     <div>
@@ -312,7 +347,7 @@ export function IAPage() {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={() => handleSend()}
-              disabled={!input.trim() || streaming}
+              disabled={!input.trim() || streaming || !hasConfig}
               className="shrink-0 w-9 h-9 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-indigo-500 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-indigo-200 transition-opacity"
             >
               {streaming ? (
