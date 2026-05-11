@@ -55,6 +55,14 @@ export async function sendMessage(
     ? 'https://api.groq.com/openai/v1'
     : 'https://api.cerebras.ai/v1'
 
+  console.log('🔧 Configuração da requisição:', {
+    provider: config.provider,
+    baseURL,
+    modelo: config.modelo,
+    apiKeyPresent: !!config.apiKey,
+    messagesCount: messages.length
+  })
+
   const client = new OpenAI({
     apiKey: config.apiKey,
     baseURL,
@@ -63,17 +71,27 @@ export async function sendMessage(
 
   const systemPrompt = config.systemPrompt || SYSTEM_PROMPT
 
-  const stream = await client.chat.completions.create({
-    model: config.modelo,
-    stream: true,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      ...messages.map((m) => ({ role: m.role, content: m.content })),
-    ],
-  })
+  try {
+    const stream = await client.chat.completions.create({
+      model: config.modelo,
+      stream: true,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...messages.map((m) => ({ role: m.role, content: m.content })),
+      ],
+    })
 
-  for await (const chunk of stream) {
-    const delta = chunk.choices[0]?.delta?.content ?? ''
-    if (delta) onChunk(delta)
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content ?? ''
+      if (delta) onChunk(delta)
+    }
+  } catch (error: any) {
+    console.error('❌ Erro detalhado:', {
+      message: error.message,
+      status: error.status,
+      error: error.error,
+      response: error.response?.data
+    })
+    throw error
   }
 }

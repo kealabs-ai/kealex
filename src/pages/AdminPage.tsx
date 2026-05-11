@@ -5,7 +5,7 @@ import { Button, Input, Textarea } from '../components/UI'
 import { DataCard } from '../components/Cards'
 import { CEREBRAS_MODELS, GROQ_MODELS, type AIProvider } from '../api/ai'
 import { useConfigIa, useSaveConfigIa } from '../hooks/useConfiguracoes'
-import { useAuth } from '../context/AuthContext'
+import { Topbar } from '../components/TopBar'
 
 type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'usuarios' | 'seguranca' | 'notificacoes'
 
@@ -21,55 +21,49 @@ const tabs: { id: Tab; label: string; icon: any }[] = [
 
 export function AdminPage() {
   const [activeTab, setActiveTab] = useState<Tab>('ia')
-  const { user } = useAuth()
-
-  const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-900 flex items-center justify-center text-sm font-bold text-white shadow-lg">
-            {initials}
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Configurações do Sistema</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Gerencie todas as configurações da plataforma</p>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col h-screen bg-gray-50">
+      <Topbar 
+        title="Configurações do Sistema" 
+        subtitle="Gerencie todas as configurações da plataforma" 
+        icon={Settings} 
+      />
 
-      <div className="flex gap-6">
-        <div className="w-56 shrink-0">
-          <DataCard className="p-2">
-            <div className="space-y-0.5">
-              {tabs.map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id)}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                    activeTab === id
-                      ? 'bg-indigo-50 text-indigo-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon size={16} />
-                  {label}
-                </button>
-              ))}
-            </div>
-          </DataCard>
-        </div>
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="flex gap-6">
+          <div className="w-56 shrink-0">
+            <DataCard className="p-2">
+              <div className="space-y-0.5">
+                {tabs.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTab(id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      activeTab === id
+                        ? 'bg-indigo-50 text-indigo-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon size={16} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </DataCard>
+          </div>
 
-        <div className="flex-1">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            {activeTab === 'ia' && <IATab />}
-          </motion.div>
+          <div className="flex-1">
+            <motion.div
+              key={activeTab}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              {activeTab === 'ia' && <IATab />}
+            </motion.div>
+          </div>
         </div>
       </div>
     </div>

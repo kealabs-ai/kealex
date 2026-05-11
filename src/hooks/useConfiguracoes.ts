@@ -51,7 +51,9 @@ export function useConfigIaAtiva() {
   return useQuery({ 
     queryKey: [...CONFIG_KEY, 'ia', 'ativa'], 
     queryFn: configuracoesApi.getIaAtiva,
-    retry: false
+    retry: false,
+    staleTime: 0,
+    refetchOnMount: true
   })
 }
 

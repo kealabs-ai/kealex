@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Sparkles, RotateCcw, Copy, Check, Bot, User, Lightbulb, ChevronRight, AlertCircle } from 'lucide-react'
+import { Send, Sparkles, RotateCcw, Copy, Check, Bot, Lightbulb, ChevronRight, AlertCircle } from 'lucide-react'
 import { sendMessage, type ChatMessage, type AIConfig } from '../api/ai'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { useAuth } from '../context/AuthContext'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
+import { TopBar } from '../components/TopBar'
 
 const SUGGESTED_PROMPTS = [
   { icon: '⚖️', label: 'Prazos processuais', prompt: 'Quais são os principais prazos processuais no CPC para contestação, recurso de apelação e embargos de declaração?' },
@@ -39,7 +40,8 @@ export function IAPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<boolean>(false)
 
-  const hasConfig = config && config.api_key && config.ativo
+  const apiKey = config?.api_key
+  const hasConfig = !!(config && apiKey && config.ativo)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -70,7 +72,7 @@ export function IAPage() {
 
     const aiConfig: AIConfig = {
       provider: config!.provider as any,
-      apiKey: config!.api_key!,
+      apiKey: apiKey!,
       modelo: config!.modelo,
       systemPrompt: config!.system_prompt || undefined,
     }
@@ -91,7 +93,7 @@ export function IAPage() {
     } finally {
       setStreaming(false)
     }
-  }, [input, messages, streaming, hasConfig, config])
+  }, [input, messages, streaming, hasConfig, config, apiKey])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
@@ -109,37 +111,28 @@ export function IAPage() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      {/* header */}
-      <div className="shrink-0 bg-white border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200">
-                <Sparkles size={18} className="text-white" />
+        <TopBar
+          icon={Sparkles}
+          title="Kealex AI"
+          subtitle="Advogado Inteligente"
+          actions={
+            <div className="flex items-center gap-3">
+              {messages.length > 0 && (
+                <button
+                  onClick={clearChat}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
+                >
+                  <RotateCcw size={13} /> Nova conversa
+                </button>
+              )}
+              <div className="hidden sm:block px-3 py-1.5 bg-indigo-50 rounded-xl">
+                <span className="text-xs font-semibold text-indigo-600">
+                  {config?.modelo || 'Llama 3.3'}
+                </span>
               </div>
-              <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 border-2 border-white rounded-full" />
             </div>
-            <div>
-              <h1 className="text-base font-bold text-gray-900">Kealex AI</h1>
-              <p className="text-xs text-emerald-600 font-medium">Advogado Inteligente • Online</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {messages.length > 0 && (
-              <motion.button
-                whileTap={{ scale: 0.95 }}
-                onClick={clearChat}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-xl transition-colors"
-              >
-                <RotateCcw size={13} /> Nova conversa
-              </motion.button>
-            )}
-            <div className="px-3 py-1.5 bg-indigo-50 rounded-xl">
-              <span className="text-xs font-semibold text-indigo-600">GPT-4o mini</span>
-            </div>
-          </div>
-        </div>
-      </div>
+          }
+        />
 
       {/* messages area */}
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
