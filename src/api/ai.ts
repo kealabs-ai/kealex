@@ -4,15 +4,20 @@ export type AIProvider = 'cerebras' | 'groq'
 
 export const CEREBRAS_MODELS = [
   'llama-3.3-70b',
-  'llama3.1-8b',
-  'llama3.1-70b',
+  'llama-3.1-70b',
+  'llama-3.1-8b',
 ]
 
 export const GROQ_MODELS = [
   'llama-3.3-70b-versatile',
   'llama-3.1-70b-versatile',
   'llama-3.1-8b-instant',
-  'mixtral-8x7b-32768',
+  'llama-3.2-90b-text-preview',
+  'llama-3.2-11b-text-preview',
+  'llama-3.2-3b-preview',
+  'llama-3.2-1b-preview',
+  'gemma2-9b-it',
+  'gemma-7b-it',
 ]
 
 export const SYSTEM_PROMPT = `Você é o **Kealex AI** — um advogado assistente inteligente especializado em direito brasileiro.

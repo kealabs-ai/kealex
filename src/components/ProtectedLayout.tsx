@@ -5,6 +5,7 @@ import type { Role } from '../types'
 
 const roleRequired: Record<string, Role[]> = {
   '/usuarios': ['admin'],
+  '/clientes': ['admin', 'advogado'],
   '/admin': ['admin'],
   '/financeiro': ['admin', 'advogado'],
   '/prazos': ['admin', 'advogado'],

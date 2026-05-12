@@ -1,6 +1,6 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Briefcase, FileText, Clock, DollarSign, Users, LogOut, Scale, Sparkles, Settings } from 'lucide-react'
+import { Briefcase, FileText, Clock, DollarSign, Users, UserCheck, Scale, Sparkles, Settings } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
 const links = [
@@ -8,23 +8,14 @@ const links = [
   { to: '/documentos', label: 'Documentos', icon: FileText },
   { to: '/prazos', label: 'Prazos', icon: Clock },
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
+  { to: '/clientes', label: 'Clientes', icon: UserCheck, roles: ['advogado'] },
   { to: '/usuarios', label: 'Usuários', icon: Users, roles: ['admin'] },
   { to: '/admin', label: 'Configurações', icon: Settings, roles: ['admin'] },
 ]
 
-const roleColors: Record<string, string> = {
-  admin: 'from-purple-500 to-indigo-500',
-  advogado: 'from-blue-500 to-cyan-500',
-  cliente: 'from-emerald-500 to-teal-500',
-}
-
 export function Sidebar() {
-  const { user, logout } = useAuth()
-  const navigate = useNavigate()
-
-  const handleLogout = () => { logout(); navigate('/login') }
+  const { user } = useAuth()
   const visibleLinks = links.filter((l) => !l.roles || l.roles.includes(user?.role ?? ''))
-  const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
   return (
     <aside className="w-64 flex flex-col min-h-screen bg-gray-950 text-white shrink-0">
@@ -96,21 +87,7 @@ export function Sidebar() {
         </motion.div>
       </nav>
 
-      {/* user */}
-      <div className="p-3 m-3 rounded-2xl bg-white/5 border border-white/10">
-        <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl bg-gradient-to-br ${roleColors[user?.role ?? 'cliente']} flex items-center justify-center text-xs font-bold text-white shrink-0`}>
-            {initials}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white truncate">{user?.nome}</p>
-            <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-          </div>
-          <button onClick={handleLogout} className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors" title="Sair">
-            <LogOut size={15} />
-          </button>
-        </div>
-      </div>
+
     </aside>
   )
 }

@@ -114,6 +114,11 @@ export interface CfgNotificacoes {
   updated_at: string
 }
 
+export interface ModelosDisponiveis {
+  cerebras: string[]
+  groq: string[]
+}
+
 export const configuracoesApi = {
   // Geral
   getGeral: () => api.get<CfgGeral>('/configuracoes/geral').then((r) => r.data),
@@ -130,6 +135,7 @@ export const configuracoesApi = {
   // IA
   getIa: () => api.get<CfgIa>('/configuracoes/ia').then((r) => r.data),
   getIaAtiva: () => api.get<CfgIa>('/configuracoes/ia/ativa').then((r) => r.data),
+  getModelosDisponiveis: () => api.get<ModelosDisponiveis>('/configuracoes/ia/modelos').then((r) => r.data),
   saveIa: (data: Partial<CfgIa>) => api.post<CfgIa>('/configuracoes/ia', data).then((r) => r.data),
 
   // Usuários

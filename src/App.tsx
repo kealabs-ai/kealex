@@ -9,6 +9,7 @@ import { DocumentosPage } from './pages/DocumentosPage'
 import { PrazosPage } from './pages/PrazosPage'
 import { FinanceiroPage } from './pages/FinanceiroPage'
 import { UsuariosPage } from './pages/UsuariosPage'
+import { ClientesPage } from './pages/ClientesPage'
 import { IAPage } from './pages/IAPage'
 import { AdminPage } from './pages/AdminPage'
 
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="/prazos" element={<PrazosPage />} />
               <Route path="/financeiro" element={<FinanceiroPage />} />
               <Route path="/usuarios" element={<UsuariosPage />} />
+              <Route path="/clientes" element={<ClientesPage />} />
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/ia" element={<IAPage />} />
             </Route>

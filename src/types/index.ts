@@ -18,8 +18,21 @@ export interface Processo extends BaseEntity {
   status: StatusProcesso
   advogadoId: string
   clienteId: string
+  clienteNome?: string
+  clienteEmail?: string
   vara: string
   tribunal: string
+}
+
+export interface Cliente extends BaseEntity {
+  tenantId: string
+  advogadoId: string
+  nome: string
+  email: string
+  telefone?: string
+  cpfCnpj?: string
+  endereco?: string
+  observacoes?: string
 }
 
 export interface Documento extends BaseEntity {

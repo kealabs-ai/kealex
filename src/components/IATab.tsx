@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Save, CheckCircle, ExternalLink, Eye, EyeOff } from 'lucide-react'
+import { Save, CheckCircle, ExternalLink, Eye, EyeOff, AlertTriangle } from 'lucide-react'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { DataCard } from '../components/Cards'
-import { CEREBRAS_MODELS, GROQ_MODELS, type AIProvider } from '../api/ai'
-import { useConfigIa } from '../hooks/useConfiguracoes'
+import { type AIProvider } from '../api/ai'
+import { useConfigIa, useModelosDisponiveis } from '../hooks/useConfiguracoes'
 
 export function IATab() {
   const { data: cfg, save, isSaving, isLoading } = useConfigIa()
+  const { data: modelosDisponiveis, isLoading: isLoadingModelos } = useModelosDisponiveis()
   const [saved, setSaved] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [fields, setFields] = useState({
@@ -50,7 +51,15 @@ export function IATab() {
       ? (cfg?.groq_api_key || '')
       : (cfg?.cerebras_api_key || '')
     
-    const modelo = newProvider === 'groq' ? 'llama-3.3-70b-versatile' : 'llama-3.3-70b'
+    // Usar modelos dinâmicos do backend ou fallback para constantes locais
+    const modelosPorProvider = modelosDisponiveis || {
+      cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
+      groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+    }
+    
+    const modelo = newProvider === 'groq' 
+      ? (modelosPorProvider.groq[0] || 'llama-3.3-70b-versatile')
+      : (modelosPorProvider.cerebras[0] || 'llama-3.3-70b')
     
     console.log('[Admin IA] API Key do novo provider:', apiKey ? 'Configurada' : 'Vazia')
     
@@ -86,12 +95,23 @@ export function IATab() {
   }
 
   const provider = fields.provider
-  const models = provider === 'groq' ? GROQ_MODELS : CEREBRAS_MODELS
+  
+  // Usar modelos dinâmicos do backend ou fallback para constantes locais
+  const modelosPorProvider = modelosDisponiveis || {
+    cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
+    groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+  }
+  
+  const models = provider === 'groq' ? modelosPorProvider.groq : modelosPorProvider.cerebras
   const providerName = provider === 'groq' ? 'Groq' : 'Cerebras'
   const providerUrl = provider === 'groq' ? 'https://console.groq.com' : 'https://cloud.cerebras.ai'
   const keyPrefix = provider === 'groq' ? 'gsk-' : 'csk-'
+  
+  // Verificar se o modelo atual é válido
+  const isModeloValido = models.includes(fields.modelo)
+  const modeloDescontinuado = !isModeloValido && fields.modelo
 
-  if (isLoading) {
+  if (isLoading || isLoadingModelos) {
     return (
       <DataCard className="p-6">
         <div className="flex items-center justify-center py-12">
@@ -238,11 +258,37 @@ export function IATab() {
             <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
               Modelo
             </label>
+            
+            {/* Aviso de modelo descontinuado */}
+            {modeloDescontinuado && (
+              <div className="mb-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle size={16} className="text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-sm">
+                    <p className="font-medium text-amber-800 mb-1">
+                      Modelo descontinuado detectado
+                    </p>
+                    <p className="text-amber-700 text-xs">
+                      O modelo "{fields.modelo}" não está mais disponível. 
+                      Selecione um modelo atualizado abaixo.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <select
-              value={fields.modelo}
+              value={isModeloValido ? fields.modelo : ''}
               onChange={set('modelo')}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+              className={`w-full border rounded-xl px-3 py-2 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300 ${
+                modeloDescontinuado ? 'border-amber-300 bg-amber-50' : 'border-gray-200'
+              }`}
             >
+              {!isModeloValido && (
+                <option value="" disabled>
+                  Selecione um modelo atualizado
+                </option>
+              )}
               {models.map((m) => (
                 <option key={m} value={m}>{m}</option>
               ))}

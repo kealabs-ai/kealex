@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { configuracoesApi, type CfgGeral, type CfgCdn, type CfgDatabase, type CfgIa, type CfgUsuarios, type CfgSeguranca, type CfgNotificacoes } from '../api/configuracoes'
+import { configuracoesApi, type CfgGeral, type CfgCdn, type CfgDatabase, type CfgIa, type CfgUsuarios, type CfgSeguranca, type CfgNotificacoes, type ModelosDisponiveis } from '../api/configuracoes'
 
 export const CONFIG_KEY = ['configuracoes']
 
@@ -44,7 +44,16 @@ export function useSaveConfigDatabase() {
 
 // IA
 export function useConfigIa() {
-  return useQuery({ queryKey: [...CONFIG_KEY, 'ia'], queryFn: configuracoesApi.getIa })
+  const query = useQuery({ queryKey: [...CONFIG_KEY, 'ia'], queryFn: configuracoesApi.getIa })
+  const saveConfig = useSaveConfigIa()
+  
+  return {
+    data: query.data,
+    isLoading: query.isLoading,
+    error: query.error,
+    save: saveConfig.mutateAsync,
+    isSaving: saveConfig.isPending,
+  }
 }
 
 export function useConfigIaAtiva() {
@@ -54,6 +63,14 @@ export function useConfigIaAtiva() {
     retry: false,
     staleTime: 0,
     refetchOnMount: true
+  })
+}
+
+export function useModelosDisponiveis() {
+  return useQuery({ 
+    queryKey: [...CONFIG_KEY, 'ia', 'modelos'], 
+    queryFn: configuracoesApi.getModelosDisponiveis,
+    staleTime: 5 * 60 * 1000, // Cache por 5 minutos
   })
 }
 

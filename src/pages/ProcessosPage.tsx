@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, Briefcase, Search, Filter } from 'lucide-react'
 import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso } from '../hooks/useProcessos'
-import { useUsuarios } from '../hooks/useUsuarios'
+import { useClientes } from '../hooks/useClientes'
 import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
 import { statusProcessoBadge } from '../components/Badge'
@@ -19,7 +19,7 @@ type FormData = {
 
 export function ProcessosPage() {
   const { data: processos, isLoading } = useProcessos()
-  const { data: clientes } = useUsuarios('cliente')
+  const { data: clientes } = useClientes()
   const create = useCreateProcesso()
   const update = useUpdateProcesso()
   const remove = useDeleteProcesso()
@@ -79,7 +79,7 @@ export function ProcessosPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Número', 'Título', 'Vara', 'Tribunal', 'Status', ''].map((h) => (
+                {['Número', 'Título', 'Cliente', 'Vara', 'Tribunal', 'Status', ''].map((h) => (
                   <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
@@ -88,7 +88,7 @@ export function ProcessosPage() {
               {isLoading ? (
                 [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
               ) : filtered.length === 0 ? (
-                <tr><td colSpan={6}><EmptyState message="Nenhum processo encontrado" icon={<Briefcase size={28} className="text-gray-300" />} /></td></tr>
+                <tr><td colSpan={7}><EmptyState message="Nenhum processo encontrado" icon={<Briefcase size={28} className="text-gray-300" />} /></td></tr>
               ) : (
                 <AnimatePresence>
                   {filtered.map((p, i) => (
@@ -101,6 +101,7 @@ export function ProcessosPage() {
                     >
                       <td className="px-4 py-3.5 font-mono text-xs text-gray-500 bg-gray-50/50">{p.numero}</td>
                       <td className="px-4 py-3.5 font-semibold text-gray-800">{p.titulo}</td>
+                      <td className="px-4 py-3.5 text-gray-600">{p.clienteNome ?? '—'}</td>
                       <td className="px-4 py-3.5 text-gray-500">{p.vara}</td>
                       <td className="px-4 py-3.5 text-gray-500">{p.tribunal}</td>
                       <td className="px-4 py-3.5">{statusProcessoBadge(p.status)}</td>

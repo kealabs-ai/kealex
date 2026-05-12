@@ -20,6 +20,7 @@ const roleColors: Record<Role, string> = {
 
 export function UsuariosPage() {
   const { data: usuarios, isLoading } = useUsuarios()
+  const isAdmin = true
   const create = useCreateUsuario()
   const update = useUpdateUsuario()
   const remove = useDeleteUsuario()
@@ -36,15 +37,17 @@ export function UsuariosPage() {
     else create.mutate(data as any, { onSuccess: close })
   }
 
-  const filtered = usuarios?.filter((u) =>
+  const filtered = (isAdmin ? usuarios : usuarios?.filter((u) => u.role === 'cliente'))?.filter((u) =>
     u.nome.toLowerCase().includes(search.toLowerCase()) ||
     u.email.toLowerCase().includes(search.toLowerCase())
   ) ?? []
 
   const stats = [
-    { label: 'Total', value: usuarios?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Users size={18} /> },
-    { label: 'Admins', value: usuarios?.filter((u) => u.role === 'admin').length ?? 0, gradient: roleColors.admin, icon: <ShieldCheck size={18} /> },
-    { label: 'Advogados', value: usuarios?.filter((u) => u.role === 'advogado').length ?? 0, gradient: roleColors.advogado, icon: <Users size={18} /> },
+    { label: 'Total', value: (isAdmin ? usuarios : usuarios?.filter(u => u.role === 'cliente'))?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Users size={18} /> },
+    ...(isAdmin ? [
+      { label: 'Admins', value: usuarios?.filter((u) => u.role === 'admin').length ?? 0, gradient: roleColors.admin, icon: <ShieldCheck size={18} /> },
+      { label: 'Advogados', value: usuarios?.filter((u) => u.role === 'advogado').length ?? 0, gradient: roleColors.advogado, icon: <Users size={18} /> },
+    ] : []),
     { label: 'Clientes', value: usuarios?.filter((u) => u.role === 'cliente').length ?? 0, gradient: roleColors.cliente, icon: <Users size={18} /> },
   ]
 
@@ -135,7 +138,7 @@ export function UsuariosPage() {
             <div className="grid grid-cols-2 gap-3">
               <Input label={editing ? 'Nova Senha (opcional)' : 'Senha'} {...register('senha')} type="password" placeholder="••••••••" />
               <Select label="Role" {...register('role')}>
-                {['admin', 'advogado', 'cliente'].map((r) => <option key={r} value={r}>{r}</option>)}
+                {(isAdmin ? ['admin', 'advogado', 'cliente'] : ['cliente']).map((r) => <option key={r} value={r}>{r}</option>)}
               </Select>
             </div>
             {editing && (
