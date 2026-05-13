@@ -1,21 +1,31 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Briefcase, FileText, Clock, DollarSign, Users, UserCheck, Scale, Sparkles, Settings } from 'lucide-react'
+import { Briefcase, FileText, Clock, DollarSign, UserCheck, Scale, Sparkles, Settings, Cloud, Database, Bot, Users, Shield, Bell } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 
-const links = [
+const mainLinks = [
   { to: '/processos', label: 'Processos', icon: Briefcase },
   { to: '/documentos', label: 'Documentos', icon: FileText },
   { to: '/prazos', label: 'Prazos', icon: Clock },
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
   { to: '/clientes', label: 'Clientes', icon: UserCheck, roles: ['advogado'] },
-  { to: '/usuarios', label: 'Usuários', icon: Users, roles: ['admin'] },
-  { to: '/admin', label: 'Configurações', icon: Settings, roles: ['admin'] },
+]
+
+const adminLinks = [
+  { to: '/admin?tab=geral', label: 'Geral', icon: Settings },
+  { to: '/admin?tab=cdn', label: 'CDN & Arquivos', icon: Cloud },
+  { to: '/admin?tab=database', label: 'Banco de Dados', icon: Database },
+  { to: '/admin?tab=ia', label: 'Agentes IA', icon: Bot },
+  { to: '/admin?tab=usuarios', label: 'Usuários', icon: Users },
+  { to: '/admin?tab=seguranca', label: 'Segurança', icon: Shield },
+  { to: '/admin?tab=notificacoes', label: 'Notificações', icon: Bell },
 ]
 
 export function Sidebar() {
   const { user } = useAuth()
-  const visibleLinks = links.filter((l) => !l.roles || l.roles.includes(user?.role ?? ''))
+  const location = useLocation()
+  const isAdmin = user?.role === 'admin'
+  const visibleLinks = isAdmin ? [] : mainLinks.filter((l) => !l.roles || l.roles.includes(user?.role ?? ''))
 
   return (
     <aside className="w-64 flex flex-col min-h-screen bg-gray-950 text-white shrink-0">
@@ -34,31 +44,57 @@ export function Sidebar() {
 
       {/* nav */}
       <nav className="flex-1 px-3 space-y-0.5">
-        <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest px-3 mb-2">Menu</p>
-        {visibleLinks.map(({ to, label, icon: Icon }, i) => (
-          <motion.div key={to} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
-            <NavLink
-              to={to}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
-                  isActive
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
-                    : 'text-gray-400 hover:text-white hover:bg-white/5'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <Icon size={17} className={isActive ? 'text-white' : 'text-gray-500'} />
-                  {label}
-                </>
-              )}
-            </NavLink>
-          </motion.div>
-        ))}
-
-        {/* divider */}
-        <div className="my-3 border-t border-white/5" />
+        {isAdmin ? (
+          <>
+            <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest px-3 mb-2">Configurações</p>
+            {adminLinks.map(({ to, label, icon: Icon }, i) => {
+              const tab = to.split('?tab=')[1]
+              const isActive = location.pathname === '/admin' && location.search === `?tab=${tab}`
+              return (
+                <motion.div key={to} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
+                  <NavLink
+                    to={to}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                      isActive
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    <Icon size={17} className={isActive ? 'text-white' : 'text-gray-500'} />
+                    {label}
+                  </NavLink>
+                </motion.div>
+              )
+            })}
+            <div className="my-3 border-t border-white/5" />
+          </>
+        ) : (
+          <>
+            <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest px-3 mb-2">Menu</p>
+            {visibleLinks.map(({ to, label, icon: Icon }, i) => (
+              <motion.div key={to} initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.05 }}>
+                <NavLink
+                  to={to}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 ${
+                      isActive
+                        ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
+                        : 'text-gray-400 hover:text-white hover:bg-white/5'
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <Icon size={17} className={isActive ? 'text-white' : 'text-gray-500'} />
+                      {label}
+                    </>
+                  )}
+                </NavLink>
+              </motion.div>
+            ))}
+            <div className="my-3 border-t border-white/5" />
+          </>
+        )}
         <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-widest px-3 mb-2">Inteligência</p>
 
         <motion.div initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 }}>

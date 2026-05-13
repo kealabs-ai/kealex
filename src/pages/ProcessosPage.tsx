@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Briefcase, Search, Filter } from 'lucide-react'
+import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download } from 'lucide-react'
 import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso } from '../hooks/useProcessos'
 import { useClientes } from '../hooks/useClientes'
 import { Modal } from '../components/Modal'
@@ -9,6 +9,7 @@ import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards
 import { statusProcessoBadge } from '../components/Badge'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { useAuth } from '../context/AuthContext'
 import type { Processo, StatusProcesso } from '../types'
 
 type FormData = {
@@ -18,19 +19,55 @@ type FormData = {
 }
 
 export function ProcessosPage() {
+  const { user } = useAuth()
   const { data: processos, isLoading } = useProcessos()
-  const { data: clientes } = useClientes()
+  const isCliente = user?.role === 'cliente'
+  const { data: clientes } = !isCliente ? useClientes() : { data: undefined }
   const create = useCreateProcesso()
   const update = useUpdateProcesso()
   const remove = useDeleteProcesso()
   const [editing, setEditing] = useState<Processo | null>(null)
   const [open, setOpen] = useState(false)
+  const [guiaOpen, setGuiaOpen] = useState(false)
+  const [selectedProcesso, setSelectedProcesso] = useState<Processo | null>(null)
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
+  const { register: registerGuia, handleSubmit: handleSubmitGuia, reset: resetGuia } = useForm<{
+    tipo: string; valor: string; vencimento: string; descricao: string
+  }>()
 
   const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
   const openEdit = (p: Processo) => { reset(p); setEditing(p); setOpen(true) }
   const close = () => setOpen(false)
+  
+  const openGuia = (p: Processo) => {
+    setSelectedProcesso(p)
+    resetGuia({
+      tipo: 'custas',
+      valor: '',
+      vencimento: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10),
+      descricao: `Guia de pagamento - Processo ${p.numero}`
+    })
+    setGuiaOpen(true)
+  }
+  const closeGuia = () => setGuiaOpen(false)
+  
+  const onSubmitGuia = (data: any) => {
+    // Simular geração de guia - em produção, chamar API
+    const guia = {
+      processo: selectedProcesso?.numero,
+      tipo: data.tipo,
+      valor: parseFloat(data.valor),
+      vencimento: data.vencimento,
+      descricao: data.descricao,
+      codigoBarras: '23793.38128 60000.123456 78901.234567 8 12340000012345'
+    }
+    
+    // Simular download de PDF
+    alert(`Guia gerada com sucesso!\n\nProcesso: ${guia.processo}\nTipo: ${guia.tipo}\nValor: R$ ${guia.valor.toFixed(2)}\nVencimento: ${new Date(guia.vencimento).toLocaleDateString('pt-BR')}\n\nCódigo de Barras:\n${guia.codigoBarras}\n\nEm produção, um PDF seria gerado e baixado automaticamente.`)
+    closeGuia()
+  }
+  
   const onSubmit = (data: FormData) => {
     if (editing) update.mutate({ id: editing.id, data }, { onSuccess: close })
     else create.mutate(data as any, { onSuccess: close })
@@ -41,11 +78,15 @@ export function ProcessosPage() {
     p.numero.toLowerCase().includes(search.toLowerCase())
   ) ?? []
 
+  const displayProcessos = isCliente && user?.tenantId
+    ? filtered.filter(p => p.tenantId === user.tenantId)
+    : filtered
+
   const stats = [
-    { label: 'Total', value: processos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Briefcase size={18} /> },
-    { label: 'Ativos', value: processos?.filter((p) => p.status === 'ativo').length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <Briefcase size={18} /> },
-    { label: 'Arquivados', value: processos?.filter((p) => p.status === 'arquivado').length ?? 0, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <Briefcase size={18} /> },
-    { label: 'Encerrados', value: processos?.filter((p) => p.status === 'encerrado').length ?? 0, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <Briefcase size={18} /> },
+    { label: 'Total', value: displayProcessos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Briefcase size={18} /> },
+    { label: 'Ativos', value: displayProcessos?.filter((p) => p.status === 'ativo').length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <Briefcase size={18} /> },
+    { label: 'Arquivados', value: displayProcessos?.filter((p) => p.status === 'arquivado').length ?? 0, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <Briefcase size={18} /> },
+    { label: 'Encerrados', value: displayProcessos?.filter((p) => p.status === 'encerrado').length ?? 0, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <Briefcase size={18} /> },
   ]
 
   return (
@@ -53,8 +94,8 @@ export function ProcessosPage() {
       <TopBar
         icon={Briefcase}
         title="Processos"
-        subtitle="Gerencie todos os processos jurídicos"
-        actions={<Button icon={<Plus size={15} />} onClick={openCreate}>Novo Processo</Button>}
+        subtitle={isCliente ? "Acompanhe seus processos jurídicos" : "Gerencie todos os processos jurídicos"}
+        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Processo</Button>}
       />
       <div className="flex-1 overflow-y-auto p-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -87,11 +128,11 @@ export function ProcessosPage() {
             <tbody>
               {isLoading ? (
                 [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
-              ) : filtered.length === 0 ? (
+              ) : displayProcessos.length === 0 ? (
                 <tr><td colSpan={7}><EmptyState message="Nenhum processo encontrado" icon={<Briefcase size={28} className="text-gray-300" />} /></td></tr>
               ) : (
                 <AnimatePresence>
-                  {filtered.map((p, i) => (
+                  {displayProcessos.map((p, i) => (
                     <motion.tr
                       key={p.id}
                       className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors group"
@@ -107,8 +148,13 @@ export function ProcessosPage() {
                       <td className="px-4 py-3.5">{statusProcessoBadge(p.status)}</td>
                       <td className="px-4 py-3.5">
                         <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
-                          <button onClick={() => remove.mutate(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                          <button onClick={() => openGuia(p)} className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Emitir Guia"><FileText size={14} /></button>
+                          {!isCliente && (
+                            <>
+                              <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Editar"><Pencil size={14} /></button>
+                              <button onClick={() => remove.mutate(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </motion.tr>
@@ -120,7 +166,7 @@ export function ProcessosPage() {
         </DataCard>
       </div>
 
-      {open && (
+      {open && !isCliente && (
         <Modal
           title={editing ? 'Editar Processo' : 'Novo Processo'}
           subtitle={editing ? `Editando: ${editing.numero}` : 'Preencha os dados do novo processo'}
@@ -148,6 +194,63 @@ export function ProcessosPage() {
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
               <Button variant="secondary" type="button" onClick={close}>Cancelar</Button>
               <Button type="submit" loading={create.isPending || update.isPending}>Salvar</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {guiaOpen && selectedProcesso && (
+        <Modal
+          title="Emitir Guia de Pagamento"
+          subtitle={`Processo: ${selectedProcesso.numero} - ${selectedProcesso.titulo}`}
+          onClose={closeGuia}
+        >
+          <form onSubmit={handleSubmitGuia(onSubmitGuia)} className="space-y-4">
+            <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
+              <p className="text-sm font-semibold text-indigo-900 mb-1">Processo Selecionado</p>
+              <p className="text-xs text-indigo-700 font-mono">{selectedProcesso.numero}</p>
+              <p className="text-xs text-indigo-700">{selectedProcesso.titulo}</p>
+            </div>
+
+            <Select label="Tipo de Guia" {...registerGuia('tipo')}>
+              <option value="custas">Custas Processuais</option>
+              <option value="honorarios">Honorários Periciais</option>
+              <option value="deposito">Depósito Judicial</option>
+              <option value="multa">Multa</option>
+              <option value="outro">Outro</option>
+            </Select>
+
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="Valor (R$)"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                {...registerGuia('valor')}
+              />
+              <Input
+                label="Vencimento"
+                type="date"
+                {...registerGuia('vencimento')}
+              />
+            </div>
+
+            <Textarea
+              label="Descrição"
+              rows={3}
+              placeholder="Detalhes do pagamento..."
+              {...registerGuia('descricao')}
+            />
+
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+              <p className="text-xs text-amber-800">
+                💡 A guia será gerada em formato PDF com código de barras para pagamento bancário.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <Button variant="secondary" type="button" onClick={closeGuia}>Cancelar</Button>
+              <Button type="submit" icon={<Download size={15} />}>Gerar e Baixar Guia</Button>
             </div>
           </form>
         </Modal>

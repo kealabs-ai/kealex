@@ -12,6 +12,7 @@ export interface BaseEntity {
 }
 
 export interface Processo extends BaseEntity {
+  tenantId?: string
   numero: string
   titulo: string
   descricao: string
@@ -36,6 +37,7 @@ export interface Cliente extends BaseEntity {
 }
 
 export interface Documento extends BaseEntity {
+  tenantId?: string
   processoId: string
   uploadadoPorId: string
   nome: string
@@ -66,6 +68,7 @@ export interface Prazo extends BaseEntity {
 }
 
 export interface Usuario extends BaseEntity {
+  tenantId?: string
   nome: string
   email: string
   role: Role
@@ -80,7 +83,10 @@ export interface DashboardFinanceiro {
 }
 
 export interface AuthUser {
+  id: string
+  tenantId?: string
   nome: string
+  email: string
   role: Role
   accessToken: string
 }

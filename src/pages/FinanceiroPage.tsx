@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, DollarSign, TrendingUp, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, DollarSign, TrendingUp, Search, AlertTriangle } from 'lucide-react'
 import { useHonorarios, useDashboardFinanceiro, useCreateHonorario, useUpdateHonorario, useDeleteHonorario } from '../hooks/useFinanceiro'
 import { useProcessos } from '../hooks/useProcessos'
-import { useUsuarios } from '../hooks/useUsuarios'
+import { useClientes } from '../hooks/useClientes'
 import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
 import { statusHonorarioBadge } from '../components/Badge'
 import { Button, Input, Select } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { useAuth } from '../context/AuthContext'
 import type { Honorario, StatusHonorario } from '../types'
 
 type FormData = {
@@ -20,11 +21,18 @@ type FormData = {
 
 const fmt = (c: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c / 100)
 
+const diasRestantes = (data: string) => {
+  const diff = new Date(data).getTime() - Date.now()
+  return Math.ceil(diff / (1000 * 60 * 60 * 24))
+}
+
 export function FinanceiroPage() {
+  const { user } = useAuth()
+  const isCliente = user?.role === 'cliente'
   const { data: honorarios, isLoading } = useHonorarios()
   const { data: dashboard } = useDashboardFinanceiro()
   const { data: processos } = useProcessos()
-  const { data: clientes } = useUsuarios('cliente')
+  const { data: clientes } = !isCliente ? useClientes() : { data: undefined }
   const create = useCreateHonorario()
   const update = useUpdateHonorario()
   const remove = useDeleteHonorario()
@@ -46,6 +54,13 @@ export function FinanceiroPage() {
   }
 
   const filtered = honorarios?.filter((h) => h.descricao.toLowerCase().includes(search.toLowerCase())) ?? []
+  
+  // Honorários vencendo nos próximos 7 dias ou já vencidos
+  const vencendo = honorarios?.filter((h) => {
+    if (h.status !== 'pendente') return false
+    const dias = diasRestantes(h.dataVencimento)
+    return dias <= 7
+  }) ?? []
 
   const stats = dashboard ? [
     { label: 'Total Geral', value: fmt(dashboard.totalGeral), gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <TrendingUp size={18} /> },
@@ -54,19 +69,57 @@ export function FinanceiroPage() {
     { label: 'Vencido', value: fmt(dashboard.totalVencido), gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <DollarSign size={18} /> },
   ] : []
 
+  // Ajustar labels para cliente
+  if (isCliente && stats.length > 0) {
+    stats[0].label = 'Total a Pagar'
+    stats[1].label = 'Já Pago'
+    stats[2].label = 'Em Aberto'
+    stats[3].label = 'Atrasado'
+  }
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <TopBar
         icon={DollarSign}
         title="Financeiro"
-        subtitle="Honorários e faturamento"
-        actions={<Button icon={<Plus size={15} />} onClick={openCreate}>Novo Honorário</Button>}
+        subtitle={isCliente ? "Acompanhe seus honorários e pagamentos" : "Honorários e faturamento"}
+        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Honorário</Button>}
       />
       <div className="flex-1 overflow-y-auto p-8 space-y-6">
         {stats.length > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.08} />)}
           </div>
+        )}
+
+        {vencendo.length > 0 && (
+          <motion.div
+            className="bg-red-50 border border-red-200 rounded-2xl p-4"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2 bg-red-100 rounded-xl shrink-0">
+                <AlertTriangle size={16} className="text-red-600" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-800">{vencendo.length} honorário(s) {isCliente ? 'a vencer' : 'vencendo'} nos próximos 7 dias</p>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {vencendo.map((h) => {
+                    const dias = diasRestantes(h.dataVencimento)
+                    return (
+                      <span key={h.id} className="inline-flex items-center gap-1.5 bg-white border border-red-200 rounded-lg px-2.5 py-1 text-xs text-red-700">
+                        <DollarSign size={11} />
+                        {h.descricao}
+                        <span className="font-bold">{fmt(h.valorCentavos)}</span>
+                        <span className="font-bold">{dias <= 0 ? 'vencido' : `${dias}d`}</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          </motion.div>
         )}
 
         <DataCard delay={0.2}>
@@ -105,10 +158,12 @@ export function FinanceiroPage() {
                       <td className="px-4 py-3.5 text-gray-500">{h.dataPagamento ? new Date(h.dataPagamento).toLocaleDateString('pt-BR') : <span className="text-gray-300">—</span>}</td>
                       <td className="px-4 py-3.5">{statusHonorarioBadge(h.status)}</td>
                       <td className="px-4 py-3.5">
-                        <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openEdit(h)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
-                          <button onClick={() => remove.mutate(h.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
-                        </div>
+                        {!isCliente && (
+                          <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => openEdit(h)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
+                            <button onClick={() => remove.mutate(h.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                          </div>
+                        )}
                       </td>
                     </motion.tr>
                   ))}
@@ -119,7 +174,7 @@ export function FinanceiroPage() {
         </DataCard>
       </div>
 
-      {open && (
+      {open && !isCliente && (
         <Modal title={editing ? 'Editar Honorário' : 'Novo Honorário'} subtitle="Registre os honorários do processo" onClose={close} size="lg">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">

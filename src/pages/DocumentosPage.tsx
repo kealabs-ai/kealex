@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, FileText, ExternalLink, Search } from 'lucide-react'
+import { Plus, Pencil, Trash2, FileText, ExternalLink, Search, Download, Upload } from 'lucide-react'
 import { useDocumentos, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '../hooks/useDocumentos'
 import { useProcessos } from '../hooks/useProcessos'
 import { Modal } from '../components/Modal'
@@ -9,6 +9,7 @@ import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards
 import { statusDocumentoBadge } from '../components/Badge'
 import { Button, Input, Select } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { useAuth } from '../context/AuthContext'
 import type { Documento, StatusDocumento, TipoDocumento } from '../types'
 
 type FormData = { processoId: string; nome: string; tipo: TipoDocumento; urlArquivo: string; tamanhoBytes: number; status?: StatusDocumento }
@@ -17,6 +18,7 @@ const fmtBytes = (b: number) => b > 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1
 const tipoIcon: Record<string, string> = { peticao: '📄', contrato: '📋', comprovante: '🧾', outro: '📁' }
 
 export function DocumentosPage() {
+  const { user } = useAuth()
   const { data: documentos, isLoading } = useDocumentos()
   const { data: processos } = useProcessos()
   const create = useCreateDocumento()
@@ -25,23 +27,52 @@ export function DocumentosPage() {
   const [editing, setEditing] = useState<Documento | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [uploadMode, setUploadMode] = useState<'url' | 'file'>('url')
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const { register, handleSubmit, reset } = useForm<FormData>()
 
-  const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
-  const openEdit = (d: Documento) => { reset(d); setEditing(d); setOpen(true) }
+  const isCliente = user?.role === 'cliente'
+
+  const openCreate = () => { reset({}); setEditing(null); setUploadMode('url'); setSelectedFile(null); setOpen(true) }
+  const openEdit = (d: Documento) => { reset(d); setEditing(d); setUploadMode('url'); setSelectedFile(null); setOpen(true) }
   const close = () => setOpen(false)
+  
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setSelectedFile(file)
+    }
+  }
+  
   const onSubmit = (data: FormData) => {
-    if (editing) update.mutate({ id: editing.id, data }, { onSuccess: close })
-    else create.mutate({ ...data, tamanhoBytes: Number(data.tamanhoBytes) }, { onSuccess: close })
+    if (uploadMode === 'file' && selectedFile) {
+      // Simular upload - em produção, fazer upload real para CDN
+      const fakeUrl = `https://cdn.kealex.com.br/docs/${selectedFile.name}`
+      const payload = {
+        ...data,
+        urlArquivo: fakeUrl,
+        tamanhoBytes: selectedFile.size
+      }
+      if (editing) update.mutate({ id: editing.id, data: payload }, { onSuccess: close })
+      else create.mutate(payload, { onSuccess: close })
+    } else {
+      if (editing) update.mutate({ id: editing.id, data }, { onSuccess: close })
+      else create.mutate({ ...data, tamanhoBytes: Number(data.tamanhoBytes) }, { onSuccess: close })
+    }
   }
 
   const filtered = documentos?.filter((d) => d.nome.toLowerCase().includes(search.toLowerCase())) ?? []
 
+  // Para cliente, filtrar por tenantId
+  const displayDocumentos = isCliente && user?.tenantId
+    ? filtered.filter(d => d.tenantId === user.tenantId)
+    : filtered
+
   const stats = [
-    { label: 'Total', value: documentos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <FileText size={18} /> },
-    { label: 'Aprovados', value: documentos?.filter((d) => d.status === 'aprovado').length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <FileText size={18} /> },
-    { label: 'Pendentes', value: documentos?.filter((d) => d.status === 'pendente').length ?? 0, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <FileText size={18} /> },
-    { label: 'Rejeitados', value: documentos?.filter((d) => d.status === 'rejeitado').length ?? 0, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <FileText size={18} /> },
+    { label: 'Total', value: displayDocumentos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <FileText size={18} /> },
+    { label: 'Aprovados', value: displayDocumentos?.filter((d) => d.status === 'aprovado').length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <FileText size={18} /> },
+    { label: 'Pendentes', value: displayDocumentos?.filter((d) => d.status === 'pendente').length ?? 0, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <FileText size={18} /> },
+    { label: 'Rejeitados', value: displayDocumentos?.filter((d) => d.status === 'rejeitado').length ?? 0, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <FileText size={18} /> },
   ]
 
   return (
@@ -49,8 +80,8 @@ export function DocumentosPage() {
       <TopBar
         icon={FileText}
         title="Documentos"
-        subtitle="Gestão de documentos processuais"
-        actions={<Button icon={<Plus size={15} />} onClick={openCreate}>Novo Documento</Button>}
+        subtitle={isCliente ? "Acesse os documentos dos seus processos" : "Gestão de documentos processuais"}
+        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Documento</Button>}
       />
       <div className="flex-1 overflow-y-auto p-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -75,11 +106,11 @@ export function DocumentosPage() {
             <tbody>
               {isLoading ? (
                 [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
-              ) : filtered.length === 0 ? (
+              ) : displayDocumentos.length === 0 ? (
                 <tr><td colSpan={5}><EmptyState message="Nenhum documento encontrado" icon={<FileText size={28} className="text-gray-300" />} /></td></tr>
               ) : (
                 <AnimatePresence>
-                  {filtered.map((d, i) => (
+                  {displayDocumentos.map((d, i) => (
                     <motion.tr
                       key={d.id}
                       className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors group"
@@ -98,9 +129,14 @@ export function DocumentosPage() {
                       <td className="px-4 py-3.5">{statusDocumentoBadge(d.status)}</td>
                       <td className="px-4 py-3.5">
                         <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <a href={d.urlArquivo} target="_blank" rel="noreferrer" className="p-1.5 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors"><ExternalLink size={14} /></a>
-                          <button onClick={() => openEdit(d)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
-                          <button onClick={() => remove.mutate(d.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                          <a href={d.urlArquivo} download className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Download"><Download size={14} /></a>
+                          <a href={d.urlArquivo} target="_blank" rel="noreferrer" className="p-1.5 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors" title="Abrir"><ExternalLink size={14} /></a>
+                          {!isCliente && (
+                            <>
+                              <button onClick={() => openEdit(d)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Editar"><Pencil size={14} /></button>
+                              <button onClick={() => remove.mutate(d.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                            </>
+                          )}
                         </div>
                       </td>
                     </motion.tr>
@@ -112,7 +148,7 @@ export function DocumentosPage() {
         </DataCard>
       </div>
 
-      {open && (
+      {open && !isCliente && (
         <Modal title={editing ? 'Editar Documento' : 'Novo Documento'} subtitle="Adicione um documento ao processo" onClose={close}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Select label="Processo" {...register('processoId')}>
@@ -125,8 +161,70 @@ export function DocumentosPage() {
                 {['peticao', 'contrato', 'comprovante', 'outro'].map((t) => <option key={t} value={t}>{t}</option>)}
               </Select>
             </div>
-            <Input label="URL do Arquivo" {...register('urlArquivo')} placeholder="https://..." />
-            <Input label="Tamanho (bytes)" {...register('tamanhoBytes')} type="number" placeholder="Ex: 204800" />
+            
+            {/* Toggle Upload Mode */}
+            {!editing && (
+              <div className="space-y-3">
+                <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">Método de Upload</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('url')}
+                    className={`p-3 border-2 rounded-xl text-left transition-all ${
+                      uploadMode === 'url'
+                        ? 'border-indigo-500 bg-indigo-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <ExternalLink size={16} className={uploadMode === 'url' ? 'text-indigo-600' : 'text-gray-400'} />
+                      <span className="font-semibold text-sm">URL Externa</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Link de arquivo já hospedado</p>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadMode('file')}
+                    className={`p-3 border-2 rounded-xl text-left transition-all ${
+                      uploadMode === 'file'
+                        ? 'border-emerald-500 bg-emerald-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2 mb-1">
+                      <Upload size={16} className={uploadMode === 'file' ? 'text-emerald-600' : 'text-gray-400'} />
+                      <span className="font-semibold text-sm">Upload de Arquivo</span>
+                    </div>
+                    <p className="text-xs text-gray-500">Enviar do seu computador</p>
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {uploadMode === 'url' ? (
+              <>
+                <Input label="URL do Arquivo" {...register('urlArquivo')} placeholder="https://..." />
+                <Input label="Tamanho (bytes)" {...register('tamanhoBytes')} type="number" placeholder="Ex: 204800" />
+              </>
+            ) : (
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">Arquivo</label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 outline-none transition-all file:mr-4 file:py-1 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                  />
+                </div>
+                {selectedFile && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <p className="text-sm text-emerald-900 font-medium">{selectedFile.name}</p>
+                    <p className="text-xs text-emerald-700">{fmtBytes(selectedFile.size)}</p>
+                  </div>
+                )}
+              </div>
+            )}
+            
             {editing && (
               <Select label="Status" {...register('status')}>
                 {['pendente', 'aprovado', 'rejeitado'].map((s) => <option key={s} value={s}>{s}</option>)}

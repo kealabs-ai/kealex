@@ -9,6 +9,7 @@ import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards
 import { statusPrazoBadge } from '../components/Badge'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { useAuth } from '../context/AuthContext'
 import type { Prazo, StatusPrazo } from '../types'
 
 type FormData = { processoId: string; titulo: string; descricao: string; dataVencimento: string; status?: StatusPrazo }
@@ -19,6 +20,7 @@ const diasRestantes = (data: string) => {
 }
 
 export function PrazosPage() {
+  const { user } = useAuth()
   const { data: prazos, isLoading } = usePrazos()
   const { data: vencendo } = usePrazosVencendo(7)
   const { data: processos } = useProcessos()
@@ -29,6 +31,8 @@ export function PrazosPage() {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
+
+  const isCliente = user?.role === 'cliente'
 
   const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
   const openEdit = (p: Prazo) => { reset({ ...p, dataVencimento: p.dataVencimento.slice(0, 10) }); setEditing(p); setOpen(true) }
@@ -52,8 +56,8 @@ export function PrazosPage() {
       <TopBar
         icon={Clock}
         title="Prazos"
-        subtitle="Controle de prazos processuais"
-        actions={<Button icon={<Plus size={15} />} onClick={openCreate}>Novo Prazo</Button>}
+        subtitle={isCliente ? "Acompanhe os prazos dos seus processos" : "Controle de prazos processuais"}
+        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Prazo</Button>}
       />
       <div className="flex-1 overflow-y-auto p-8 space-y-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -132,10 +136,12 @@ export function PrazosPage() {
                         </td>
                         <td className="px-4 py-3.5">{statusPrazoBadge(p.status)}</td>
                         <td className="px-4 py-3.5">
-                          <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
-                            <button onClick={() => remove.mutate(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
-                          </div>
+                          {!isCliente && (
+                            <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
+                              <button onClick={() => remove.mutate(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                            </div>
+                          )}
                         </td>
                       </motion.tr>
                     )
@@ -147,7 +153,7 @@ export function PrazosPage() {
         </DataCard>
       </div>
 
-      {open && (
+      {open && !isCliente && (
         <Modal title={editing ? 'Editar Prazo' : 'Novo Prazo'} subtitle="Defina o prazo processual" onClose={close}>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Select label="Processo" {...register('processoId')}>
