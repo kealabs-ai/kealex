@@ -73,14 +73,15 @@ export function ProcessosPage() {
     else create.mutate(data as any, { onSuccess: close })
   }
 
-  const filtered = processos?.filter((p) =>
+  const displayProcessos = processos?.filter((p) =>
     p.titulo.toLowerCase().includes(search.toLowerCase()) ||
     p.numero.toLowerCase().includes(search.toLowerCase())
   ) ?? []
 
-  const displayProcessos = isCliente && user?.tenantId
-    ? filtered.filter(p => p.tenantId === user.tenantId)
-    : filtered
+  console.log('ProcessosPage: processos from API:', processos?.length ?? 0)
+  console.log('ProcessosPage: displayProcessos after filter:', displayProcessos.length)
+  console.log('ProcessosPage: isLoading:', isLoading)
+  console.log('ProcessosPage: user role:', user?.role)
 
   const stats = [
     { label: 'Total', value: displayProcessos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Briefcase size={18} /> },
