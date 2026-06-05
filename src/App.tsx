@@ -13,6 +13,8 @@ import { UsuariosPage } from './pages/UsuariosPage'
 import { ClientesPage } from './pages/ClientesPage'
 import { IAPage } from './pages/IAPage'
 import { AdminPage } from './pages/AdminPage'
+import { NotFoundPage } from './pages/NotFoundPage'
+import { ErrorPage } from './pages/ErrorPage'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 30, retry: 1 } },
@@ -26,6 +28,7 @@ export default function App() {
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/error" element={<ErrorPage />} />
               <Route element={<ProtectedLayout />}>
                 <Route path="/" element={<Navigate to="/processos" replace />} />
                 <Route path="/processos" element={<ProcessosPage />} />
@@ -37,6 +40,7 @@ export default function App() {
                 <Route path="/admin" element={<AdminPage />} />
                 <Route path="/ia" element={<IAPage />} />
               </Route>
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </BrowserRouter>
         </AuthProvider>
