@@ -27,6 +27,10 @@ export function LoginPage() {
       login(data)
       navigate(from === '/login' ? '/processos' : from, { replace: true })
     },
+    onError: (error: any) => {
+      console.error('Login error:', error)
+      // Não redirecionar, apenas mostrar erro
+    },
   })
 
   if (user) return <Navigate to="/processos" replace />
