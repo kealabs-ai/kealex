@@ -7,7 +7,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'https://srv1023256.hstgr.cloud/k1/lex',
+        target: 'https://srv1023256.hstgr.cloud',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         secure: false,
