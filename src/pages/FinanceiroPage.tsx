@@ -41,6 +41,9 @@ export function FinanceiroPage() {
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
 
+  // Garantir que sejam arrays
+  const honorariosList = Array.isArray(honorarios) ? honorarios : []
+
   const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
   const openEdit = (h: Honorario) => {
     reset({ ...h, dataVencimento: h.dataVencimento.slice(0, 10), dataPagamento: h.dataPagamento?.slice(0, 10) })
@@ -53,14 +56,14 @@ export function FinanceiroPage() {
     else create.mutate(payload, { onSuccess: close })
   }
 
-  const filtered = honorarios?.filter((h) => h.descricao.toLowerCase().includes(search.toLowerCase())) ?? []
+  const filtered = honorariosList.filter((h) => h?.descricao && h.descricao.toLowerCase().includes(search.toLowerCase()))
   
   // Honorários vencendo nos próximos 7 dias ou já vencidos
-  const vencendo = honorarios?.filter((h) => {
-    if (h.status !== 'pendente') return false
+  const vencendo = honorariosList.filter((h) => {
+    if (h?.status !== 'pendente') return false
     const dias = diasRestantes(h.dataVencimento)
     return dias <= 7
-  }) ?? []
+  })
 
   const stats = dashboard ? [
     { label: 'Total Geral', value: fmt(dashboard.totalGeral), gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <TrendingUp size={18} /> },

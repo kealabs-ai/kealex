@@ -34,6 +34,10 @@ export function PrazosPage() {
 
   const isCliente = user?.role === 'cliente'
 
+  // Garantir que seja sempre um array
+  const prazosList = Array.isArray(prazos) ? prazos : []
+  const vencendoList = Array.isArray(vencendo) ? vencendo : []
+
   const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
   const openEdit = (p: Prazo) => { reset({ ...p, dataVencimento: p.dataVencimento.slice(0, 10) }); setEditing(p); setOpen(true) }
   const close = () => setOpen(false)
@@ -42,13 +46,13 @@ export function PrazosPage() {
     else create.mutate(data, { onSuccess: close })
   }
 
-  const filtered = prazos?.filter((p) => p.titulo.toLowerCase().includes(search.toLowerCase())) ?? []
+  const filtered = prazosList.filter((p) => p?.titulo && p.titulo.toLowerCase().includes(search.toLowerCase()))
 
   const stats = [
-    { label: 'Total', value: prazos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Clock size={18} /> },
-    { label: 'Pendentes', value: prazos?.filter((p) => p.status === 'pendente').length ?? 0, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <Clock size={18} /> },
-    { label: 'Concluídos', value: prazos?.filter((p) => p.status === 'concluido').length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <CheckCircle size={18} /> },
-    { label: 'Vencidos', value: prazos?.filter((p) => p.status === 'vencido').length ?? 0, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <AlertTriangle size={18} /> },
+    { label: 'Total', value: prazosList.length, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Clock size={18} /> },
+    { label: 'Pendentes', value: prazosList.filter((p) => p?.status === 'pendente').length, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <Clock size={18} /> },
+    { label: 'Concluídos', value: prazosList.filter((p) => p?.status === 'concluido').length, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <CheckCircle size={18} /> },
+    { label: 'Vencidos', value: prazosList.filter((p) => p?.status === 'vencido').length, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <AlertTriangle size={18} /> },
   ]
 
   return (
@@ -64,7 +68,7 @@ export function PrazosPage() {
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.08} />)}
         </div>
 
-        {vencendo && vencendo.length > 0 && (
+        {vencendoList.length > 0 && (
           <motion.div
             className="bg-amber-50 border border-amber-200 rounded-2xl p-4"
             initial={{ opacity: 0, y: -8 }}
@@ -75,9 +79,9 @@ export function PrazosPage() {
                 <AlertTriangle size={16} className="text-amber-600" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-800">{vencendo.length} prazo(s) vencendo nos próximos 7 dias</p>
+                <p className="text-sm font-semibold text-amber-800">{vencendoList.length} prazo(s) vencendo nos próximos 7 dias</p>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {vencendo.map((p) => {
+                  {vencendoList.map((p) => {
                     const dias = diasRestantes(p.dataVencimento)
                     return (
                       <span key={p.id} className="inline-flex items-center gap-1.5 bg-white border border-amber-200 rounded-lg px-2.5 py-1 text-xs text-amber-700">

@@ -121,32 +121,35 @@ export interface ModelosDisponiveis {
 
 export const configuracoesApi = {
   // Geral
-  getGeral: () => api.get<CfgGeral>('/configuracoes/geral').then((r) => r.data),
+  getGeral: () => api.get<CfgGeral>('/configuracoes/geral').then((r) => r.data).catch(() => null),
   saveGeral: (data: Partial<CfgGeral>) => api.post<CfgGeral>('/configuracoes/geral', data).then((r) => r.data),
 
   // CDN
-  getCdn: () => api.get<CfgCdn>('/configuracoes/cdn').then((r) => r.data),
+  getCdn: () => api.get<CfgCdn>('/configuracoes/cdn').then((r) => r.data).catch(() => null),
   saveCdn: (data: Partial<CfgCdn>) => api.post<CfgCdn>('/configuracoes/cdn', data).then((r) => r.data),
 
   // Database
-  getDatabase: () => api.get<CfgDatabase>('/configuracoes/database').then((r) => r.data),
+  getDatabase: () => api.get<CfgDatabase>('/configuracoes/database').then((r) => r.data).catch(() => null),
   saveDatabase: (data: Partial<CfgDatabase>) => api.post<CfgDatabase>('/configuracoes/database', data).then((r) => r.data),
 
   // IA
-  getIa: () => api.get<CfgIa>('/configuracoes/ia').then((r) => r.data),
-  getIaAtiva: () => api.get<CfgIa>('/configuracoes/ia/ativa').then((r) => r.data),
-  getModelosDisponiveis: () => api.get<ModelosDisponiveis>('/configuracoes/ia/modelos').then((r) => r.data),
+  getIa: () => api.get<CfgIa>('/configuracoes/ia').then((r) => r.data).catch(() => null),
+  getIaAtiva: () => api.get<CfgIa>('/configuracoes/ia/ativa').then((r) => r.data).catch(() => null),
+  getModelosDisponiveis: () => api.get<ModelosDisponiveis>('/configuracoes/ia/modelos').then((r) => r.data).catch(() => ({
+    cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
+    groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+  })),
   saveIa: (data: Partial<CfgIa>) => api.post<CfgIa>('/configuracoes/ia', data).then((r) => r.data),
 
   // Usuários
-  getUsuarios: () => api.get<CfgUsuarios>('/configuracoes/usuarios').then((r) => r.data),
+  getUsuarios: () => api.get<CfgUsuarios>('/configuracoes/usuarios').then((r) => r.data).catch(() => null),
   saveUsuarios: (data: Partial<CfgUsuarios>) => api.post<CfgUsuarios>('/configuracoes/usuarios', data).then((r) => r.data),
 
   // Segurança
-  getSeguranca: () => api.get<CfgSeguranca>('/configuracoes/seguranca').then((r) => r.data),
+  getSeguranca: () => api.get<CfgSeguranca>('/configuracoes/seguranca').then((r) => r.data).catch(() => null),
   saveSeguranca: (data: Partial<CfgSeguranca>) => api.post<CfgSeguranca>('/configuracoes/seguranca', data).then((r) => r.data),
 
   // Notificações
-  getNotificacoes: () => api.get<CfgNotificacoes>('/configuracoes/notificacoes').then((r) => r.data),
+  getNotificacoes: () => api.get<CfgNotificacoes>('/configuracoes/notificacoes').then((r) => r.data).catch(() => null),
   saveNotificacoes: (data: Partial<CfgNotificacoes>) => api.post<CfgNotificacoes>('/configuracoes/notificacoes', data).then((r) => r.data),
 }

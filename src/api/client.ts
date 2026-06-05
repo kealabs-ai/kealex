@@ -1,6 +1,12 @@
 import axios from 'axios'
 
-export const api = axios.create({ baseURL: '/api' })
+// Usar proxy local para evitar CORS em desenvolvimento
+const isDev = import.meta.env.DEV
+const baseURL = isDev 
+  ? '/api'  // Proxy local do Vite
+  : (import.meta.env.VITE_API_URL || 'https://srv1023256.hstgr.cloud/k1/lex')
+
+export const api = axios.create({ baseURL })
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('kealex_token')

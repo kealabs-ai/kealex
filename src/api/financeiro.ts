@@ -2,8 +2,8 @@ import { api } from './client'
 import type { Honorario, DashboardFinanceiro } from '../types'
 
 export const financeiroApi = {
-  list: () => api.get<Honorario[]>('/financeiro').then((r) => r.data),
-  dashboard: () => api.get<DashboardFinanceiro>('/financeiro/dashboard').then((r) => r.data),
+  list: () => api.get<Honorario[]>('/financeiro').then((r) => r.data).catch(() => []),
+  dashboard: () => api.get<DashboardFinanceiro>('/financeiro/dashboard').then((r) => r.data).catch(() => ({ totalPendente: 0, totalPago: 0, totalVencido: 0, totalGeral: 0 })),
   get: (id: string) => api.post<Honorario>('/financeiro/get', { id }).then((r) => r.data),
   create: (data: { processoId: string; clienteId: string; descricao: string; valorCentavos: number; dataVencimento: string }) =>
     api.post<Honorario>('/financeiro', data).then((r) => r.data),

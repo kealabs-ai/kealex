@@ -24,6 +24,9 @@ export function ClientesPage() {
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
 
+  // Garantir que seja array
+  const clientesList = Array.isArray(clientes) ? clientes : []
+
   const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
   const openEdit = (c: Cliente) => { reset(c); setEditing(c); setOpen(true) }
   const close = () => setOpen(false)
@@ -32,16 +35,16 @@ export function ClientesPage() {
     else create.mutate(data as any, { onSuccess: close })
   }
 
-  const filtered = clientes?.filter((c) =>
-    c.nome.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase())
-  ) ?? []
+  const filtered = clientesList.filter((c) =>
+    (c?.nome && c.nome.toLowerCase().includes(search.toLowerCase())) ||
+    (c?.email && c.email.toLowerCase().includes(search.toLowerCase()))
+  )
 
   const stats = [
-    { label: 'Total', value: clientes?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <UserCheck size={18} /> },
-    { label: 'Com telefone', value: clientes?.filter((c) => c.telefone).length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <Phone size={18} /> },
-    { label: 'Com CPF/CNPJ', value: clientes?.filter((c) => c.cpfCnpj).length ?? 0, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <UserCheck size={18} /> },
-    { label: 'Com endereço', value: clientes?.filter((c) => c.endereco).length ?? 0, gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)', icon: <UserCheck size={18} /> },
+    { label: 'Total', value: clientesList.length, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <UserCheck size={18} /> },
+    { label: 'Com telefone', value: clientesList.filter((c) => c?.telefone).length, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <Phone size={18} /> },
+    { label: 'Com CPF/CNPJ', value: clientesList.filter((c) => c?.cpfCnpj).length, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <UserCheck size={18} /> },
+    { label: 'Com endereço', value: clientesList.filter((c) => c?.endereco).length, gradient: 'linear-gradient(135deg,#3b82f6,#06b6d4)', icon: <UserCheck size={18} /> },
   ]
 
   return (

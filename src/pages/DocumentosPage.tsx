@@ -19,11 +19,14 @@ const tipoIcon: Record<string, string> = { peticao: '📄', contrato: '📋', co
 
 export function DocumentosPage() {
   const { user } = useAuth()
-  const { data: documentos, isLoading } = useDocumentos()
+  const isCliente = user?.role === 'cliente'
+  
+  const { data: documentos, isLoading, error } = useDocumentos()
   const { data: processos } = useProcessos()
   const create = useCreateDocumento()
   const update = useUpdateDocumento()
   const remove = useDeleteDocumento()
+  
   const [editing, setEditing] = useState<Documento | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
@@ -31,7 +34,18 @@ export function DocumentosPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const { register, handleSubmit, reset } = useForm<FormData>()
 
-  const isCliente = user?.role === 'cliente'
+  // Log para debug
+  console.log('DocumentosPage render:', { documentos, isLoading, error, user })
+
+  // Garantir que documentos seja sempre um array
+  const documentosList = Array.isArray(documentos) ? documentos : []
+  
+  const filtered = documentosList.filter((d) => 
+    d?.nome && typeof d.nome === 'string' && d.nome.toLowerCase().includes(search.toLowerCase())
+  )
+
+  // Simplificar - backend já filtra os dados por tenant
+  const displayDocumentos = filtered
 
   const openCreate = () => { reset({}); setEditing(null); setUploadMode('url'); setSelectedFile(null); setOpen(true) }
   const openEdit = (d: Documento) => { reset(d); setEditing(d); setUploadMode('url'); setSelectedFile(null); setOpen(true) }
@@ -61,18 +75,11 @@ export function DocumentosPage() {
     }
   }
 
-  const filtered = documentos?.filter((d) => d.nome.toLowerCase().includes(search.toLowerCase())) ?? []
-
-  // Para cliente, filtrar por tenantId
-  const displayDocumentos = isCliente && user?.tenantId
-    ? filtered.filter(d => d.tenantId === user.tenantId)
-    : filtered
-
   const stats = [
-    { label: 'Total', value: displayDocumentos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <FileText size={18} /> },
-    { label: 'Aprovados', value: displayDocumentos?.filter((d) => d.status === 'aprovado').length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <FileText size={18} /> },
-    { label: 'Pendentes', value: displayDocumentos?.filter((d) => d.status === 'pendente').length ?? 0, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <FileText size={18} /> },
-    { label: 'Rejeitados', value: displayDocumentos?.filter((d) => d.status === 'rejeitado').length ?? 0, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <FileText size={18} /> },
+    { label: 'Total', value: displayDocumentos.length, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <FileText size={18} /> },
+    { label: 'Aprovados', value: displayDocumentos.filter((d) => d?.status === 'aprovado').length, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <FileText size={18} /> },
+    { label: 'Pendentes', value: displayDocumentos.filter((d) => d?.status === 'pendente').length, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <FileText size={18} /> },
+    { label: 'Rejeitados', value: displayDocumentos.filter((d) => d?.status === 'rejeitado').length, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <FileText size={18} /> },
   ]
 
   return (

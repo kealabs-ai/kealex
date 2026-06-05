@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { configuracoesApi, type CfgGeral, type CfgCdn, type CfgDatabase, type CfgIa, type CfgUsuarios, type CfgSeguranca, type CfgNotificacoes, type ModelosDisponiveis } from '../api/configuracoes'
+import { configuracoesApi } from '../api/configuracoes'
 
 export const CONFIG_KEY = ['configuracoes']
 

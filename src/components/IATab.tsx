@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Save, CheckCircle, ExternalLink, Eye, EyeOff, AlertTriangle } from 'lucide-react'
-import { Button, Input, Select, Textarea } from '../components/UI'
+import { Button, Input, Textarea } from '../components/UI'
 import { DataCard } from '../components/Cards'
 import { type AIProvider } from '../api/ai'
 import { useConfigIa, useModelosDisponiveis } from '../hooks/useConfiguracoes'
@@ -81,7 +81,7 @@ export function IATab() {
       api_key: fields.api_key,
       modelo: fields.modelo,
       max_tokens: parseInt(fields.max_tokens),
-      system_prompt: fields.system_prompt || null,
+      system_prompt: fields.system_prompt || undefined,
       ativo: fields.ativo,
     }
     
