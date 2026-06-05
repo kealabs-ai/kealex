@@ -72,8 +72,11 @@ export function IATab() {
   }
 
   const set = (k: keyof typeof fields) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-      setFields((prev) => ({ ...prev, [k]: e.target.value }))
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+      const value = e.target.value
+      console.log(`[Admin IA] Atualizando ${k}:`, value)
+      setFields((prev) => ({ ...prev, [k]: value }))
+    }
 
   const handleSave = async () => {
     const payload = {
@@ -85,11 +88,15 @@ export function IATab() {
       ativo: fields.ativo,
     }
     
+    console.log('[Admin IA] Salvando configuração:', payload)
+    
     try {
-      await save(payload)
+      const result = await save(payload)
+      console.log('[Admin IA] Configuração salva com sucesso:', result)
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (error: any) {
+      console.error('[Admin IA] Erro ao salvar:', error)
       alert(error.message || 'Erro ao salvar configuração')
     }
   }
