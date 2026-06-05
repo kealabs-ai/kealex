@@ -10,7 +10,7 @@ interface ErrorConfig {
   title: string
   description: string
   suggestions: string[]
-  icon: JSX.Element
+  icon: React.ReactElement
   gradient: string
 }
 
