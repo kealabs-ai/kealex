@@ -38,10 +38,25 @@ export function IATab() {
       const defaultGroqKey = import.meta.env.GROQ_API_KEY || ''
       const apiKey = cfg.api_key || (cfg.provider === 'groq' ? defaultGroqKey : '')
       
+      // Validar se o modelo atual é válido
+      const modelosPorProvider = modelosDisponiveis || {
+        cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
+        groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+      }
+      
+      const provider = (cfg.provider || 'cerebras') as AIProvider
+      const modelosValidos = provider === 'groq' ? modelosPorProvider.groq : modelosPorProvider.cerebras
+      const modeloAtual = cfg.modelo || 'llama-3.3-70b'
+      const modeloValido = modelosValidos.includes(modeloAtual) ? modeloAtual : modelosValidos[0]
+      
+      if (modeloAtual !== modeloValido) {
+        console.warn(`[Admin IA] Modelo "${modeloAtual}" inválido, usando "${modeloValido}"`)
+      }
+      
       setFields({
-        provider:      (cfg.provider || 'cerebras') as AIProvider,
+        provider:      provider,
         api_key:       apiKey,
-        modelo:        cfg.modelo || 'llama-3.3-70b',
+        modelo:        modeloValido,
         max_tokens:    String(cfg.max_tokens || 8192),
         system_prompt: cfg.system_prompt || '',
         ativo:         cfg.ativo ?? true,
@@ -53,7 +68,7 @@ export function IATab() {
         if (keyToUse) loadGroqModels(keyToUse)
       }
     }
-  }, [cfg])
+  }, [cfg, modelosDisponiveis])
 
   // Função para carregar modelos do Groq
   const loadGroqModels = async (apiKey: string) => {
@@ -67,17 +82,26 @@ export function IATab() {
         }
       })
       
-      // Extrair apenas modelos ativos e com suporte a chat
+      // Extrair apenas modelos Llama 3.x válidos (não incluir meta-llama/llama-4)
       const models = response.data.data
-        .filter((m: any) => m.active && m.id.includes('llama'))
+        .filter((m: any) => {
+          const id = m.id.toLowerCase()
+          return m.active && 
+                 (id.startsWith('llama-3.') || id.startsWith('gemma')) &&
+                 !id.includes('guard') && 
+                 !id.includes('meta-llama/')
+        })
         .map((m: any) => m.id)
         .sort()
       
       console.log('[Admin IA] Modelos Groq carregados:', models)
-      setGroqModels(models)
+      setGroqModels(models.length > 0 ? models : [
+        'llama-3.3-70b-versatile',
+        'llama-3.1-70b-versatile',
+        'llama-3.1-8b-instant'
+      ])
     } catch (error: any) {
       console.error('[Admin IA] Erro ao carregar modelos Groq:', error)
-      // Usar modelos padrão em caso de erro
       setGroqModels([
         'llama-3.3-70b-versatile',
         'llama-3.1-70b-versatile',
@@ -131,6 +155,12 @@ export function IATab() {
     }
 
   const handleSave = async () => {
+    // Validar se o modelo é válido antes de enviar
+    if (!models.includes(fields.modelo)) {
+      alert(`O modelo "${fields.modelo}" não é válido para o provider ${providerName}. Selecione um modelo da lista.`)
+      return
+    }
+    
     const payload = {
       provider: fields.provider,
       api_key: fields.api_key,
@@ -149,7 +179,8 @@ export function IATab() {
       setTimeout(() => setSaved(false), 3000)
     } catch (error: any) {
       console.error('[Admin IA] Erro ao salvar:', error)
-      alert(error.message || 'Erro ao salvar configuração')
+      const errorMsg = error.response?.data?.detail || error.message || 'Erro ao salvar configuração'
+      alert(errorMsg)
     }
   }
 
