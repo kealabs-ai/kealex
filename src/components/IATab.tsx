@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Save, CheckCircle, ExternalLink, Eye, EyeOff, AlertTriangle } from 'lucide-react'
+import { Save, CheckCircle, ExternalLink, Eye, EyeOff, AlertTriangle, RefreshCw } from 'lucide-react'
 import { Button, Input, Textarea } from '../components/UI'
 import { DataCard } from '../components/Cards'
 import { type AIProvider } from '../api/ai'
 import { useConfigIa, useModelosDisponiveis } from '../hooks/useConfiguracoes'
+import axios from 'axios'
 
 export function IATab() {
   const { data: cfg, save, isSaving, isLoading } = useConfigIa()
   const { data: modelosDisponiveis, isLoading: isLoadingModelos } = useModelosDisponiveis()
   const [saved, setSaved] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
+  const [loadingGroqModels, setLoadingGroqModels] = useState(false)
+  const [groqModels, setGroqModels] = useState<string[]>([])
   const [fields, setFields] = useState({
     provider:      'cerebras' as AIProvider,
     api_key:       '',
@@ -31,30 +34,74 @@ export function IATab() {
         ativo: cfg.ativo
       })
       
+      // Se não tiver API key configurada, usar a do .env
+      const defaultGroqKey = import.meta.env.GROQ_API_KEY || ''
+      const apiKey = cfg.api_key || (cfg.provider === 'groq' ? defaultGroqKey : '')
+      
       setFields({
         provider:      (cfg.provider || 'cerebras') as AIProvider,
-        api_key:       cfg.api_key || '',  // Backend já retorna a correta
+        api_key:       apiKey,
         modelo:        cfg.modelo || 'llama-3.3-70b',
         max_tokens:    String(cfg.max_tokens || 8192),
         system_prompt: cfg.system_prompt || '',
         ativo:         cfg.ativo ?? true,
       })
+      
+      // Se for Groq e tiver chave, carregar modelos
+      if (cfg.provider === 'groq') {
+        const keyToUse = cfg.api_key || defaultGroqKey
+        if (keyToUse) loadGroqModels(keyToUse)
+      }
     }
   }, [cfg])
+
+  // Função para carregar modelos do Groq
+  const loadGroqModels = async (apiKey: string) => {
+    setLoadingGroqModels(true)
+    try {
+      console.log('[Admin IA] Carregando modelos do Groq...')
+      const response = await axios.get('https://api.groq.com/openai/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      // Extrair apenas modelos ativos e com suporte a chat
+      const models = response.data.data
+        .filter((m: any) => m.active && m.id.includes('llama'))
+        .map((m: any) => m.id)
+        .sort()
+      
+      console.log('[Admin IA] Modelos Groq carregados:', models)
+      setGroqModels(models)
+    } catch (error: any) {
+      console.error('[Admin IA] Erro ao carregar modelos Groq:', error)
+      // Usar modelos padrão em caso de erro
+      setGroqModels([
+        'llama-3.3-70b-versatile',
+        'llama-3.1-70b-versatile',
+        'llama-3.1-8b-instant'
+      ])
+    } finally {
+      setLoadingGroqModels(false)
+    }
+  }
 
   // Handler para trocar provider
   const handleProviderChange = (newProvider: AIProvider) => {
     console.log('[Admin IA] Trocando provider para:', newProvider)
     
-    // Carregar API Key do novo provider
+    // Carregar API Key do novo provider (prioriza backend, fallback para .env)
+    const defaultGroqKey = import.meta.env.VITE_GROQ_API_KEY || ''
     const apiKey = newProvider === 'groq'
-      ? (cfg?.groq_api_key || '')
+      ? (cfg?.groq_api_key || defaultGroqKey)
       : (cfg?.cerebras_api_key || '')
     
     // Usar modelos dinâmicos do backend ou fallback para constantes locais
     const modelosPorProvider = modelosDisponiveis || {
       cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
-      groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+      groq: groqModels.length > 0 ? groqModels : ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
     }
     
     const modelo = newProvider === 'groq' 
@@ -62,6 +109,11 @@ export function IATab() {
       : (modelosPorProvider.cerebras[0] || 'llama-3.3-70b')
     
     console.log('[Admin IA] API Key do novo provider:', apiKey ? 'Configurada' : 'Vazia')
+    
+    // Se trocar para Groq e tiver API key, carregar modelos
+    if (newProvider === 'groq' && apiKey) {
+      loadGroqModels(apiKey)
+    }
     
     setFields(prev => ({
       ...prev,
@@ -103,10 +155,14 @@ export function IATab() {
 
   const provider = fields.provider
   
-  // Usar modelos dinâmicos do backend ou fallback para constantes locais
-  const modelosPorProvider = modelosDisponiveis || {
-    cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
-    groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+  // Usar modelos dinâmicos: Groq da API, Cerebras do backend
+  const modelosPorProvider = {
+    cerebras: modelosDisponiveis?.cerebras || ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
+    groq: groqModels.length > 0 ? groqModels : (modelosDisponiveis?.groq || [
+      'llama-3.3-70b-versatile',
+      'llama-3.1-70b-versatile',
+      'llama-3.1-8b-instant'
+    ])
   }
   
   const models = provider === 'groq' ? modelosPorProvider.groq : modelosPorProvider.cerebras
@@ -262,9 +318,23 @@ export function IATab() {
 
           {/* Modelo */}
           <div>
-            <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide mb-1.5">
-              Modelo
-            </label>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-medium text-gray-600 uppercase tracking-wide">
+                Modelo
+              </label>
+              {provider === 'groq' && fields.api_key && (
+                <button
+                  type="button"
+                  onClick={() => loadGroqModels(fields.api_key)}
+                  disabled={loadingGroqModels}
+                  className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 disabled:opacity-50"
+                  title="Recarregar modelos da API Groq"
+                >
+                  <RefreshCw size={12} className={loadingGroqModels ? 'animate-spin' : ''} />
+                  {loadingGroqModels ? 'Carregando...' : 'Atualizar modelos'}
+                </button>
+              )}
+            </div>
             
             {/* Aviso de modelo descontinuado */}
             {modeloDescontinuado && (
@@ -302,7 +372,9 @@ export function IATab() {
             </select>
             <p className="text-xs text-gray-400 mt-1">
               {provider === 'groq' 
-                ? 'llama-3.3-70b-versatile — recomendado para tarefas jurídicas complexas'
+                ? groqModels.length > 0 
+                  ? `${groqModels.length} modelos disponíveis (carregados da API Groq)`
+                  : 'llama-3.3-70b-versatile — recomendado para tarefas jurídicas complexas'
                 : 'llama-3.3-70b — balanço ideal entre velocidade e precisão'}
             </p>
           </div>
