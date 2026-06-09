@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, Bot } from 'lucide-react'
+import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone } from 'lucide-react'
 import { DataCard, StatCard } from '../components/Cards'
 import { IATab } from '../components/IATab'
 import { AgentesTab } from '../components/AgentesTab'

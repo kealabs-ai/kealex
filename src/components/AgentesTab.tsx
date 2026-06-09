@@ -5,7 +5,7 @@ import { DataCard } from './Cards'
 import { Button, Input, Textarea, Select } from './UI'
 import { Modal } from './Modal'
 import { useAgentes, useCreateAgente, useUpdateAgente, useDeleteAgente } from '../hooks/useAgentes'
-import { AgenteIA, AIProvider } from '../types'
+import type { AgenteIA, AIProvider } from '../types'
 
 export function AgentesTab() {
   const { data: agentes = [], isLoading } = useAgentes()
@@ -206,7 +206,7 @@ function AgenteModal({
   }
 
   return (
-    <Modal isOpen onClose={onClose} title={agente ? 'Editar Agente' : 'Novo Agente'}>
+    <Modal onClose={onClose} title={agente ? 'Editar Agente' : 'Novo Agente'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           label="Nome do Agente"

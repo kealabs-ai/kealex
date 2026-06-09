@@ -1,5 +1,5 @@
 import { api } from './client'
-import { AgenteIA } from '../types'
+import type { AgenteIA } from '../types'
 
 export const agentesApi = {
   list: () => api.get<AgenteIA[]>('/v1/lex/agentes').then((r) => r.data),

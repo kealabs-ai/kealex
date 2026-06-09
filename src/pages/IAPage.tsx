@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext'
 import { useAgentesPublicos } from '../hooks/useAgentes'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
 import { TopBar } from '../components/TopBar'
-import { AgenteIA } from '../types'
+import type { AgenteIA } from '../types'
 
 const SUGGESTED_PROMPTS = [
   { icon: '⚖️', label: 'Prazos processuais', prompt: 'Quais são os principais prazos processuais no CPC para contestação, recurso de apelação e embargos de declaração?' },
