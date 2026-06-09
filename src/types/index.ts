@@ -95,6 +95,7 @@ export type AIProvider = 'cerebras' | 'groq'
 
 export interface AgenteIA extends BaseEntity {
   tenantId: string
+  escritorioId?: string
   nome: string
   descricao?: string
   provider: AIProvider
