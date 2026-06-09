@@ -1,13 +1,14 @@
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone } from 'lucide-react'
+import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, Bot } from 'lucide-react'
 import { DataCard, StatCard } from '../components/Cards'
 import { IATab } from '../components/IATab'
+import { AgentesTab } from '../components/AgentesTab'
 import { Topbar } from '../components/TopBar'
 import { Input, Select, Button, Textarea } from '../components/UI'
 import { useState } from 'react'
 
-type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'usuarios' | 'seguranca' | 'notificacoes'
+type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'usuarios' | 'seguranca' | 'notificacoes'
 
 export function AdminPage() {
   const [searchParams] = useSearchParams()
@@ -30,6 +31,7 @@ export function AdminPage() {
           transition={{ duration: 0.2 }}
         >
           {activeTab === 'ia' && <IATab />}
+          {activeTab === 'agentes' && <AgentesTab />}
           {activeTab === 'geral' && <GeralTab />}
           {activeTab === 'cdn' && <CdnTab />}
           {activeTab === 'database' && <DatabaseTab />}

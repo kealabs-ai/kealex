@@ -1,11 +1,13 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Sparkles, RotateCcw, Copy, Check, Bot, Lightbulb, ChevronRight, AlertCircle } from 'lucide-react'
+import { Send, Sparkles, RotateCcw, Copy, Check, Bot, Lightbulb, ChevronRight, AlertCircle, ChevronDown } from 'lucide-react'
 import { sendMessage, type ChatMessage, type AIConfig } from '../api/ai'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { useAuth } from '../context/AuthContext'
+import { useAgentesPublicos } from '../hooks/useAgentes'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
 import { TopBar } from '../components/TopBar'
+import { AgenteIA } from '../types'
 
 const SUGGESTED_PROMPTS = [
   { icon: '⚖️', label: 'Prazos processuais', prompt: 'Quais são os principais prazos processuais no CPC para contestação, recurso de apelação e embargos de declaração?' },
@@ -30,16 +32,21 @@ function genId() { return Math.random().toString(36).slice(2) }
 
 export function IAPage() {
   const { user } = useAuth()
-  const { data: config, isLoading: configLoading, error: configError } = useConfigIaAtiva()
+  const { data: configPadrao, isLoading: configLoading, error: configError } = useConfigIaAtiva()
+  const { data: agentesPublicos = [], isLoading: agentesLoading } = useAgentesPublicos()
+  
+  const [agenteAtivo, setAgenteAtivo] = useState<AgenteIA | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [streaming, setStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
+  const [showSeletor, setShowSeletor] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<boolean>(false)
 
+  const config = agenteAtivo || configPadrao
   const apiKey = config?.api_key
   const hasConfig = !!(config && apiKey && config.ativo)
 
@@ -125,6 +132,59 @@ export function IAPage() {
                   <RotateCcw size={13} /> Nova conversa
                 </button>
               )}
+              {agentesPublicos.length > 0 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setShowSeletor(!showSeletor)}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-200 rounded-xl hover:border-indigo-300 transition-colors"
+                  >
+                    <Bot size={14} className={agenteAtivo ? 'text-indigo-600' : 'text-gray-400'} />
+                    <span className="text-xs font-medium text-gray-700">
+                      {agenteAtivo?.nome || 'Padrão'}
+                    </span>
+                    <ChevronDown size={12} className="text-gray-400" />
+                  </button>
+                  {showSeletor && (
+                    <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl z-50">
+                      <div className="p-2 space-y-1">
+                        <button
+                          onClick={() => { setAgenteAtivo(null); setShowSeletor(false) }}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                            !agenteAtivo ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="font-medium">Agente Padrão</div>
+                          <div className="text-xs text-gray-500 mt-0.5">
+                            {configPadrao?.modelo || 'Configuração padrão'}
+                          </div>
+                        </button>
+                        <div className="border-t border-gray-100 my-1" />
+                        {agentesPublicos.filter(a => a.ativo).map((agente) => (
+                          <button
+                            key={agente.id}
+                            onClick={() => { setAgenteAtivo(agente); setShowSeletor(false) }}
+                            className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                              agenteAtivo?.id === agente.id ? 'bg-indigo-50 text-indigo-700' : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="font-medium">{agente.nome}</div>
+                            {agente.descricao && (
+                              <div className="text-xs text-gray-500 mt-0.5 line-clamp-1">{agente.descricao}</div>
+                            )}
+                            <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                              <span className={agente.provider === 'groq' ? 'text-orange-600' : 'text-indigo-600'}>
+                                {agente.provider === 'groq' ? 'Groq' : 'Cerebras'}
+                              </span>
+                              <span>•</span>
+                              <span>{agente.modelo}</span>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="hidden sm:block px-3 py-1.5 bg-indigo-50 rounded-xl">
                 <span className="text-xs font-semibold text-indigo-600">
                   {config?.modelo || 'Llama 3.3'}
@@ -153,7 +213,7 @@ export function IAPage() {
               </p>
             </div>
 
-            {!hasConfig && !configLoading && (
+            {!hasConfig && !configLoading && !agentesLoading && (
               <motion.div
                 className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-6"
                 initial={{ opacity: 0 }}
@@ -161,11 +221,11 @@ export function IAPage() {
               >
                 <AlertCircle size={18} className="text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-semibold text-amber-800">Configure o Agente de IA</p>
+                  <p className="text-sm font-semibold text-amber-800">Configure um Agente de IA</p>
                   <p className="text-xs text-amber-700 mt-0.5">
                     {configError 
-                      ? 'Nenhuma configuração de IA ativa encontrada. Configure em Configurações > Agentes IA.'
-                      : 'Acesse Configurações > Agentes IA e configure sua chave de API (Cerebras ou Groq).'}
+                      ? 'Nenhuma configuração de IA ativa encontrada. Entre em contato com o administrador.'
+                      : 'Aguarde a configuração do agente pelo administrador.'}
                   </p>
                 </div>
               </motion.div>
@@ -180,7 +240,7 @@ export function IAPage() {
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mt-1.5" />
                 <div>
                   <p className="text-sm font-semibold text-emerald-800">
-                    Conectado ao {config.provider === 'groq' ? 'Groq' : 'Cerebras'}
+                    {agenteAtivo ? `Usando: ${agenteAtivo.nome}` : `Conectado ao ${config.provider === 'groq' ? 'Groq' : 'Cerebras'}`}
                   </p>
                   <p className="text-xs text-emerald-700 mt-0.5">
                     Modelo: {config.modelo} • Max Tokens: {config.max_tokens}

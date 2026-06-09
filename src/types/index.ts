@@ -90,3 +90,18 @@ export interface AuthUser {
   role: Role
   accessToken: string
 }
+
+export type AIProvider = 'cerebras' | 'groq'
+
+export interface AgenteIA extends BaseEntity {
+  tenantId: string
+  nome: string
+  descricao?: string
+  provider: AIProvider
+  api_key: string
+  modelo: string
+  max_tokens: number
+  system_prompt?: string
+  ativo: boolean
+  publico: boolean // Se pode ser usado por clientes
+}
