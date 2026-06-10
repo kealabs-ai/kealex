@@ -17,6 +17,7 @@ const adminLinks = [
   { to: '/admin?tab=database', label: 'Banco de Dados', icon: Database },
   { to: '/admin?tab=ia', label: 'Config. IA', icon: Settings },
   { to: '/admin?tab=agentes', label: 'Agentes IA', icon: Bot },
+  { to: '/admin?tab=debug', label: '🧪 Debug API', icon: Bot },
   { to: '/admin?tab=usuarios', label: 'Usuários', icon: Users },
   { to: '/admin?tab=seguranca', label: 'Segurança', icon: Shield },
   { to: '/admin?tab=notificacoes', label: 'Notificações', icon: Bell },

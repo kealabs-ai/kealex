@@ -4,11 +4,12 @@ import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, 
 import { DataCard, StatCard } from '../components/Cards'
 import { IATab } from '../components/IATab'
 import { AgentesTab } from '../components/AgentesTab'
+import { AgentesDebugPanel } from '../components/AgentesDebugPanel'
 import { Topbar } from '../components/TopBar'
 import { Input, Select, Button, Textarea } from '../components/UI'
 import { useState } from 'react'
 
-type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'usuarios' | 'seguranca' | 'notificacoes'
+type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'seguranca' | 'notificacoes'
 
 export function AdminPage() {
   const [searchParams] = useSearchParams()
@@ -32,6 +33,7 @@ export function AdminPage() {
         >
           {activeTab === 'ia' && <IATab />}
           {activeTab === 'agentes' && <AgentesTab />}
+          {activeTab === 'debug' && <AgentesDebugPanel />}
           {activeTab === 'geral' && <GeralTab />}
           {activeTab === 'cdn' && <CdnTab />}
           {activeTab === 'database' && <DatabaseTab />}
