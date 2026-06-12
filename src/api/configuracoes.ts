@@ -134,32 +134,32 @@ export const configuracoesApi = {
   saveGeral: (data: Partial<CfgGeral>) => api.post<CfgGeral>('/v1/lex/configuracoes/geral', data).then((r) => r.data),
 
   // CDN
-  getCdn: () => api.get<CfgCdn>('/v1/lex/configuracoes/cdn').then((r) => r.data).catch(() => null),
-  saveCdn: (data: Partial<CfgCdn>) => api.post<CfgCdn>('/v1/lex/configuracoes/cdn', data).then((r) => r.data),
+  getCdn: () => api.get<CfgCdn>('/k1/lex/configuracoes/cdn').then((r) => r.data).catch(() => null),
+  saveCdn: (data: Partial<CfgCdn>) => api.post<CfgCdn>('/k1/lex/configuracoes/cdn', data).then((r) => r.data),
 
   // Database
-  getDatabase: () => api.get<CfgDatabase>('/v1/lex/configuracoes/database').then((r) => r.data).catch(() => null),
+  getDatabase: () => api.get<CfgDatabase>('/k1/lex/configuracoes/database').then((r) => r.data).catch(() => null),
   getDatabaseEnv: () => api.get<DatabaseEnv>('/v1/lex/configuracoes/database/env').then((r) => r.data).catch(() => null),
-  saveDatabase: (data: Partial<CfgDatabase>) => api.post<CfgDatabase>('/v1/lex/configuracoes/database', data).then((r) => r.data),
+  saveDatabase: (data: Partial<CfgDatabase>) => api.post<CfgDatabase>('/k1/lex/configuracoes/database', data).then((r) => r.data),
 
   // IA
-  getIa: () => api.get<CfgIa>('/v1/lex/configuracoes/ia').then((r) => r.data).catch(() => null),
-  getIaAtiva: () => api.get<CfgIa>('/v1/lex/configuracoes/ia/ativa').then((r) => r.data).catch(() => null),
-  getModelosDisponiveis: () => api.get<ModelosDisponiveis>('/v1/lex/configuracoes/ia/modelos').then((r) => r.data).catch(() => ({
+  getIa: () => api.get<CfgIa>('/k1/lex/configuracoes/ia').then((r) => r.data).catch(() => null),
+  getIaAtiva: () => api.get<CfgIa>('/k1/lex/configuracoes/ia/ativa').then((r) => r.data).catch(() => null),
+  getModelosDisponiveis: () => api.get<ModelosDisponiveis>('/k1/lex/configuracoes/ia/modelos').then((r) => r.data).catch(() => ({
     cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
     groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
   })),
-  saveIa: (data: Partial<CfgIa>) => api.post<CfgIa>('/v1/lex/configuracoes/ia', data).then((r) => r.data),
+  saveIa: (data: Partial<CfgIa>) => api.post<CfgIa>('/k1/lex/configuracoes/ia', data).then((r) => r.data),
 
   // Usuários
-  getUsuarios: () => api.get<CfgUsuarios>('/v1/lex/configuracoes/usuarios').then((r) => r.data).catch(() => null),
-  saveUsuarios: (data: Partial<CfgUsuarios>) => api.post<CfgUsuarios>('/v1/lex/configuracoes/usuarios', data).then((r) => r.data),
+  getUsuarios: () => api.get<CfgUsuarios>('/k1/lex/configuracoes/usuarios').then((r) => r.data).catch(() => null),
+  saveUsuarios: (data: Partial<CfgUsuarios>) => api.post<CfgUsuarios>('/k1/lex/configuracoes/usuarios', data).then((r) => r.data),
 
   // Segurança
-  getSeguranca: () => api.get<CfgSeguranca>('/v1/lex/configuracoes/seguranca').then((r) => r.data).catch(() => null),
-  saveSeguranca: (data: Partial<CfgSeguranca>) => api.post<CfgSeguranca>('/v1/lex/configuracoes/seguranca', data).then((r) => r.data),
+  getSeguranca: () => api.get<CfgSeguranca>('/k1/lex/configuracoes/seguranca').then((r) => r.data).catch(() => null),
+  saveSeguranca: (data: Partial<CfgSeguranca>) => api.post<CfgSeguranca>('/k1/lex/configuracoes/seguranca', data).then((r) => r.data),
 
   // Notificações
-  getNotificacoes: () => api.get<CfgNotificacoes>('/v1/lex/configuracoes/notificacoes').then((r) => r.data).catch(() => null),
-  saveNotificacoes: (data: Partial<CfgNotificacoes>) => api.post<CfgNotificacoes>('/v1/lex/configuracoes/notificacoes', data).then((r) => r.data),
+  getNotificacoes: () => api.get<CfgNotificacoes>('/k1/lex/configuracoes/notificacoes').then((r) => r.data).catch(() => null),
+  saveNotificacoes: (data: Partial<CfgNotificacoes>) => api.post<CfgNotificacoes>('/k1/lex/configuracoes/notificacoes', data).then((r) => r.data),
 }
