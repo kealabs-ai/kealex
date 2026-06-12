@@ -139,7 +139,7 @@ export const configuracoesApi = {
 
   // Database
   getDatabase: () => api.get<CfgDatabase>('/k1/lex/configuracoes/database').then((r) => r.data).catch(() => null),
-  getDatabaseEnv: () => api.get<DatabaseEnv>('/v1/lex/configuracoes/database/env').then((r) => r.data).catch(() => null),
+  getDatabaseEnv: () => api.get<DatabaseEnv>('/k1/lex/configuracoes/database/env').then((r) => r.data).catch(() => null),
   saveDatabase: (data: Partial<CfgDatabase>) => api.post<CfgDatabase>('/k1/lex/configuracoes/database', data).then((r) => r.data),
 
   // IA
