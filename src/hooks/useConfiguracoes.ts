@@ -34,6 +34,10 @@ export function useConfigDatabase() {
   return useQuery({ queryKey: [...CONFIG_KEY, 'database'], queryFn: configuracoesApi.getDatabase })
 }
 
+export function useDatabaseEnv() {
+  return useQuery({ queryKey: [...CONFIG_KEY, 'database', 'env'], queryFn: configuracoesApi.getDatabaseEnv })
+}
+
 export function useSaveConfigDatabase() {
   const qc = useQueryClient()
   return useMutation({

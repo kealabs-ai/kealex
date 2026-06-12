@@ -119,6 +119,15 @@ export interface ModelosDisponiveis {
   groq: string[]
 }
 
+export interface DatabaseEnv {
+  host: string
+  port: string
+  name: string
+  user: string
+  password: string
+  connection_string: string
+}
+
 export const configuracoesApi = {
   // Geral
   getGeral: () => api.get<CfgGeral>('/v1/lex/configuracoes/geral').then((r) => r.data).catch(() => null),
@@ -130,6 +139,7 @@ export const configuracoesApi = {
 
   // Database
   getDatabase: () => api.get<CfgDatabase>('/v1/lex/configuracoes/database').then((r) => r.data).catch(() => null),
+  getDatabaseEnv: () => api.get<DatabaseEnv>('/v1/lex/configuracoes/database/env').then((r) => r.data).catch(() => null),
   saveDatabase: (data: Partial<CfgDatabase>) => api.post<CfgDatabase>('/v1/lex/configuracoes/database', data).then((r) => r.data),
 
   // IA

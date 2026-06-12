@@ -1,6 +1,6 @@
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle } from 'lucide-react'
+import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle, RefreshCw } from 'lucide-react'
 import { DataCard, StatCard } from '../components/Cards'
 import { IATab } from '../components/IATab'
 import { AgentesTab } from '../components/AgentesTab'
@@ -8,7 +8,7 @@ import { AgentesDebugPanel } from '../components/AgentesDebugPanel'
 import { Topbar } from '../components/TopBar'
 import { Input, Select, Button, Textarea } from '../components/UI'
 import { useState, useEffect } from 'react'
-import { useConfigDatabase, useSaveConfigDatabase } from '../hooks/useConfiguracoes'
+import { useConfigDatabase, useSaveConfigDatabase, useDatabaseEnv } from '../hooks/useConfiguracoes'
 
 type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'seguranca' | 'notificacoes'
 
@@ -323,6 +323,7 @@ function CdnTab() {
 // ============ BANCO DE DADOS ============
 function DatabaseTab() {
   const { data: dbConfig, isLoading } = useConfigDatabase()
+  const { data: dbEnv, isLoading: envLoading, refetch: refetchEnv } = useDatabaseEnv()
   const saveConfig = useSaveConfigDatabase()
   const [saved, setSaved] = useState(false)
   const [config, setConfig] = useState({
@@ -401,6 +402,63 @@ function DatabaseTab() {
           gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
         />
       </div>
+
+      {/* Informações da Conexão */}
+      <DataCard className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-gray-900">Variáveis de Ambiente (Easypanel)</h2>
+          <button
+            onClick={() => refetchEnv()}
+            disabled={envLoading}
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={envLoading ? 'animate-spin' : ''} />
+            Atualizar
+          </button>
+        </div>
+        
+        {envLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="w-6 h-6 border-3 border-gray-200 border-t-gray-600 rounded-full animate-spin" />
+          </div>
+        ) : dbEnv ? (
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Host</label>
+                <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.host || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Porta</label>
+                <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.port || 'N/A'}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Database</label>
+                <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.name || 'N/A'}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Usuário</label>
+                <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.user || 'N/A'}</p>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Senha</label>
+              <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.password ? '•'.repeat(dbEnv.password.length) : 'N/A'}</p>
+            </div>
+
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Connection String</label>
+              <p className="mt-1 text-xs font-mono text-gray-700 bg-gray-50 px-3 py-2 rounded-lg break-all">{dbEnv.connection_string || 'N/A'}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-gray-500 text-center py-8">Não foi possível carregar as variáveis de ambiente</p>
+        )}
+      </DataCard>
 
       {/* Informações da Conexão */}
       <DataCard className="p-6">
