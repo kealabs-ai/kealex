@@ -3,6 +3,7 @@ import { DataCard } from './Cards'
 import { Button } from './UI'
 import { CheckCircle, XCircle, Loader, Play } from 'lucide-react'
 import { agentesApi } from '../api/agentes'
+import { configuracoesApi } from '../api/configuracoes'
 
 interface TestResult {
   name: string
@@ -31,28 +32,113 @@ export function AgentesDebugPanel() {
     setResults([])
     setCreatedId(null)
 
-    // Teste 1: Listar agentes
+    // === CONFIGURAÇÕES ===
+    
+    // Teste: CDN
     try {
-      updateResult('List Agentes', 'pending')
+      updateResult('GET /k1/lex/configuracoes/cdn', 'pending')
+      const cdn = await configuracoesApi.getCdn()
+      updateResult('GET /k1/lex/configuracoes/cdn', 'success', 'CDN config carregada', cdn)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/cdn', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // Teste: Database
+    try {
+      updateResult('GET /k1/lex/configuracoes/database', 'pending')
+      const db = await configuracoesApi.getDatabase()
+      updateResult('GET /k1/lex/configuracoes/database', 'success', 'Database config carregada', db)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/database', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // Teste: Database ENV
+    try {
+      updateResult('GET /k1/lex/configuracoes/database/env', 'pending')
+      const dbEnv = await configuracoesApi.getDatabaseEnv()
+      updateResult('GET /k1/lex/configuracoes/database/env', 'success', 'ENV carregadas', dbEnv)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/database/env', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // Teste: IA
+    try {
+      updateResult('GET /k1/lex/configuracoes/ia', 'pending')
+      const ia = await configuracoesApi.getIa()
+      updateResult('GET /k1/lex/configuracoes/ia', 'success', 'IA config carregada', ia)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/ia', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // Teste: IA Modelos
+    try {
+      updateResult('GET /k1/lex/configuracoes/ia/modelos', 'pending')
+      const modelos = await configuracoesApi.getModelosDisponiveis()
+      updateResult('GET /k1/lex/configuracoes/ia/modelos', 'success', `${Object.keys(modelos).length} providers`, modelos)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/ia/modelos', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // Teste: IA Ativa
+    try {
+      updateResult('GET /k1/lex/configuracoes/ia/ativa', 'pending')
+      const iaAtiva = await configuracoesApi.getIaAtiva()
+      updateResult('GET /k1/lex/configuracoes/ia/ativa', 'success', `Provider: ${iaAtiva?.provider}`, iaAtiva)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/ia/ativa', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // Teste: Usuários
+    try {
+      updateResult('GET /k1/lex/configuracoes/usuarios', 'pending')
+      const usuarios = await configuracoesApi.getUsuarios()
+      updateResult('GET /k1/lex/configuracoes/usuarios', 'success', 'Usuários config carregada', usuarios)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/usuarios', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // Teste: Segurança
+    try {
+      updateResult('GET /k1/lex/configuracoes/seguranca', 'pending')
+      const seguranca = await configuracoesApi.getSeguranca()
+      updateResult('GET /k1/lex/configuracoes/seguranca', 'success', 'Segurança config carregada', seguranca)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/seguranca', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // Teste: Notificações
+    try {
+      updateResult('GET /k1/lex/configuracoes/notificacoes', 'pending')
+      const notif = await configuracoesApi.getNotificacoes()
+      updateResult('GET /k1/lex/configuracoes/notificacoes', 'success', 'Notificações config carregada', notif)
+    } catch (error: any) {
+      updateResult('GET /k1/lex/configuracoes/notificacoes', 'error', error.response?.data?.detail || error.message)
+    }
+
+    // === AGENTES ===
+
+    // Teste: Listar agentes
+    try {
+      updateResult('GET /k1/lex/agentes', 'pending')
       const agentes = await agentesApi.list()
-      updateResult('List Agentes', 'success', `${agentes.length} agentes encontrados`, agentes)
+      updateResult('GET /k1/lex/agentes', 'success', `${agentes.length} agentes encontrados`, agentes)
     } catch (error: any) {
-      updateResult('List Agentes', 'error', error.response?.data?.detail || error.message)
+      updateResult('GET /k1/lex/agentes', 'error', error.response?.data?.detail || error.message)
     }
 
-    // Teste 2: Listar agentes públicos
+    // Teste: Listar agentes públicos
     try {
-      updateResult('List Públicos', 'pending')
+      updateResult('GET /k1/lex/agentes/publicos', 'pending')
       const publicos = await agentesApi.listPublicos()
-      updateResult('List Públicos', 'success', `${publicos.length} agentes públicos`, publicos)
+      updateResult('GET /k1/lex/agentes/publicos', 'success', `${publicos.length} agentes públicos`, publicos)
     } catch (error: any) {
-      updateResult('List Públicos', 'error', error.response?.data?.detail || error.message)
+      updateResult('GET /k1/lex/agentes/publicos', 'error', error.response?.data?.detail || error.message)
     }
 
-    // Teste 3: Criar agente
+    // Teste: Criar agente
     let newId: string | null = null
     try {
-      updateResult('Create Agente', 'pending')
+      updateResult('POST /k1/lex/agentes', 'pending')
       const novoAgente = {
         nome: 'Teste Debug ' + Date.now(),
         descricao: 'Agente de teste criado pelo debug panel',
@@ -67,41 +153,41 @@ export function AgentesDebugPanel() {
       const created = await agentesApi.create(novoAgente)
       newId = created.id
       setCreatedId(newId)
-      updateResult('Create Agente', 'success', `ID: ${created.id}`, created)
+      updateResult('POST /k1/lex/agentes', 'success', `ID: ${created.id}`, created)
     } catch (error: any) {
-      updateResult('Create Agente', 'error', error.response?.data?.detail || error.message)
+      updateResult('POST /k1/lex/agentes', 'error', error.response?.data?.detail || error.message)
     }
 
-    // Teste 4: Buscar por ID (se criou)
+    // Teste: Buscar por ID (se criou)
     if (newId) {
       try {
-        updateResult('Get Agente', 'pending')
+        updateResult('GET /k1/lex/agentes/{id}', 'pending')
         const agente = await agentesApi.get(newId)
-        updateResult('Get Agente', 'success', `Nome: ${agente.nome}`, agente)
+        updateResult('GET /k1/lex/agentes/{id}', 'success', `Nome: ${agente.nome}`, agente)
       } catch (error: any) {
-        updateResult('Get Agente', 'error', error.response?.data?.detail || error.message)
+        updateResult('GET /k1/lex/agentes/{id}', 'error', error.response?.data?.detail || error.message)
       }
 
-      // Teste 5: Atualizar
+      // Teste: Atualizar
       try {
-        updateResult('Update Agente', 'pending')
+        updateResult('PUT /k1/lex/agentes/{id}', 'pending')
         const updated = await agentesApi.update(newId, {
           nome: 'Teste Debug Atualizado',
           descricao: 'Descrição atualizada'
         })
-        updateResult('Update Agente', 'success', 'Agente atualizado', updated)
+        updateResult('PUT /k1/lex/agentes/{id}', 'success', 'Agente atualizado', updated)
       } catch (error: any) {
-        updateResult('Update Agente', 'error', error.response?.data?.detail || error.message)
+        updateResult('PUT /k1/lex/agentes/{id}', 'error', error.response?.data?.detail || error.message)
       }
 
-      // Teste 6: Deletar
+      // Teste: Deletar
       try {
-        updateResult('Delete Agente', 'pending')
+        updateResult('DELETE /k1/lex/agentes/{id}', 'pending')
         await agentesApi.delete(newId)
-        updateResult('Delete Agente', 'success', 'Agente deletado')
+        updateResult('DELETE /k1/lex/agentes/{id}', 'success', 'Agente deletado')
         setCreatedId(null)
       } catch (error: any) {
-        updateResult('Delete Agente', 'error', error.response?.data?.detail || error.message)
+        updateResult('DELETE /k1/lex/agentes/{id}', 'error', error.response?.data?.detail || error.message)
       }
     }
 
@@ -124,8 +210,8 @@ export function AgentesDebugPanel() {
       <DataCard className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h2 className="text-base font-semibold text-gray-900">Debug Panel - Endpoints</h2>
-            <p className="text-xs text-gray-500 mt-1">Validação dos endpoints de agentes IA</p>
+            <h2 className="text-base font-semibold text-gray-900">Debug Panel - Todos os Endpoints</h2>
+            <p className="text-xs text-gray-500 mt-1">Validação completa de configurações e agentes IA</p>
           </div>
           <Button
             icon={<Play size={14} />}
