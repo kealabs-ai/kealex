@@ -1,13 +1,14 @@
 import { useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone } from 'lucide-react'
+import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle } from 'lucide-react'
 import { DataCard, StatCard } from '../components/Cards'
 import { IATab } from '../components/IATab'
 import { AgentesTab } from '../components/AgentesTab'
 import { AgentesDebugPanel } from '../components/AgentesDebugPanel'
 import { Topbar } from '../components/TopBar'
 import { Input, Select, Button, Textarea } from '../components/UI'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useConfigDatabase, useSaveConfigDatabase } from '../hooks/useConfiguracoes'
 
 type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'seguranca' | 'notificacoes'
 
@@ -321,48 +322,254 @@ function CdnTab() {
 
 // ============ BANCO DE DADOS ============
 function DatabaseTab() {
+  const { data: dbConfig, isLoading } = useConfigDatabase()
+  const saveConfig = useSaveConfigDatabase()
+  const [saved, setSaved] = useState(false)
+  const [config, setConfig] = useState({
+    tipo: 'postgresql',
+    pool_size: 10,
+    timeout_segundos: 30,
+    ssl_enabled: true,
+    query_logging: false,
+    read_replicas: false,
+    backup_frequencia: 'diario',
+    backup_retencao: 30,
+  })
+
+  // Carregar configuração do backend
+  useEffect(() => {
+    if (dbConfig) {
+      setConfig({
+        tipo: dbConfig.tipo || 'postgresql',
+        pool_size: dbConfig.pool_size || 10,
+        timeout_segundos: dbConfig.timeout_segundos || 30,
+        ssl_enabled: dbConfig.ssl_enabled ?? true,
+        query_logging: dbConfig.query_logging ?? false,
+        read_replicas: dbConfig.read_replicas ?? false,
+        backup_frequencia: dbConfig.backup_frequencia || 'diario',
+        backup_retencao: dbConfig.backup_retencao || 30,
+      })
+    }
+  }, [dbConfig])
+
+  const handleSave = async () => {
+    try {
+      await saveConfig.mutateAsync(config)
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (error) {
+      console.error('Erro ao salvar configuração:', error)
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <DataCard className="p-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+        </div>
+      </DataCard>
+    )
+  }
+
+  // Extrair informações da connection string (se existir)
+  const connectionInfo = dbConfig?.connection_string ? {
+    host: dbConfig.connection_string.match(/(?:@|:\/\/)([^:\/]+)/)?.[1] || 'N/A',
+    port: dbConfig.connection_string.match(/:([0-9]+)\//)?.[1] || 'N/A',
+    database: dbConfig.connection_string.match(/\/([^?]+)/)?.[1] || 'N/A'
+  } : null
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-3 gap-4">
         <StatCard
-          label="Conexões Ativas"
-          value="42"
+          label="Pool Size"
+          value={String(config.pool_size)}
           icon={<Database size={20} />}
           gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
         />
         <StatCard
-          label="Tamanho do Banco"
-          value="3.2 GB"
-          icon={<HardDrive size={20} />}
+          label="Timeout"
+          value={`${config.timeout_segundos}s`}
+          icon={<Activity size={20} />}
           gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
         />
         <StatCard
-          label="Queries/seg"
-          value="127"
-          icon={<Activity size={20} />}
+          label="SSL"
+          value={config.ssl_enabled ? 'Ativo' : 'Inativo'}
+          icon={<Shield size={20} />}
           gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
         />
       </div>
 
+      {/* Informações da Conexão */}
+      <DataCard className="p-6">
+        <h2 className="text-base font-semibold text-gray-900 mb-4">Informações da Conexão</h2>
+        
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tipo de Banco</label>
+              <p className="mt-1 text-sm font-medium text-gray-900">{config.tipo}</p>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">SSL</label>
+              <p className="mt-1 text-sm font-medium text-gray-900">{config.ssl_enabled ? '✅ Habilitado' : '❌ Desabilitado'}</p>
+            </div>
+          </div>
+
+          {connectionInfo && (
+            <>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Host</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900">{connectionInfo.host}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Porta</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900">{connectionInfo.port}</p>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Database</label>
+                  <p className="mt-1 text-sm font-mono text-gray-900">{connectionInfo.database}</p>
+                </div>
+              </div>
+            </>
+          )}
+
+          {dbConfig?.updated_at && (
+            <div className="pt-3 border-t">
+              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Última Atualização</label>
+              <p className="mt-1 text-sm text-gray-700">{new Date(dbConfig.updated_at).toLocaleString('pt-BR')}</p>
+            </div>
+          )}
+        </div>
+      </DataCard>
+
+      {/* Configurações de Performance */}
       <DataCard className="p-6 space-y-4">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Configuração do Banco de Dados</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">Configurações de Performance</h2>
 
         <div className="grid grid-cols-2 gap-4">
-          <Input label="Host" value="localhost" disabled />
-          <Input label="Porta" value="5432" disabled />
+          <Input
+            label="Pool Size"
+            type="number"
+            value={config.pool_size}
+            onChange={(e) => setConfig({ ...config, pool_size: parseInt(e.target.value) })}
+          />
+          <Input
+            label="Timeout (segundos)"
+            type="number"
+            value={config.timeout_segundos}
+            onChange={(e) => setConfig({ ...config, timeout_segundos: parseInt(e.target.value) })}
+          />
         </div>
 
-        <Input label="Database" value="kealex_prod" disabled />
+        <div className="space-y-3">
+          <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+            <div>
+              <p className="text-sm font-medium text-gray-900">SSL Habilitado</p>
+              <p className="text-xs text-gray-500">Conexões criptografadas com TLS/SSL</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfig({ ...config, ssl_enabled: !config.ssl_enabled })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                config.ssl_enabled ? 'bg-emerald-500' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                config.ssl_enabled ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </label>
+
+          <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Query Logging</p>
+              <p className="text-xs text-gray-500">Registrar todas as queries executadas</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfig({ ...config, query_logging: !config.query_logging })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                config.query_logging ? 'bg-emerald-500' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                config.query_logging ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </label>
+
+          <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+            <div>
+              <p className="text-sm font-medium text-gray-900">Read Replicas</p>
+              <p className="text-xs text-gray-500">Usar réplicas para leitura (distribuir carga)</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setConfig({ ...config, read_replicas: !config.read_replicas })}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                config.read_replicas ? 'bg-emerald-500' : 'bg-gray-300'
+              }`}
+            >
+              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                config.read_replicas ? 'translate-x-6' : 'translate-x-1'
+              }`} />
+            </button>
+          </label>
+        </div>
+      </DataCard>
+
+      {/* Backup */}
+      <DataCard className="p-6 space-y-4">
+        <h2 className="text-base font-semibold text-gray-900 mb-4">Backup Automático</h2>
+
+        <div className="grid grid-cols-2 gap-4">
+          <Select
+            label="Frequência"
+            value={config.backup_frequencia}
+            onChange={(e) => setConfig({ ...config, backup_frequencia: e.target.value })}
+          >
+            <option value="horario">A cada hora</option>
+            <option value="diario">Diariamente às 03:00</option>
+            <option value="semanal">Semanalmente (Domingo)</option>
+            <option value="mensal">Mensalmente (Dia 1)</option>
+          </Select>
+
+          <Input
+            label="Retenção (dias)"
+            type="number"
+            value={config.backup_retencao}
+            onChange={(e) => setConfig({ ...config, backup_retencao: parseInt(e.target.value) })}
+          />
+        </div>
 
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <p className="text-sm text-blue-900 font-medium mb-2">Backup Automático</p>
-          <p className="text-xs text-blue-700">Último backup: Hoje às 03:00</p>
-          <p className="text-xs text-blue-700">Próximo backup: Amanhã às 03:00</p>
+          <p className="text-sm text-blue-900 font-medium mb-2">Status do Backup</p>
+          <p className="text-xs text-blue-700">Último backup: {dbConfig?.updated_at ? new Date(dbConfig.updated_at).toLocaleString('pt-BR') : 'N/A'}</p>
+          <p className="text-xs text-blue-700">Próximo backup: {config.backup_frequencia === 'diario' ? 'Amanhã às 03:00' : 'Conforme configurado'}</p>
         </div>
 
         <div className="flex gap-3 pt-4 border-t">
           <Button variant="secondary">Executar Backup Manual</Button>
           <Button variant="secondary">Ver Logs</Button>
+        </div>
+      </DataCard>
+
+      {/* Botão Salvar */}
+      <DataCard className="p-6">
+        <div className="flex items-center justify-between">
+          {saved && (
+            <div className="flex items-center gap-2 text-emerald-600">
+              <CheckCircle size={16} />
+              <span className="text-sm font-medium">Configurações salvas com sucesso!</span>
+            </div>
+          )}
+          <Button onClick={handleSave} loading={saveConfig.isPending} className="ml-auto">
+            Salvar Configurações
+          </Button>
         </div>
       </DataCard>
     </div>

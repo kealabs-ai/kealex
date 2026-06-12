@@ -182,6 +182,7 @@ function AgenteModal({
   onClose: () => void
   isSaving: boolean
 }) {
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [form, setForm] = useState({
     nome: agente?.nome || '',
     descricao: agente?.descricao || '',
@@ -208,35 +209,51 @@ function AgenteModal({
   return (
     <Modal onClose={onClose} title={agente ? 'Editar Agente' : 'Novo Agente'}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        <Input
-          label="Nome do Agente"
-          value={form.nome}
-          onChange={(e) => setForm({ ...form, nome: e.target.value })}
-          placeholder="Ex: Assistente Jurídico Trabalhista"
-          required
-        />
+        {/* Nome e Descrição */}
+        <div className="space-y-3">
+          <Input
+            label="Nome do Agente"
+            value={form.nome}
+            onChange={(e) => setForm({ ...form, nome: e.target.value })}
+            placeholder="Ex: Assistente Jurídico Trabalhista"
+            required
+          />
 
-        <Textarea
-          label="Descrição (opcional)"
-          value={form.descricao}
-          onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-          rows={2}
-          placeholder="Descreva o propósito deste agente..."
-        />
+          <Input
+            label="Descrição (opcional)"
+            value={form.descricao}
+            onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+            placeholder="Breve descrição do agente"
+          />
+        </div>
 
-        <Select
-          label="Provider"
-          value={form.provider}
-          onChange={(e) => setForm({ 
-            ...form, 
-            provider: e.target.value as AIProvider,
-            modelo: e.target.value === 'groq' ? 'llama-3.3-70b-versatile' : 'llama-3.3-70b'
-          })}
-        >
-          <option value="cerebras">Cerebras</option>
-          <option value="groq">Groq</option>
-        </Select>
+        {/* Provider e Modelo em grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <Select
+            label="Provider"
+            value={form.provider}
+            onChange={(e) => setForm({ 
+              ...form, 
+              provider: e.target.value as AIProvider,
+              modelo: e.target.value === 'groq' ? 'llama-3.3-70b-versatile' : 'llama-3.3-70b'
+            })}
+          >
+            <option value="cerebras">Cerebras</option>
+            <option value="groq">Groq</option>
+          </Select>
 
+          <Select
+            label="Modelo"
+            value={form.modelo}
+            onChange={(e) => setForm({ ...form, modelo: e.target.value })}
+          >
+            {modelos[form.provider].map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </Select>
+        </div>
+
+        {/* API Key */}
         <Input
           label="API Key"
           type="password"
@@ -246,34 +263,10 @@ function AgenteModal({
           required
         />
 
-        <Select
-          label="Modelo"
-          value={form.modelo}
-          onChange={(e) => setForm({ ...form, modelo: e.target.value })}
-        >
-          {modelos[form.provider].map((m) => (
-            <option key={m} value={m}>{m}</option>
-          ))}
-        </Select>
-
-        <Input
-          label="Max Tokens"
-          type="number"
-          value={form.max_tokens}
-          onChange={(e) => setForm({ ...form, max_tokens: parseInt(e.target.value) })}
-        />
-
-        <Textarea
-          label="System Prompt (opcional)"
-          value={form.system_prompt}
-          onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
-          rows={4}
-          placeholder="Deixe vazio para usar o prompt padrão..."
-        />
-
-        <div className="space-y-3">
-          <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer">
-            <span className="text-sm font-medium text-gray-900">Agente Ativo</span>
+        {/* Toggles compactos */}
+        <div className="flex gap-2">
+          <label className="flex-1 flex items-center justify-between p-2.5 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+            <span className="text-xs font-medium text-gray-900">Ativo</span>
             <input
               type="checkbox"
               checked={form.ativo}
@@ -282,11 +275,8 @@ function AgenteModal({
             />
           </label>
 
-          <label className="flex items-center justify-between p-3 bg-gray-50 rounded-xl cursor-pointer">
-            <div>
-              <span className="text-sm font-medium text-gray-900">Público</span>
-              <p className="text-xs text-gray-500">Permite que clientes usem este agente</p>
-            </div>
+          <label className="flex-1 flex items-center justify-between p-2.5 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
+            <span className="text-xs font-medium text-gray-900">Público</span>
             <input
               type="checkbox"
               checked={form.publico}
@@ -296,12 +286,57 @@ function AgenteModal({
           </label>
         </div>
 
-        <div className="flex gap-3 pt-4 border-t">
-          <Button type="button" variant="secondary" onClick={onClose}>
+        {/* Configurações Avançadas (Collapsible) */}
+        <div className="border-t pt-3">
+          <button
+            type="button"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="flex items-center justify-between w-full text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
+          >
+            <span>Configurações Avançadas</span>
+            <svg
+              className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {showAdvanced && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="space-y-3 mt-3"
+            >
+              <Input
+                label="Max Tokens"
+                type="number"
+                value={form.max_tokens}
+                onChange={(e) => setForm({ ...form, max_tokens: parseInt(e.target.value) })}
+              />
+
+              <Textarea
+                label="System Prompt (opcional)"
+                value={form.system_prompt}
+                onChange={(e) => setForm({ ...form, system_prompt: e.target.value })}
+                rows={3}
+                placeholder="Deixe vazio para usar o prompt padrão..."
+              />
+            </motion.div>
+          )}
+        </div>
+
+        {/* Botões de Ação */}
+        <div className="flex gap-3 pt-3 border-t">
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
             Cancelar
           </Button>
-          <Button type="submit" loading={isSaving}>
-            {agente ? 'Salvar Alterações' : 'Criar Agente'}
+          <Button type="submit" loading={isSaving} className="flex-1">
+            {agente ? 'Salvar' : 'Criar'}
           </Button>
         </div>
       </form>
