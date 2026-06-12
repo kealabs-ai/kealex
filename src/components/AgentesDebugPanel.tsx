@@ -54,11 +54,11 @@ export function AgentesDebugPanel() {
 
     // Teste: Database ENV
     try {
-      updateResult('GET /k1/lex/configuracoes/database/env', 'pending')
+      updateResult('GET /k1/lex/admin/config/env', 'pending')
       const dbEnv = await configuracoesApi.getDatabaseEnv()
-      updateResult('GET /k1/lex/configuracoes/database/env', 'success', 'ENV carregadas', dbEnv)
+      updateResult('GET /k1/lex/admin/config/env', 'success', 'ENV carregadas', dbEnv)
     } catch (error: any) {
-      updateResult('GET /k1/lex/configuracoes/database/env', 'error', error.response?.data?.detail || error.message)
+      updateResult('GET /k1/lex/admin/config/env', 'error', error.response?.data?.detail || error.message)
     }
 
     // Teste: IA
