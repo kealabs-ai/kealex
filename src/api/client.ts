@@ -4,7 +4,7 @@ import axios from 'axios'
 const isDev = import.meta.env.DEV
 const baseURL = isDev 
   ? '/api'  // Proxy local do Vite - será redirecionado para https://srv1023256.hstgr.cloud
-  : 'https://srv1023256.hstgr.cloud/api'
+  : 'https://srv1023256.hstgr.cloud'
 
 export const api = axios.create({ baseURL })
 
