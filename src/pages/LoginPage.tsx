@@ -29,7 +29,10 @@ export function LoginPage() {
     },
     onError: (error: any) => {
       console.error('Login error:', error)
-      // Não redirecionar, apenas mostrar erro
+      const isTimeout = error.code === 'ECONNABORTED' || error.response?.status === 504
+      if (isTimeout) {
+        alert('Servidor não está respondendo. Verifique se o backend está rodando.')
+      }
     },
   })
 

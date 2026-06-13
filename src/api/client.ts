@@ -6,7 +6,10 @@ const baseURL = isDev
   ? '/api'  // Proxy local do Vite - será redirecionado para https://srv1023256.hstgr.cloud
   : 'https://srv1023256.hstgr.cloud'
 
-export const api = axios.create({ baseURL })
+export const api = axios.create({ 
+  baseURL,
+  timeout: 30000 // 30 segundos
+})
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('kealex_token')
