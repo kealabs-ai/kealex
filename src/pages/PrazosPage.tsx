@@ -167,7 +167,7 @@ export function PrazosPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Select label="Processo" {...register('processoId')}>
               <option value="">Selecione...</option>
-              {processos?.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
+              {Array.isArray(processos) && processos.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
             </Select>
             <Input label="Título" {...register('titulo')} placeholder="Ex: Contestação" />
             <Textarea label="Descrição" {...register('descricao')} rows={2} placeholder="Detalhes do prazo..." />

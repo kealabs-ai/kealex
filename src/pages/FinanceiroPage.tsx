@@ -188,11 +188,11 @@ export function FinanceiroPage() {
             <div className="grid grid-cols-2 gap-3">
               <Select label="Processo" {...register('processoId')}>
                 <option value="">Selecione...</option>
-                {processos?.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
+                {Array.isArray(processos) && processos.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
               </Select>
               <Select label="Cliente" {...register('clienteId')}>
                 <option value="">Selecione...</option>
-                {clientes?.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                {Array.isArray(clientes) && clientes.map((c) => <option key={c.id} value={c.id}>{c.nome}</option>)}
               </Select>
             </div>
             <Input label="Descrição" {...register('descricao')} placeholder="Ex: Honorários advocatícios" />

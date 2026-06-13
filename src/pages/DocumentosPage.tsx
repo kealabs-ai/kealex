@@ -165,7 +165,7 @@ export function DocumentosPage() {
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <Select label="Processo" {...register('processoId')}>
               <option value="">Selecione...</option>
-              {processos?.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
+              {Array.isArray(processos) && processos.map((p) => <option key={p.id} value={p.id}>{p.titulo}</option>)}
             </Select>
             <div className="grid grid-cols-2 gap-3">
               <Input label="Nome" {...register('nome')} placeholder="Ex: Petição Inicial" />
