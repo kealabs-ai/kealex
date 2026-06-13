@@ -21,7 +21,7 @@ const diasRestantes = (data: string) => {
 
 export function PrazosPage() {
   const { user } = useAuth()
-  const { data: prazos, isLoading } = usePrazos()
+  const { data: prazos, isLoading, error } = usePrazos()
   const { data: vencendo } = usePrazosVencendo(7)
   const { data: processos } = useProcessos()
   const create = useCreatePrazo()
@@ -33,6 +33,11 @@ export function PrazosPage() {
   const { register, handleSubmit, reset } = useForm<FormData>()
 
   const isCliente = user?.role === 'cliente'
+
+  // Tratar erro
+  if (error) {
+    console.error('Erro ao carregar prazos:', error)
+  }
 
   // Garantir que seja sempre um array
   const prazosList = Array.isArray(prazos) ? prazos : []

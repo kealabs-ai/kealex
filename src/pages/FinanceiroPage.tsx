@@ -29,7 +29,7 @@ const diasRestantes = (data: string) => {
 export function FinanceiroPage() {
   const { user } = useAuth()
   const isCliente = user?.role === 'cliente'
-  const { data: honorarios, isLoading } = useHonorarios()
+  const { data: honorarios, isLoading, error } = useHonorarios()
   const { data: dashboard } = useDashboardFinanceiro()
   const { data: processos } = useProcessos()
   const { data: clientes } = !isCliente ? useClientes() : { data: undefined }
@@ -40,6 +40,11 @@ export function FinanceiroPage() {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
+
+  // Tratar erro
+  if (error) {
+    console.error('Erro ao carregar honorários:', error)
+  }
 
   // Garantir que sejam arrays
   const honorariosList = Array.isArray(honorarios) ? honorarios : []

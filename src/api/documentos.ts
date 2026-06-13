@@ -2,9 +2,9 @@ import { api } from './client'
 import type { Documento } from '../types'
 
 export const documentosApi = {
-  list: () => api.get<Documento[]>('/documentos').then((r) => r.data).catch(() => []),
+  list: () => api.get<Documento[]>('/documentos').then((r) => r.data),
   byProcesso: (processoId: string) =>
-    api.post<Documento[]>('/documentos/by-processo', { processoId }).then((r) => r.data).catch(() => []),
+    api.post<Documento[]>('/documentos/by-processo', { processoId }).then((r) => r.data),
   get: (id: string) => api.post<Documento>('/documentos/get', { id }).then((r) => r.data),
   create: (data: { processoId: string; nome: string; tipo: string; urlArquivo: string; tamanhoBytes: number }) =>
     api.post<Documento>('/documentos', data).then((r) => r.data),

@@ -37,6 +37,11 @@ export function DocumentosPage() {
   // Log para debug
   console.log('DocumentosPage render:', { documentos, isLoading, error, user })
 
+  // Tratar erro
+  if (error) {
+    console.error('Erro ao carregar documentos:', error)
+  }
+
   // Garantir que documentos seja sempre um array
   const documentosList = Array.isArray(documentos) ? documentos : []
   

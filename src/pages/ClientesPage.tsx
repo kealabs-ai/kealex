@@ -15,7 +15,7 @@ type FormData = {
 }
 
 export function ClientesPage() {
-  const { data: clientes, isLoading } = useClientes()
+  const { data: clientes, isLoading, error } = useClientes()
   const create = useCreateCliente()
   const update = useUpdateCliente()
   const remove = useDeleteCliente()
@@ -23,6 +23,11 @@ export function ClientesPage() {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
+
+  // Tratar erro
+  if (error) {
+    console.error('Erro ao carregar clientes:', error)
+  }
 
   // Garantir que seja array
   const clientesList = Array.isArray(clientes) ? clientes : []
