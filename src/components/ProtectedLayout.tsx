@@ -9,6 +9,8 @@ const roleRequired: Record<string, Role[]> = {
   '/admin': ['admin'],
   '/financeiro': ['admin', 'advogado', 'cliente'],
   '/prazos': ['admin', 'advogado', 'cliente'],
+  '/intimacoes': ['admin', 'advogado'],
+  '/audiencias': ['admin', 'advogado'],
 }
 
 export function ProtectedLayout() {
@@ -26,9 +28,9 @@ export function ProtectedLayout() {
   }
 
   return (
-    <div className="flex min-h-screen mesh-bg">
+    <div className="flex min-h-screen mesh-bg dark:bg-[#070514]">
       <Sidebar />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto bg-slate-50 dark:bg-transparent">
         <Outlet />
       </main>
     </div>

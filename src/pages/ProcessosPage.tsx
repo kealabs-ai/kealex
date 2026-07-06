@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download } from 'lucide-react'
+import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download, ChevronRight } from 'lucide-react'
 import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso } from '../hooks/useProcessos'
 import { useClientes } from '../hooks/useClientes'
+import { ProcessoTimeline } from '../components/ProcessoTimeline'
 import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
 import { statusProcessoBadge } from '../components/Badge'
@@ -30,6 +31,7 @@ export function ProcessosPage() {
   const [open, setOpen] = useState(false)
   const [guiaOpen, setGuiaOpen] = useState(false)
   const [selectedProcesso, setSelectedProcesso] = useState<Processo | null>(null)
+  const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
   const { register: registerGuia, handleSubmit: handleSubmitGuia, reset: resetGuia } = useForm<{
@@ -39,7 +41,7 @@ export function ProcessosPage() {
   const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
   const openEdit = (p: Processo) => { reset(p); setEditing(p); setOpen(true) }
   const close = () => setOpen(false)
-  
+
   const openGuia = (p: Processo) => {
     setSelectedProcesso(p)
     resetGuia({
@@ -51,9 +53,8 @@ export function ProcessosPage() {
     setGuiaOpen(true)
   }
   const closeGuia = () => setGuiaOpen(false)
-  
+
   const onSubmitGuia = (data: any) => {
-    // Simular geração de guia - em produção, chamar API
     const guia = {
       processo: selectedProcesso?.numero,
       tipo: data.tipo,
@@ -62,12 +63,10 @@ export function ProcessosPage() {
       descricao: data.descricao,
       codigoBarras: '23793.38128 60000.123456 78901.234567 8 12340000012345'
     }
-    
-    // Simular download de PDF
     alert(`Guia gerada com sucesso!\n\nProcesso: ${guia.processo}\nTipo: ${guia.tipo}\nValor: R$ ${guia.valor.toFixed(2)}\nVencimento: ${new Date(guia.vencimento).toLocaleDateString('pt-BR')}\n\nCódigo de Barras:\n${guia.codigoBarras}\n\nEm produção, um PDF seria gerado e baixado automaticamente.`)
     closeGuia()
   }
-  
+
   const onSubmit = (data: FormData) => {
     if (editing) update.mutate({ id: editing.id, data }, { onSuccess: close })
     else create.mutate(data as any, { onSuccess: close })
@@ -78,11 +77,6 @@ export function ProcessosPage() {
     p.numero.toLowerCase().includes(search.toLowerCase())
   ) ?? []
 
-  console.log('ProcessosPage: processos from API:', processos?.length ?? 0)
-  console.log('ProcessosPage: displayProcessos after filter:', displayProcessos.length)
-  console.log('ProcessosPage: isLoading:', isLoading)
-  console.log('ProcessosPage: user role:', user?.role)
-
   const stats = [
     { label: 'Total', value: displayProcessos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Briefcase size={18} /> },
     { label: 'Ativos', value: displayProcessos?.filter((p) => p.status === 'ativo').length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <Briefcase size={18} /> },
@@ -91,79 +85,106 @@ export function ProcessosPage() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-slate-50 dark:bg-transparent">
       <TopBar
         icon={Briefcase}
-        title="Processos"
-        subtitle={isCliente ? "Acompanhe seus processos jurídicos" : "Gerencie todos os processos jurídicos"}
+        title="Processos & Fases"
+        subtitle={isCliente ? "Acompanhe seus processos jurídicos" : "Gerencie processos com esteira de fases interativa"}
         actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Processo</Button>}
       />
-      <div className="flex-1 overflow-y-auto p-8 space-y-6">
+      <div className="flex-1 overflow-y-auto p-6 space-y-5">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => (
-            <StatCard key={s.label} {...s} delay={i * 0.08} />
+            <StatCard key={s.label} {...s} delay={i * 0.07} />
           ))}
         </div>
 
         <DataCard delay={0.2}>
-          <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+          <div className="flex items-center gap-3 p-4 border-b border-slate-100 dark:border-indigo-950/40">
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por título ou número..."
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition-all"
+                className="w-full pl-9 pr-4 py-2 text-sm bg-transparent border border-slate-200 dark:border-indigo-950/60 rounded-xl focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
             <Button variant="secondary" size="sm" icon={<Filter size={13} />}>Filtrar</Button>
           </div>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100">
-                {['Número', 'Título', 'Cliente', 'Vara', 'Tribunal', 'Status', ''].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {isLoading ? (
-                [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
-              ) : displayProcessos.length === 0 ? (
-                <tr><td colSpan={7}><EmptyState message="Nenhum processo encontrado" icon={<Briefcase size={28} className="text-gray-300" />} /></td></tr>
-              ) : (
-                <AnimatePresence>
-                  {displayProcessos.map((p, i) => (
-                    <motion.tr
+          <div className="divide-y divide-slate-100 dark:divide-indigo-950/30">
+            {isLoading ? (
+              [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
+            ) : displayProcessos.length === 0 ? (
+              <div className="p-8"><EmptyState message="Nenhum processo encontrado" icon={<Briefcase size={28} className="text-slate-300" />} /></div>
+            ) : (
+              <AnimatePresence>
+                {displayProcessos.map((p, i) => {
+                  const isExpanded = expandedTimeline === p.id
+                  return (
+                    <motion.div
                       key={p.id}
-                      className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors group"
+                      className="p-4 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-200"
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
                     >
-                      <td className="px-4 py-3.5 font-mono text-xs text-gray-500 bg-gray-50/50">{p.numero}</td>
-                      <td className="px-4 py-3.5 font-semibold text-gray-800">{p.titulo}</td>
-                      <td className="px-4 py-3.5 text-gray-600">{p.clienteNome ?? '—'}</td>
-                      <td className="px-4 py-3.5 text-gray-500">{p.vara}</td>
-                      <td className="px-4 py-3.5 text-gray-500">{p.tribunal}</td>
-                      <td className="px-4 py-3.5">{statusProcessoBadge(p.status)}</td>
-                      <td className="px-4 py-3.5">
-                        <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => openGuia(p)} className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Emitir Guia"><FileText size={14} /></button>
+                      <div className="flex items-start gap-4">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap mb-1">
+                            <span className="text-xs font-mono text-indigo-500 dark:text-indigo-400">{p.numero}</span>
+                            {statusProcessoBadge(p.status)}
+                          </div>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-0.5">{p.titulo}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+                            {p.clienteNome} • {p.vara} • {p.tribunal}
+                          </p>
+
+                          {/* Timeline expandível */}
+                          <AnimatePresence>
+                            {isExpanded && (
+                              <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden"
+                              >
+                                <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-indigo-950/40">
+                                  <ProcessoTimeline fases={p.fases} faseAtual={p.faseAtual} readonly={isCliente} />
+                                </div>
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </div>
+
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          <button
+                            onClick={() => setExpandedTimeline(isExpanded ? null : p.id)}
+                            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all"
+                          >
+                            Fases {isExpanded ? '−' : '+'}
+                          </button>
+                          <button onClick={() => openGuia(p)} className="px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all" title="Emitir Guia">
+                            <FileText size={11} className="inline mr-1" /> Guia
+                          </button>
                           {!isCliente && (
                             <>
-                              <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Editar"><Pencil size={14} /></button>
-                              <button onClick={() => remove.mutate(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                              <button onClick={() => openEdit(p)} className="px-2.5 py-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all">
+                                <Pencil size={11} className="inline mr-1" /> Editar
+                              </button>
+                              <button onClick={() => remove.mutate(p.id)} className="px-2.5 py-1 text-[11px] font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all">
+                                <Trash2 size={11} className="inline mr-1" /> Excluir
+                              </button>
                             </>
                           )}
                         </div>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </AnimatePresence>
-              )}
-            </tbody>
-          </table>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </AnimatePresence>
+            )}
+          </div>
         </DataCard>
       </div>
 
@@ -192,7 +213,7 @@ export function ProcessosPage() {
                 {['ativo', 'arquivado', 'encerrado'].map((s) => <option key={s} value={s}>{s}</option>)}
               </Select>
             )}
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-indigo-950/40">
               <Button variant="secondary" type="button" onClick={close}>Cancelar</Button>
               <Button type="submit" loading={create.isPending || update.isPending}>Salvar</Button>
             </div>
@@ -207,10 +228,10 @@ export function ProcessosPage() {
           onClose={closeGuia}
         >
           <form onSubmit={handleSubmitGuia(onSubmitGuia)} className="space-y-4">
-            <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-xl">
-              <p className="text-sm font-semibold text-indigo-900 mb-1">Processo Selecionado</p>
-              <p className="text-xs text-indigo-700 font-mono">{selectedProcesso.numero}</p>
-              <p className="text-xs text-indigo-700">{selectedProcesso.titulo}</p>
+            <div className="p-4 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-500/20 rounded-xl">
+              <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300 mb-1">Processo Selecionado</p>
+              <p className="text-xs text-indigo-700 dark:text-indigo-400 font-mono">{selectedProcesso.numero}</p>
+              <p className="text-xs text-indigo-700 dark:text-indigo-400">{selectedProcesso.titulo}</p>
             </div>
 
             <Select label="Tipo de Guia" {...registerGuia('tipo')}>
@@ -243,13 +264,13 @@ export function ProcessosPage() {
               {...registerGuia('descricao')}
             />
 
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-              <p className="text-xs text-amber-800">
+            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-500/20 rounded-xl">
+              <p className="text-xs text-amber-800 dark:text-amber-300">
                 💡 A guia será gerada em formato PDF com código de barras para pagamento bancário.
               </p>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+            <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-indigo-950/40">
               <Button variant="secondary" type="button" onClick={closeGuia}>Cancelar</Button>
               <Button type="submit" icon={<Download size={15} />}>Gerar e Baixar Guia</Button>
             </div>

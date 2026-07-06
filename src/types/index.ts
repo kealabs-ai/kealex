@@ -4,11 +4,21 @@ export type TipoDocumento = 'peticao' | 'contrato' | 'comprovante' | 'outro'
 export type StatusDocumento = 'pendente' | 'aprovado' | 'rejeitado'
 export type StatusHonorario = 'pendente' | 'pago' | 'vencido' | 'cancelado'
 export type StatusPrazo = 'pendente' | 'concluido' | 'vencido'
+export type StatusIntimacao = 'nova' | 'lida' | 'respondida' | 'ignorada'
+export type StatusAudiencia = 'agendada' | 'realizada' | 'cancelada' | 'adiada'
+export type FaseProcessoStatus = 'concluida' | 'ativa' | 'futura'
 
 export interface BaseEntity {
   id: string
   createdAt: string
   updatedAt: string
+}
+
+export interface FaseProcesso {
+  id: string
+  label: string
+  status: FaseProcessoStatus
+  data?: string
 }
 
 export interface Processo extends BaseEntity {
@@ -23,6 +33,32 @@ export interface Processo extends BaseEntity {
   clienteEmail?: string
   vara: string
   tribunal: string
+  fases?: FaseProcesso[]
+  faseAtual?: number
+}
+
+export interface Intimacao extends BaseEntity {
+  processoId?: string
+  processoNumero?: string
+  processoTitulo?: string
+  diario: string
+  dataPublicacao: string
+  conteudo: string
+  resumoIA?: string
+  prazoCalculado?: string
+  status: StatusIntimacao
+}
+
+export interface Audiencia extends BaseEntity {
+  processoId: string
+  processoTitulo?: string
+  tipo: string
+  dataHora: string
+  local: string
+  juiz?: string
+  partes?: string
+  roteiro?: string
+  status: StatusAudiencia
 }
 
 export interface Cliente extends BaseEntity {
