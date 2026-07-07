@@ -51,5 +51,8 @@ export function useAvancarFase() {
   return useMutation({
     mutationFn: ({ id, novaFase }: { id: string; novaFase: number }) => processosApi.avancarFase(id, novaFase),
     onSuccess: () => qc.invalidateQueries({ queryKey: PROCESSOS_KEY }),
+    onError: (error: any) => {
+      console.error('useAvancarFase error:', error.response?.data || error.message)
+    },
   })
 }
