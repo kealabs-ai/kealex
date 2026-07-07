@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download } from 'lucide-react'
+import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download, ChevronUp } from 'lucide-react'
 import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso } from '../hooks/useProcessos'
 import { useClientes } from '../hooks/useClientes'
 import { ProcessoTimeline } from '../components/ProcessoTimeline'
@@ -150,31 +150,60 @@ export function ProcessosPage() {
                                 className="overflow-hidden"
                               >
                                 <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-indigo-950/40">
-                                  <ProcessoTimeline fases={p.fases} faseAtual={p.faseAtual} readonly={isCliente} />
+                                  <ProcessoTimeline
+                                    fases={p.fases}
+                                    faseAtual={p.faseAtual}
+                                    readonly={isCliente}
+                                    onAvancar={(novaFase) => {
+                                      // Aqui seria feita a chamada ao backend para atualizar a fase
+                                      console.log(`Processo ${p.id} avançou para fase ${novaFase}`)
+                                    }}
+                                  />
                                 </div>
                               </motion.div>
                             )}
                           </AnimatePresence>
                         </div>
 
-                        <div className="flex flex-col gap-1.5 shrink-0">
-                          <button
+                        <div className="flex items-center gap-2 shrink-0">
+                          <motion.button
                             onClick={() => setExpandedTimeline(isExpanded ? null : p.id)}
-                            className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all"
+                            className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all"
+                            title="Expandir/Recolher Fases"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
                           >
-                            Fases {isExpanded ? '−' : '+'}
-                          </button>
-                          <button onClick={() => openGuia(p)} className="px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all" title="Emitir Guia">
-                            <FileText size={11} className="inline mr-1" /> Guia
-                          </button>
+                            <ChevronUp size={20} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                          </motion.button>
+                          <motion.button
+                            onClick={() => openGuia(p)}
+                            className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all"
+                            title="Emitir Guia"
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            <FileText size={20} />
+                          </motion.button>
                           {!isCliente && (
                             <>
-                              <button onClick={() => openEdit(p)} className="px-2.5 py-1 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all">
-                                <Pencil size={11} className="inline mr-1" /> Editar
-                              </button>
-                              <button onClick={() => remove.mutate(p.id)} className="px-2.5 py-1 text-[11px] font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all">
-                                <Trash2 size={11} className="inline mr-1" /> Excluir
-                              </button>
+                              <motion.button
+                                onClick={() => openEdit(p)}
+                                className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all"
+                                title="Editar Processo"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <Pencil size={20} />
+                              </motion.button>
+                              <motion.button
+                                onClick={() => remove.mutate(p.id)}
+                                className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all"
+                                title="Excluir Processo"
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.95 }}
+                              >
+                                <Trash2 size={20} />
+                              </motion.button>
                             </>
                           )}
                         </div>
