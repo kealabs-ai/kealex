@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download, ChevronUp } from 'lucide-react'
-import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso } from '../hooks/useProcessos'
+import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso, useAvancarFase } from '../hooks/useProcessos'
 import { useClientes } from '../hooks/useClientes'
 import { ProcessoTimeline } from '../components/ProcessoTimeline'
 import { Modal } from '../components/Modal'
@@ -28,6 +28,7 @@ export function ProcessosPage() {
   const create = useCreateProcesso()
   const update = useUpdateProcesso()
   const remove = useDeleteProcesso()
+  const avancarFase = useAvancarFase()
   const [editing, setEditing] = useState<Processo | null>(null)
   const [open, setOpen] = useState(false)
   const [guiaOpen, setGuiaOpen] = useState(false)
@@ -166,8 +167,7 @@ export function ProcessosPage() {
                                     faseAtual={p.faseAtual}
                                     readonly={isCliente}
                                     onAvancar={(novaFase) => {
-                                      // Aqui seria feita a chamada ao backend para atualizar a fase
-                                      console.log(`Processo ${p.id} avançou para fase ${novaFase}`)
+                                      avancarFase.mutate({ id: p.id, novaFase })
                                     }}
                                   />
                                 </div>

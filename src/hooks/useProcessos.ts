@@ -45,3 +45,11 @@ export function useDeleteProcesso() {
     onSuccess: () => qc.invalidateQueries({ queryKey: PROCESSOS_KEY }),
   })
 }
+
+export function useAvancarFase() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, novaFase }: { id: string; novaFase: number }) => processosApi.avancarFase(id, novaFase),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PROCESSOS_KEY }),
+  })
+}
