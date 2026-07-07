@@ -28,9 +28,9 @@ export function ProtectedLayout() {
   }
 
   return (
-    <div className="flex min-h-screen mesh-bg dark:bg-[#070514]">
+    <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
       <Sidebar />
-      <main className="flex-1 overflow-auto bg-slate-50 dark:bg-transparent">
+      <main className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950">
         <Outlet />
       </main>
     </div>

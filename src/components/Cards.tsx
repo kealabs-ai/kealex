@@ -47,7 +47,7 @@ interface DataCardProps {
 export function DataCard({ children, className = '', delay = 0 }: DataCardProps) {
   return (
     <motion.div
-      className={`bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden ${className}`}
+      className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden ${className}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35 }}
@@ -72,11 +72,11 @@ export function SkeletonRow() {
 export function EmptyState({ message, icon }: { message: string; icon: ReactNode }) {
   return (
     <motion.div
-      className="flex flex-col items-center justify-center py-16 text-gray-400"
+      className="flex flex-col items-center justify-center py-16 text-slate-400 dark:text-slate-500"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >
-      <div className="p-4 bg-gray-50 rounded-2xl mb-3">{icon}</div>
+      <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-2xl mb-3">{icon}</div>
       <p className="text-sm">{message}</p>
     </motion.div>
   )

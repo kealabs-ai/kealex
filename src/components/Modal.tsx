@@ -28,7 +28,7 @@ export function Modal({ title, subtitle, onClose, children, size = 'md' }: Modal
           animate={{ opacity: 1 }}
         />
         <motion.div
-          className={`relative bg-white rounded-2xl shadow-2xl w-full ${sizes[size]} overflow-hidden`}
+          className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full ${sizes[size]} overflow-hidden`}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -38,12 +38,12 @@ export function Modal({ title, subtitle, onClose, children, size = 'md' }: Modal
           <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500" />
           <div className="flex items-start justify-between px-6 pt-5 pb-4">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-              {subtitle && <p className="text-sm text-gray-500 mt-0.5">{subtitle}</p>}
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
+              {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+              className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
             >
               <X size={18} />
             </button>
