@@ -6,6 +6,7 @@ import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { useAuth } from '../context/AuthContext'
 import { useAgentesPublicos } from '../hooks/useAgentes'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
+import { gerarDocumentoWordDoChat } from '../utils/documentGenerator'
 import { TopBar } from '../components/TopBar'
 import type { AgenteIA } from '../types'
 
@@ -110,6 +111,20 @@ export function IAPage() {
     navigator.clipboard.writeText(content)
     setCopied(id)
     setTimeout(() => setCopied(null), 2000)
+  }
+
+  const [generatingDocx, setGeneratingDocx] = useState(false)
+
+  const handleGerarDocx = async () => {
+    try {
+      setGeneratingDocx(true)
+      const titulo = `Documento_${new Date().toISOString().split('T')[0]}`
+      await gerarDocumentoWordDoChat(titulo, messages, user?.nome)
+    } catch (err) {
+      console.error('Erro ao gerar documento:', err)
+    } finally {
+      setGeneratingDocx(false)
+    }
   }
 
   const clearChat = () => { setMessages([]); setError(null) }
@@ -455,8 +470,24 @@ export function IAPage() {
                   <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-xl transition-all">
                     <Copy size={12} /> Copiar
                   </button>
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium rounded-xl transition-all shadow-md shadow-indigo-600/30">
-                    <Download size={12} /> .docx
+                  <button
+                    onClick={handleGerarDocx}
+                    disabled={generatingDocx || messages.filter((m) => m.role === 'assistant').length === 0}
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-xl transition-all shadow-md shadow-indigo-600/30"
+                  >
+                    {generatingDocx ? (
+                      <>
+                        <svg className="animate-spin w-3 h-3" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        </svg>
+                        Gerando...
+                      </>
+                    ) : (
+                      <>
+                        <Download size={12} /> .docx
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
