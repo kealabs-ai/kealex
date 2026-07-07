@@ -49,7 +49,6 @@ export function AreaChart({ data, height = 300, isDark }: AreaChartProps) {
   const despesaPath = despesaPoints
     .map((p, i) => {
       if (i === 0) return `M ${p.x} ${p.y}`
-      const prev = despesaPoints[i - 1]
       return `L ${p.x} ${p.y}`
     })
     .join(' ')

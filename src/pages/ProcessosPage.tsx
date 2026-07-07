@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download, ChevronRight } from 'lucide-react'
+import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download } from 'lucide-react'
 import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso } from '../hooks/useProcessos'
 import { useClientes } from '../hooks/useClientes'
 import { ProcessoTimeline } from '../components/ProcessoTimeline'

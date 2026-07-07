@@ -8,7 +8,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 
-const advogadoLinks = [
+const advogadoLinks: Array<{ to: string; label: string; icon: any; badge?: string }> = [
   { to: '/processos', label: 'Processos & Fases', icon: Briefcase },
   { to: '/intimacoes', label: 'Intimações & DJE', icon: Bell, badge: 'Novo' },
   { to: '/prazos', label: 'Calendário de Prazos', icon: Calendar },
@@ -18,14 +18,14 @@ const advogadoLinks = [
   { to: '/clientes', label: 'Clientes & CRM', icon: Users },
 ]
 
-const clienteLinks = [
+const clienteLinks: Array<{ to: string; label: string; icon: any; badge?: string }> = [
   { to: '/processos', label: 'Meus Processos', icon: Briefcase },
   { to: '/prazos', label: 'Prazos', icon: Calendar },
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
   { to: '/documentos', label: 'Documentos', icon: FileText },
 ]
 
-const adminLinks = [
+const adminLinks: Array<{ to: string; label: string; icon: any; badge?: string }> = [
   { to: '/admin?tab=geral', label: 'Geral', icon: Settings },
   { to: '/admin?tab=cdn', label: 'CDN & Arquivos', icon: Cloud },
   { to: '/admin?tab=database', label: 'Banco de Dados', icon: Database },
