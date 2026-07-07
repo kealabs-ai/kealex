@@ -306,7 +306,7 @@ export function ProcessosPage() {
 
             <div className="p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-500/20 rounded-xl">
               <p className="text-xs text-amber-800 dark:text-amber-300">
-                💡 A guia será gerada em formato PDF com código de barras para pagamento bancário.
+                💡 A guia será gerada em formato PDF com código de barras para pagamento bancário e símbolo da justiça federal.
               </p>
             </div>
 

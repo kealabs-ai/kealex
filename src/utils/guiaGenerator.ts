@@ -1,4 +1,4 @@
-import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, BorderStyle, AlignmentType } from 'docx'
+import PDFDocument from 'pdfkit'
 import { saveAs } from 'file-saver'
 
 interface GuiaData {
@@ -23,11 +23,11 @@ const gerarCodigoBarras = (valor: number, vencimento: string): string => {
   const valorFormatado = String(Math.round(valor * 100)).padStart(10, '0')
   const sequencial = String(Math.floor(Math.random() * 10000000000)).padStart(10, '0')
   
-  return `${banco}.${vencFormatado} ${valorFormatado}.${sequencial}`
+  return `${banco}${vencFormatado}${valorFormatado}${sequencial}`
 }
 
 export async function gerarGuiaTJMG(data: GuiaData): Promise<void> {
-  const codigoBarras = data.codigoBarras || gerarCodigoBarras(data.valor, data.vencimento)
+  const codigoBarrasNumero = data.codigoBarras || gerarCodigoBarras(data.valor, data.vencimento)
   const dataEmissao = data.dataEmissao || new Date().toLocaleDateString('pt-BR')
   const dataVencimento = new Date(data.vencimento).toLocaleDateString('pt-BR')
 
@@ -39,209 +39,157 @@ export async function gerarGuiaTJMG(data: GuiaData): Promise<void> {
     outro: 'Outro'
   }
 
-  const doc = new Document({
-    sections: [{
-      children: [
-        new Paragraph({
-          text: 'GUIA DE PAGAMENTO - TRIBUNAL DE JUSTIÇA DE MINAS GERAIS',
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 200 }
-        }),
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margin: 40
+      })
 
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({
-              height: { value: 400, rule: 'auto' },
-              children: [
-                new TableCell({
-                  children: [new Paragraph('TJMG - Tribunal de Justiça de Minas Gerais')],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                }),
-                new TableCell({
-                  children: [new Paragraph({ text: `Data de Emissão: ${dataEmissao}`, alignment: AlignmentType.RIGHT })],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                })
-              ]
-            })
-          ]
-        }),
+      const chunks: Buffer[] = []
+      doc.on('data', (chunk: Buffer) => chunks.push(chunk))
+      doc.on('end', () => {
+        const blob = new Blob(chunks as any, { type: 'application/pdf' })
+        const nomeArquivo = `Guia_${data.numeroProcesso.replace(/\D/g, '')}_${new Date().getTime()}.pdf`
+        saveAs(blob, nomeArquivo)
+        resolve()
+      })
+      doc.on('error', reject)
 
-        new Paragraph({ text: '', spacing: { after: 400 } }),
+      // Cabeçalho com símbolo da justiça
+      doc.fontSize(24).text('⚖️', { align: 'center' })
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: '1. IDENTIFICAÇÃO DO PROCESSO',
-          spacing: { before: 200, after: 200 }
-        }),
+      // Título
+      doc.fontSize(14).font('Helvetica-Bold').text('GUIA DE PAGAMENTO', { align: 'center' })
+      doc.fontSize(12).font('Helvetica-Bold').text('TRIBUNAL DE JUSTIÇA DE MINAS GERAIS', { align: 'center' })
+      doc.moveDown(0.5)
 
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({
-              children: [
-                new TableCell({
-                  children: [
-                    new Paragraph('Número do Processo:'),
-                    new Paragraph({ text: data.numeroProcesso, spacing: { after: 200 } })
-                  ],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph('Vara:'),
-                    new Paragraph({ text: data.vara, spacing: { after: 200 } })
-                  ],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                })
-              ]
-            }),
-            new TableRow({
-              children: [
-                new TableCell({
-                  children: [
-                    new Paragraph('Tribunal:'),
-                    new Paragraph({ text: data.tribunal, spacing: { after: 200 } })
-                  ],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph('Título:'),
-                    new Paragraph({ text: data.titulo, spacing: { after: 200 } })
-                  ],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                })
-              ]
-            })
-          ]
-        }),
+      // Linha separadora
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke()
+      doc.moveDown(0.3)
 
-        new Paragraph({ text: '', spacing: { after: 400 } }),
+      // Informações do tribunal
+      doc.fontSize(10).font('Helvetica')
+      doc.text(`Data de Emissão: ${dataEmissao}`, { align: 'right' })
+      doc.moveDown(0.5)
 
-        new Paragraph({
-          text: '2. DADOS DO PAGAMENTO',
-          spacing: { before: 200, after: 200 }
-        }),
+      // Seção 1: Identificação do Processo
+      doc.fontSize(11).font('Helvetica-Bold').text('1. IDENTIFICAÇÃO DO PROCESSO')
+      doc.moveDown(0.2)
 
-        new Table({
-          width: { size: 100, type: WidthType.PERCENTAGE },
-          rows: [
-            new TableRow({
-              children: [
-                new TableCell({
-                  children: [
-                    new Paragraph('Tipo de Guia:'),
-                    new Paragraph({ text: tiposGuia[data.tipo], spacing: { after: 200 } })
-                  ],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph('Valor:'),
-                    new Paragraph({ 
-                      text: new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.valor),
-                      spacing: { after: 200 }
-                    })
-                  ],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                })
-              ]
-            }),
-            new TableRow({
-              children: [
-                new TableCell({
-                  children: [
-                    new Paragraph('Data de Vencimento:'),
-                    new Paragraph({ text: dataVencimento, spacing: { after: 200 } })
-                  ],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                }),
-                new TableCell({
-                  children: [
-                    new Paragraph('Responsável:'),
-                    new Paragraph({ text: data.clienteNome, spacing: { after: 200 } })
-                  ],
-                  borders: { top: { style: BorderStyle.SINGLE }, bottom: { style: BorderStyle.SINGLE }, left: { style: BorderStyle.SINGLE }, right: { style: BorderStyle.SINGLE } }
-                })
-              ]
-            })
-          ]
-        }),
+      doc.fontSize(9).font('Helvetica-Bold').text('Número do Processo:')
+      doc.fontSize(9).font('Helvetica').text(data.numeroProcesso)
+      doc.moveDown(0.3)
 
-        new Paragraph({ text: '', spacing: { after: 400 } }),
+      doc.fontSize(9).font('Helvetica-Bold').text('Vara:')
+      doc.fontSize(9).font('Helvetica').text(data.vara)
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: '3. CÓDIGO DE BARRAS PARA PAGAMENTO',
-          spacing: { before: 200, after: 200 }
-        }),
+      doc.fontSize(9).font('Helvetica-Bold').text('Tribunal:')
+      doc.fontSize(9).font('Helvetica').text(data.tribunal)
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: codigoBarras,
-          alignment: AlignmentType.CENTER,
-          spacing: { before: 200, after: 200 }
-        }),
+      doc.fontSize(9).font('Helvetica-Bold').text('Título:')
+      doc.fontSize(9).font('Helvetica').text(data.titulo)
+      doc.moveDown(0.5)
 
-        new Paragraph({
-          text: '⚠️ Utilize este código de barras para realizar o pagamento em qualquer banco ou instituição financeira.',
-          spacing: { after: 400 }
-        }),
+      // Linha separadora
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke()
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: '4. DESCRIÇÃO DO PAGAMENTO',
-          spacing: { before: 200, after: 200 }
-        }),
+      // Seção 2: Dados do Pagamento
+      doc.fontSize(11).font('Helvetica-Bold').text('2. DADOS DO PAGAMENTO')
+      doc.moveDown(0.2)
 
-        new Paragraph({
-          text: data.descricao,
-          spacing: { after: 400 }
-        }),
+      doc.fontSize(9).font('Helvetica-Bold').text('Tipo de Guia:')
+      doc.fontSize(9).font('Helvetica').text(tiposGuia[data.tipo])
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: '5. INSTRUÇÕES IMPORTANTES',
-          spacing: { before: 200, after: 200 }
-        }),
+      doc.fontSize(9).font('Helvetica-Bold').text('Valor:')
+      doc.fontSize(9).font('Helvetica').text(
+        new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.valor)
+      )
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: '• O pagamento deve ser realizado até a data de vencimento indicada acima.',
-          spacing: { after: 100 }
-        }),
+      doc.fontSize(9).font('Helvetica-Bold').text('Data de Vencimento:')
+      doc.fontSize(9).font('Helvetica').text(dataVencimento)
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: '• Após o pagamento, guarde o comprovante para fins de comprovação.',
-          spacing: { after: 100 }
-        }),
+      doc.fontSize(9).font('Helvetica-Bold').text('Responsável:')
+      doc.fontSize(9).font('Helvetica').text(data.clienteNome)
+      doc.moveDown(0.5)
 
-        new Paragraph({
-          text: '• Em caso de dúvidas, entre em contato com o tribunal responsável.',
-          spacing: { after: 100 }
-        }),
+      // Linha separadora
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke()
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: '• Este documento foi gerado automaticamente pelo sistema Kealex.',
-          spacing: { after: 800 }
-        }),
+      // Seção 3: Código de Barras
+      doc.fontSize(11).font('Helvetica-Bold').text('3. CÓDIGO DE BARRAS PARA PAGAMENTO')
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: '_________________________________',
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 100 }
-        }),
+      // Exibir código de barras em formato legível
+      doc.fontSize(12).font('Helvetica-Bold').text(codigoBarrasNumero, { align: 'center' })
+      doc.moveDown(0.2)
 
-        new Paragraph({
-          text: 'Assinatura do Responsável',
-          alignment: AlignmentType.CENTER,
-          spacing: { after: 400 }
-        }),
+      // Formatação visual do código
+      const codigoFormatado = `${codigoBarrasNumero.slice(0, 3)}.${codigoBarrasNumero.slice(3, 9)} ${codigoBarrasNumero.slice(9, 19)}.${codigoBarrasNumero.slice(19)}`
+      doc.fontSize(11).font('Helvetica-Bold').text(codigoFormatado, { align: 'center' })
+      doc.moveDown(0.3)
 
-        new Paragraph({
-          text: `Gerado em ${new Date().toLocaleString('pt-BR')}`,
-          alignment: AlignmentType.CENTER
-        })
+      doc.fontSize(8).font('Helvetica').text(
+        '⚠️ Utilize este código de barras para realizar o pagamento em qualquer banco ou instituição financeira.',
+        { align: 'center', width: 475 }
+      )
+      doc.moveDown(0.5)
+
+      // Linha separadora
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke()
+      doc.moveDown(0.3)
+
+      // Seção 4: Descrição do Pagamento
+      doc.fontSize(11).font('Helvetica-Bold').text('4. DESCRIÇÃO DO PAGAMENTO')
+      doc.moveDown(0.2)
+      doc.fontSize(9).font('Helvetica').text(data.descricao, { width: 475, align: 'justify' })
+      doc.moveDown(0.5)
+
+      // Linha separadora
+      doc.moveTo(40, doc.y).lineTo(555, doc.y).stroke()
+      doc.moveDown(0.3)
+
+      // Seção 5: Instruções Importantes
+      doc.fontSize(11).font('Helvetica-Bold').text('5. INSTRUÇÕES IMPORTANTES')
+      doc.moveDown(0.2)
+
+      const instrucoes = [
+        '• O pagamento deve ser realizado até a data de vencimento indicada acima.',
+        '• Após o pagamento, guarde o comprovante para fins de comprovação.',
+        '• Em caso de dúvidas, entre em contato com o tribunal responsável.',
+        '• Este documento foi gerado automaticamente pelo sistema Kealex.'
       ]
-    }]
-  })
 
-  const blob = await Packer.toBlob(doc)
-  const nomeArquivo = `Guia_${data.numeroProcesso.replace(/\D/g, '')}_${new Date().getTime()}.docx`
-  saveAs(blob, nomeArquivo)
+      instrucoes.forEach((instr) => {
+        doc.fontSize(8).font('Helvetica').text(instr, { width: 475 })
+        doc.moveDown(0.15)
+      })
+
+      doc.moveDown(0.8)
+
+      // Linha para assinatura
+      doc.moveTo(40, doc.y).lineTo(200, doc.y).stroke()
+      doc.moveDown(0.1)
+      doc.fontSize(8).font('Helvetica').text('Assinatura do Responsável')
+      doc.moveDown(0.5)
+
+      // Rodapé
+      doc.fontSize(7).font('Helvetica').text(
+        `Gerado em ${new Date().toLocaleString('pt-BR')} | Sistema Kealex`,
+        { align: 'center' }
+      )
+
+      doc.end()
+    } catch (error) {
+      reject(error)
+    }
+  })
 }
