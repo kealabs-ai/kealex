@@ -53,7 +53,7 @@ export function ClientesPage() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-white dark:bg-slate-950">
       <TopBar
         icon={UserCheck}
         title="Clientes"
@@ -66,22 +66,22 @@ export function ClientesPage() {
         </div>
 
         <DataCard delay={0.2}>
-          <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+          <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-slate-700">
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nome ou email..."
-                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition-all"
+                className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950 transition-all"
               />
             </div>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
                 {['Cliente', 'Email', 'Telefone', 'CPF/CNPJ', ''].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -97,7 +97,7 @@ export function ClientesPage() {
                     return (
                       <motion.tr
                         key={c.id}
-                        className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors group"
+                        className="border-b border-gray-200 dark:border-slate-700 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-colors group"
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04 }}
@@ -107,24 +107,24 @@ export function ClientesPage() {
                             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
                               {initials}
                             </div>
-                            <span className="font-semibold text-gray-800">{c.nome}</span>
+                            <span className="font-semibold text-gray-800 dark:text-white">{c.nome}</span>
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          <div className="flex items-center gap-1.5 text-gray-500">
-                            <Mail size={13} className="text-gray-400" />{c.email}
+                          <div className="flex items-center gap-1.5 text-gray-500 dark:text-slate-400">
+                            <Mail size={13} className="text-gray-400 dark:text-slate-500" />{c.email}
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
                           {c.telefone
-                            ? <div className="flex items-center gap-1.5 text-gray-500"><Phone size={13} className="text-gray-400" />{c.telefone}</div>
-                            : <span className="text-gray-300">—</span>}
+                            ? <div className="flex items-center gap-1.5 text-gray-500 dark:text-slate-400"><Phone size={13} className="text-gray-400 dark:text-slate-500" />{c.telefone}</div>
+                            : <span className="text-gray-300 dark:text-slate-600">—</span>}
                         </td>
-                        <td className="px-4 py-3.5 text-gray-500 font-mono text-xs">{c.cpfCnpj ?? <span className="text-gray-300">—</span>}</td>
+                        <td className="px-4 py-3.5 text-gray-500 dark:text-slate-400 font-mono text-xs">{c.cpfCnpj ?? <span className="text-gray-300 dark:text-slate-600">—</span>}</td>
                         <td className="px-4 py-3.5">
                           <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
-                            <button onClick={() => remove.mutate(c.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                            <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors"><Pencil size={14} /></button>
+                            <button onClick={() => remove.mutate(c.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><Trash2 size={14} /></button>
                           </div>
                         </td>
                       </motion.tr>

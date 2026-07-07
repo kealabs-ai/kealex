@@ -5,6 +5,7 @@ import { Plus, Pencil, Trash2, Clock, AlertTriangle, CheckCircle, Search } from 
 import { usePrazos, usePrazosVencendo, useCreatePrazo, useUpdatePrazo, useDeletePrazo } from '../hooks/usePrazos'
 import { useProcessos } from '../hooks/useProcessos'
 import { Modal } from '../components/Modal'
+import { Calendar } from '../components/Calendar'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
 import { statusPrazoBadge } from '../components/Badge'
 import { Button, Input, Select, Textarea } from '../components/UI'
@@ -30,6 +31,7 @@ export function PrazosPage() {
   const [editing, setEditing] = useState<Prazo | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const { register, handleSubmit, reset } = useForm<FormData>()
 
   const isCliente = user?.role === 'cliente'
@@ -61,7 +63,7 @@ export function PrazosPage() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-white dark:bg-slate-950">
       <TopBar
         icon={Clock}
         title="Prazos"
@@ -73,47 +75,64 @@ export function PrazosPage() {
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.08} />)}
         </div>
 
-        {vencendoList.length > 0 && (
+        <div className="grid lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            {vencendoList.length > 0 && (
+              <motion.div
+                className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-4 mb-6"
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-xl shrink-0">
+                    <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{vencendoList.length} prazo(s) vencendo nos próximos 7 dias</p>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {vencendoList.map((p) => {
+                        const dias = diasRestantes(p.dataVencimento)
+                        return (
+                          <span key={p.id} className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-lg px-2.5 py-1 text-xs text-amber-700 dark:text-amber-300">
+                            <Clock size={11} />
+                            {p.titulo}
+                            <span className="font-bold">{dias <= 0 ? 'hoje' : `${dias}d`}</span>
+                          </span>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+          <Calendar prazos={prazosList} onDateSelect={setSelectedDate} />
+        </div>
+
+        {selectedDate && (
           <motion.div
-            className="bg-amber-50 border border-amber-200 rounded-2xl p-4"
+            className="bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-900/50 rounded-2xl p-4 mb-6"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
           >
-            <div className="flex items-start gap-3">
-              <div className="p-2 bg-amber-100 rounded-xl shrink-0">
-                <AlertTriangle size={16} className="text-amber-600" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-800">{vencendoList.length} prazo(s) vencendo nos próximos 7 dias</p>
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {vencendoList.map((p) => {
-                    const dias = diasRestantes(p.dataVencimento)
-                    return (
-                      <span key={p.id} className="inline-flex items-center gap-1.5 bg-white border border-amber-200 rounded-lg px-2.5 py-1 text-xs text-amber-700">
-                        <Clock size={11} />
-                        {p.titulo}
-                        <span className="font-bold">{dias <= 0 ? 'hoje' : `${dias}d`}</span>
-                      </span>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
+            <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">
+              Prazos para {selectedDate.toLocaleDateString('pt-BR')}
+            </p>
           </motion.div>
         )}
 
         <DataCard delay={0.2}>
-          <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+          <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-slate-700">
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar prazo..." className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition-all" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar prazo..." className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950 transition-all" />
             </div>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
                 {['Título', 'Descrição', 'Vencimento', 'Dias', 'Status', ''].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -130,14 +149,14 @@ export function PrazosPage() {
                     return (
                       <motion.tr
                         key={p.id}
-                        className={`border-b border-gray-50 transition-colors group ${urgente ? 'bg-red-50/40 hover:bg-red-50/60' : 'hover:bg-indigo-50/30'}`}
+                        className={`border-b border-gray-200 dark:border-slate-700 transition-colors group ${urgente ? 'bg-red-50/40 dark:bg-red-950/20 hover:bg-red-50/60 dark:hover:bg-red-950/30' : 'hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20'}`}
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.04 }}
                       >
-                        <td className="px-4 py-3.5 font-semibold text-gray-800">{p.titulo}</td>
-                        <td className="px-4 py-3.5 text-gray-500 max-w-xs truncate">{p.descricao}</td>
-                        <td className="px-4 py-3.5 text-gray-500">{new Date(p.dataVencimento).toLocaleDateString('pt-BR')}</td>
+                        <td className="px-4 py-3.5 font-semibold text-gray-800 dark:text-white">{p.titulo}</td>
+                        <td className="px-4 py-3.5 text-gray-500 dark:text-slate-400 max-w-xs truncate">{p.descricao}</td>
+                        <td className="px-4 py-3.5 text-gray-500 dark:text-slate-400">{new Date(p.dataVencimento).toLocaleDateString('pt-BR')}</td>
                         <td className="px-4 py-3.5">
                           <span className={`text-xs font-bold ${dias < 0 ? 'text-red-600' : dias <= 3 ? 'text-amber-600' : 'text-gray-500'}`}>
                             {dias < 0 ? `${Math.abs(dias)}d atrás` : dias === 0 ? 'Hoje' : `${dias}d`}
@@ -147,8 +166,8 @@ export function PrazosPage() {
                         <td className="px-4 py-3.5">
                           {!isCliente && (
                             <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
-                              <button onClick={() => remove.mutate(p.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                              <button onClick={() => openEdit(p)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors"><Pencil size={14} /></button>
+                              <button onClick={() => remove.mutate(p.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><Trash2 size={14} /></button>
                             </div>
                           )}
                         </td>

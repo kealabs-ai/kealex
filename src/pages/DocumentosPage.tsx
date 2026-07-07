@@ -88,7 +88,7 @@ export function DocumentosPage() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-white dark:bg-slate-950">
       <TopBar
         icon={FileText}
         title="Documentos"
@@ -101,17 +101,17 @@ export function DocumentosPage() {
         </div>
 
         <DataCard delay={0.2}>
-          <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+          <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-slate-700">
             <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar documento..." className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition-all" />
+              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
+              <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar documento..." className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950 transition-all" />
             </div>
           </div>
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-100">
+              <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
                 {['Nome', 'Tipo', 'Tamanho', 'Status', ''].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-600 dark:text-slate-400 uppercase tracking-wide">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -125,7 +125,7 @@ export function DocumentosPage() {
                   {displayDocumentos.map((d, i) => (
                     <motion.tr
                       key={d.id}
-                      className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors group"
+                      className="border-b border-gray-200 dark:border-slate-700 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-colors group"
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
@@ -133,20 +133,20 @@ export function DocumentosPage() {
                       <td className="px-4 py-3.5">
                         <div className="flex items-center gap-2">
                           <span className="text-base">{tipoIcon[d.tipo] ?? '📁'}</span>
-                          <span className="font-semibold text-gray-800">{d.nome}</span>
+                          <span className="font-semibold text-gray-800 dark:text-white">{d.nome}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3.5 text-gray-500 capitalize">{d.tipo}</td>
-                      <td className="px-4 py-3.5 text-gray-500 font-mono text-xs">{fmtBytes(d.tamanhoBytes)}</td>
+                      <td className="px-4 py-3.5 text-gray-500 dark:text-slate-400 capitalize">{d.tipo}</td>
+                      <td className="px-4 py-3.5 text-gray-500 dark:text-slate-400 font-mono text-xs">{fmtBytes(d.tamanhoBytes)}</td>
                       <td className="px-4 py-3.5">{statusDocumentoBadge(d.status)}</td>
                       <td className="px-4 py-3.5">
                         <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <a href={d.urlArquivo} download className="p-1.5 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors" title="Download"><Download size={14} /></a>
-                          <a href={d.urlArquivo} target="_blank" rel="noreferrer" className="p-1.5 text-gray-400 hover:text-cyan-600 hover:bg-cyan-50 rounded-lg transition-colors" title="Abrir"><ExternalLink size={14} /></a>
+                          <a href={d.urlArquivo} download className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition-colors" title="Download"><Download size={14} /></a>
+                          <a href={d.urlArquivo} target="_blank" rel="noreferrer" className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 rounded-lg transition-colors" title="Abrir"><ExternalLink size={14} /></a>
                           {!isCliente && (
                             <>
-                              <button onClick={() => openEdit(d)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" title="Editar"><Pencil size={14} /></button>
-                              <button onClick={() => remove.mutate(d.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                              <button onClick={() => openEdit(d)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors" title="Editar"><Pencil size={14} /></button>
+                              <button onClick={() => remove.mutate(d.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors" title="Excluir"><Trash2 size={14} /></button>
                             </>
                           )}
                         </div>
