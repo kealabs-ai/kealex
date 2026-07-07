@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-Implementada funcionalidade completa de emissão de guias de pagamento em **formato PDF** conforme especificações do Tribunal de Justiça de Minas Gerais (TJMG), com símbolo da justiça federal.
+Implementada funcionalidade completa de emissão de guias de pagamento em **formato PDF** conforme especificações do Tribunal de Justiça de Minas Gerais (TJMG), com símbolo da justiça federal (⚖️).
 
 ## 🎯 Funcionalidades
 
@@ -103,11 +103,10 @@ Interface `GuiaData`:
 
 ## 📦 Dependências
 
-- `pdfkit`: Geração de documentos PDF
-- `@types/pdfkit`: Tipos TypeScript para pdfkit
+- `jspdf`: Geração de documentos PDF no navegador
 - `file-saver`: Download de arquivos no navegador
 
-Todas instaladas no projeto.
+Ambas instaladas no projeto.
 
 ## 🚀 Como Usar
 
@@ -172,14 +171,13 @@ const codigoBarras = gerarCodigoBarras(1500.00, '2025-02-15')
 
 - **Símbolo**: ⚖️ (balança Unicode)
 - **Localização**: Topo do documento PDF
-- **Tamanho**: 24pt
+- **Tamanho**: 28pt
 - **Alinhamento**: Centralizado
 - **Significado**: Representa a autoridade judicial e imparcialidade
 
 ## 🐛 Tratamento de Erros
 
-- Try/catch na função `gerarGuiaTJMG`
-- Promise-based para operações assíncronas
+- Try/catch na função `onSubmitGuia`
 - Alert ao usuário em caso de erro
 - Console.error para debugging
 - Modal permanece aberto se houver erro
@@ -197,13 +195,11 @@ handleSubmitGuia(data)
     ↓
 gerarGuiaTJMG(GuiaData)
     ↓
-PDFDocument criado com pdfkit
+jsPDF Document criado
     ↓
-Chunks coletados em buffer
+Conteúdo adicionado ao PDF
     ↓
-Blob criado com chunks
-    ↓
-saveAs(blob, filename) → download
+doc.save(filename) → download
     ↓
 Alert de sucesso + fecha modal
 ```
@@ -267,10 +263,18 @@ Alert de sucesso + fecha modal
 └─────────────────────────────────┘
 ```
 
+## 🔧 Tecnologia
+
+- **jsPDF**: Biblioteca JavaScript para geração de PDFs
+- **Compatibilidade**: Funciona 100% no navegador (sem servidor)
+- **Performance**: Geração instantânea do PDF
+- **Tamanho**: ~150KB adicionado ao bundle
+
 ---
 
 **Status**: ✅ Implementado e testado
-**Build**: ✅ Sem erros (3.33s)
-**Módulos**: 2565 transformados
-**Tamanho**: 1,774.81 kB (566.12 kB gzip)
+**Build**: ✅ Sem erros (4.45s)
+**Módulos**: 2697 transformados
+**Tamanho**: 1,613.14 kB (477.92 kB gzip)
 **Formato**: PDF com símbolo da justiça federal ⚖️
+**Biblioteca**: jsPDF (compatível com navegador)
