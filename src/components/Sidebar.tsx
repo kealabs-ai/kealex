@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import {
   Briefcase, Bell, Calendar, Gavel, DollarSign, FileText,
   Users, Sparkles, Settings, Cloud, Database, Bot, Shield,
-  Scale, Sun, Moon, ChevronRight,
+  Scale, Sun, Moon, ChevronRight, TrendingUp,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -14,6 +14,7 @@ const advogadoLinks: Array<{ to: string; label: string; icon: any; badge?: strin
   { to: '/prazos', label: 'Calendário de Prazos', icon: Calendar },
   { to: '/audiencias', label: 'Audiências', icon: Gavel, badge: 'Novo' },
   { to: '/financeiro', label: 'Gestão Financeira', icon: DollarSign },
+  { to: '/cobranca', label: 'Gestão de Cobrança', icon: TrendingUp, badge: 'Novo' },
   { to: '/documentos', label: 'Modelos e Peças', icon: FileText },
   { to: '/clientes', label: 'Clientes & CRM', icon: Users },
 ]
