@@ -11,6 +11,7 @@ import { statusProcessoBadge } from '../components/Badge'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { TopBar } from '../components/TopBar'
 import { useAuth } from '../context/AuthContext'
+import { gerarGuiaTJMG } from '../utils/guiaGenerator'
 import type { Processo, StatusProcesso } from '../types'
 
 type FormData = {
@@ -54,17 +55,27 @@ export function ProcessosPage() {
   }
   const closeGuia = () => setGuiaOpen(false)
 
-  const onSubmitGuia = (data: any) => {
-    const guia = {
-      processo: selectedProcesso?.numero,
-      tipo: data.tipo,
-      valor: parseFloat(data.valor),
-      vencimento: data.vencimento,
-      descricao: data.descricao,
-      codigoBarras: '23793.38128 60000.123456 78901.234567 8 12340000012345'
+  const onSubmitGuia = async (data: any) => {
+    if (!selectedProcesso) return
+    
+    try {
+      await gerarGuiaTJMG({
+        numeroProcesso: selectedProcesso.numero,
+        titulo: selectedProcesso.titulo,
+        vara: selectedProcesso.vara,
+        tribunal: selectedProcesso.tribunal,
+        clienteNome: selectedProcesso.clienteNome || 'Cliente',
+        tipo: data.tipo,
+        valor: parseFloat(data.valor),
+        vencimento: data.vencimento,
+        descricao: data.descricao
+      })
+      alert('Guia gerada e baixada com sucesso!')
+      closeGuia()
+    } catch (error) {
+      console.error('Erro ao gerar guia:', error)
+      alert('Erro ao gerar guia. Tente novamente.')
     }
-    alert(`Guia gerada com sucesso!\n\nProcesso: ${guia.processo}\nTipo: ${guia.tipo}\nValor: R$ ${guia.valor.toFixed(2)}\nVencimento: ${new Date(guia.vencimento).toLocaleDateString('pt-BR')}\n\nCódigo de Barras:\n${guia.codigoBarras}\n\nEm produção, um PDF seria gerado e baixado automaticamente.`)
-    closeGuia()
   }
 
   const onSubmit = (data: FormData) => {
