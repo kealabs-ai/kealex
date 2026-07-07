@@ -40,7 +40,7 @@ export function Calendar({ prazos, onDateSelect }: CalendarProps) {
   const prevMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1))
   const nextMonth = () => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1))
 
-  const days = Array.from({ length: firstDay }, () => null)
+  const days: (number | null)[] = Array.from({ length: firstDay }, () => null)
   for (let i = 1; i <= daysInMonth; i++) days.push(i)
 
   const isToday = (day: number | null) => {
@@ -88,7 +88,7 @@ export function Calendar({ prazos, onDateSelect }: CalendarProps) {
 
       <div className="grid grid-cols-7 gap-2">
         {days.map((day, idx) => {
-          const dayPrazos = day ? getPrazosForDate(day) : []
+          const dayPrazos = day !== null ? getPrazosForDate(day) : []
           const today = isToday(day)
 
           return (
@@ -101,10 +101,10 @@ export function Calendar({ prazos, onDateSelect }: CalendarProps) {
                     ? 'border-indigo-400 dark:border-indigo-600 bg-indigo-50 dark:bg-indigo-950/20'
                     : 'border-gray-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 bg-white dark:bg-slate-800/50'
               }`}
-              onClick={() => day && onDateSelect?.(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
-              whileHover={day ? { scale: 1.02 } : {}}
+              onClick={() => day !== null && onDateSelect?.(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}
+              whileHover={day !== null ? { scale: 1.02 } : {}}
             >
-              {day && (
+              {day !== null && (
                 <>
                   <div className={`text-sm font-semibold mb-1 ${today ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-700 dark:text-gray-300'}`}>
                     {day}
