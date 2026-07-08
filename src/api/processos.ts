@@ -16,7 +16,7 @@ export const processosApi = {
     api.post<Processo>('/k1/lex/processos/update', { id, ...data }).then((r) => r.data),
   remove: (id: string) => api.post('/k1/lex/processos/delete', { id }).then((r) => r.data),
   avancarFase: (id: string, novaFase: number) => {
-    console.log('avancarFase API call:', { id, novaFase })
-    return api.post<Processo>('/k1/lex/processos/avancar-fase', { id, novaFase }).then((r) => r.data)
+    console.log('avancarFase API call:', { processoId: id, novaFase })
+    return api.post<Processo>('/k1/lex/processos/avancar-fase', { processoId: id, novaFase }).then((r) => r.data)
   },
 }
