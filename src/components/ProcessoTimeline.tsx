@@ -21,9 +21,11 @@ interface ProcessoTimelineProps {
 }
 
 export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly }: ProcessoTimelineProps) {
-  const items = fases ?? DEFAULT_FASES.map((f, i) => ({
+  const items = (fases ?? DEFAULT_FASES.map((f, i) => ({
     ...f,
     id: String(i),
+  } as FaseProcesso))).map((f, i) => ({
+    ...f,
     status: i < faseAtual ? 'concluida' : i === faseAtual ? 'ativa' : 'futura',
   } as FaseProcesso))
 
