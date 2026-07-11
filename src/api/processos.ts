@@ -31,6 +31,7 @@ export const processosApi = {
         status: error.response?.status,
         data: error.response?.data,
         message: error.message,
+        errorDetail: error.response?.data?.detail || 'Sem detalhes',
       })
       throw error
     }
