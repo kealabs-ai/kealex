@@ -18,6 +18,7 @@ type FormData = {
   numero: string; titulo: string; descricao: string
   clienteId: string; vara: string; tribunal: string
   status?: StatusProcesso
+  fases?: string[]
 }
 
 export function ProcessosPage() {
@@ -35,12 +36,14 @@ export function ProcessosPage() {
   const [selectedProcesso, setSelectedProcesso] = useState<Processo | null>(null)
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [customFases, setCustomFases] = useState<string[]>([])
+  const [novaFase, setNovaFase] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
   const { register: registerGuia, handleSubmit: handleSubmitGuia, reset: resetGuia } = useForm<{
     tipo: string; valor: string; vencimento: string; descricao: string
   }>()
 
-  const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
+  const openCreate = () => { reset({}); setEditing(null); setCustomFases([]); setNovaFase(''); setOpen(true) }
   const openEdit = (p: Processo) => { reset(p); setEditing(p); setOpen(true) }
   const close = () => setOpen(false)
 
@@ -80,8 +83,9 @@ export function ProcessosPage() {
   }
 
   const onSubmit = (data: FormData) => {
-    if (editing) update.mutate({ id: editing.id, data }, { onSuccess: close })
-    else create.mutate(data as any, { onSuccess: close })
+    const payload = { ...data, fases: customFases.length > 0 ? customFases : undefined }
+    if (editing) update.mutate({ id: editing.id, data: payload }, { onSuccess: close })
+    else create.mutate(payload as any, { onSuccess: close })
   }
 
   const displayProcessos = processos?.filter((p) =>
@@ -253,6 +257,55 @@ export function ProcessosPage() {
                 {['ativo', 'arquivado', 'encerrado'].map((s) => <option key={s} value={s}>{s}</option>)}
               </Select>
             )}
+            
+            <div className="border-t border-slate-100 dark:border-indigo-950/40 pt-4">
+              <p className="text-sm font-semibold text-slate-800 dark:text-slate-100 mb-3">Fases do Processo</p>
+              <div className="space-y-2 mb-3">
+                {customFases.length === 0 ? (
+                  <p className="text-xs text-slate-500 dark:text-slate-400 italic">Nenhuma fase adicionada. Use as padrões ou crie customizadas.</p>
+                ) : (
+                  customFases.map((fase, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg">
+                      <span className="text-sm text-slate-700 dark:text-slate-300">{idx + 1}. {fase}</span>
+                      <button
+                        type="button"
+                        onClick={() => setCustomFases(customFases.filter((_, i) => i !== idx))}
+                        className="text-xs text-red-600 dark:text-red-400 hover:text-red-700 font-semibold"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={novaFase}
+                  onChange={(e) => setNovaFase(e.target.value)}
+                  placeholder="Ex: Distribuição, Citação..."
+                  className="flex-1 px-3 py-2 text-sm bg-transparent border border-slate-200 dark:border-indigo-950/60 rounded-lg focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && novaFase.trim()) {
+                      setCustomFases([...customFases, novaFase.trim()])
+                      setNovaFase('')
+                    }
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (novaFase.trim()) {
+                      setCustomFases([...customFases, novaFase.trim()])
+                      setNovaFase('')
+                    }
+                  }}
+                  className="px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-semibold rounded-lg transition-all"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </div>
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-indigo-950/40">
               <Button variant="secondary" type="button" onClick={close}>Cancelar</Button>
               <Button type="submit" loading={create.isPending || update.isPending}>Salvar</Button>
