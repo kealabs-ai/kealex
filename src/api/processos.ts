@@ -19,8 +19,8 @@ export const processosApi = {
     return api.post<Processo>('/k1/lex/processos/update', { id, ...data }).then((r) => r.data)
   },
   remove: (id: string) => api.post('/k1/lex/processos/delete', { id }).then((r) => r.data),
-  avancarFase: async (id: string, novaFase: number) => {
-    const payload = { processoId: id, faseAtual: novaFase }
+  avancarFase: async (id: string) => {
+    const payload = { processoId: id }
     console.log('avancarFase API call:', payload)
     try {
       const response = await api.post<Processo>('/k1/lex/processos/avancar-fase', payload)

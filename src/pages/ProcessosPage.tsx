@@ -169,8 +169,8 @@ export function ProcessosPage() {
                                     fases={p.fases}
                                     faseAtual={p.faseAtual}
                                     readonly={isCliente}
-                                    onAvancar={(novaFase) => {
-                                      avancarFase.mutate({ id: p.id, novaFase })
+                                    onAvancar={() => {
+                                      avancarFase.mutate({ id: p.id })
                                     }}
                                   />
                                 </div>

@@ -49,9 +49,9 @@ export function useDeleteProcesso() {
 export function useAvancarFase() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, novaFase }: { id: string; novaFase: number }) => {
-      console.log('useAvancarFase: Calling API with', { id, novaFase })
-      return processosApi.avancarFase(id, novaFase)
+    mutationFn: ({ id }: { id: string }) => {
+      console.log('useAvancarFase: Calling API with', { id })
+      return processosApi.avancarFase(id)
     },
     onSuccess: (data) => {
       console.log('useAvancarFase: Success', data)
