@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { Check, ChevronRight } from 'lucide-react'
-import type { FaseProcesso } from '../types'
+import type { FaseProcesso, FaseProcessoStatus } from '../types'
 
 const DEFAULT_FASES: Omit<FaseProcesso, 'id'>[] = [
   { label: 'Distribuição', status: 'futura' },
@@ -21,13 +21,24 @@ interface ProcessoTimelineProps {
 }
 
 export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly }: ProcessoTimelineProps) {
-  const items = (fases ?? DEFAULT_FASES.map((f, i) => ({
+  // Se fases foi fornecido e tem items, usa ele; senão usa DEFAULT_FASES
+  const baseFases = fases && fases.length > 0 ? fases : DEFAULT_FASES.map((f, i) => ({
     ...f,
     id: String(i),
-  } as FaseProcesso))).map((f, i) => ({
-    ...f,
-    status: i < faseAtual ? 'concluida' : i === faseAtual ? 'ativa' : 'futura',
   } as FaseProcesso))
+  
+  const items = baseFases.map((f, i) => {
+    let status: FaseProcessoStatus
+    if (i < faseAtual) status = 'concluida'
+    else if (i === faseAtual) status = 'ativa'
+    else status = 'futura'
+    
+    return {
+      ...f,
+      id: f.id || String(i),
+      status,
+    }
+  })
 
   const podeAvancar = !readonly && faseAtual < items.length - 1
 
