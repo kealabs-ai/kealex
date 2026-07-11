@@ -15,8 +15,20 @@ export const processosApi = {
   update: (id: string, data: any) =>
     api.post<Processo>('/k1/lex/processos/update', { id, ...data }).then((r) => r.data),
   remove: (id: string) => api.post('/k1/lex/processos/delete', { id }).then((r) => r.data),
-  avancarFase: (id: string, novaFase: number) => {
-    console.log('avancarFase API call:', { processoId: id, novaFase })
-    return api.post<Processo>('/k1/lex/processos/avancar-fase', { processoId: id, novaFase }).then((r) => r.data)
+  avancarFase: async (id: string, novaFase: number) => {
+    const payload = { processoId: id, faseAtual: novaFase }
+    console.log('avancarFase API call:', payload)
+    try {
+      const response = await api.post<Processo>('/k1/lex/processos/avancar-fase', payload)
+      console.log('avancarFase response:', response.data)
+      return response.data
+    } catch (error: any) {
+      console.error('avancarFase error details:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message,
+      })
+      throw error
+    }
   },
 }
