@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { Check, ChevronRight } from 'lucide-react'
+import { Check, ChevronRight, Loader } from 'lucide-react'
 import type { FaseProcesso, FaseProcessoStatus } from '../types'
 
 const DEFAULT_FASES: Omit<FaseProcesso, 'id'>[] = [
@@ -18,9 +18,10 @@ interface ProcessoTimelineProps {
   faseAtual?: number
   onAvancar?: (novaFase: number) => void
   readonly?: boolean
+  isLoading?: boolean
 }
 
-export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly }: ProcessoTimelineProps) {
+export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, isLoading }: ProcessoTimelineProps) {
   // Se fases foi fornecido e tem items, usa ele; senão usa DEFAULT_FASES
   const baseFases = fases && fases.length > 0 ? fases : DEFAULT_FASES.map((f, i) => ({
     ...f,
@@ -40,7 +41,7 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly }: 
     }
   })
 
-  const podeAvancar = !readonly && faseAtual < items.length - 1
+  const podeAvancar = !readonly && !isLoading && faseAtual < items.length - 1
 
   return (
     <div className="space-y-3">
@@ -58,24 +59,32 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly }: 
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
             onClick={() => onAvancar?.(faseAtual + 1)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-xl shadow-md shadow-indigo-600/30 transition-all duration-300"
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 text-white text-xs font-semibold rounded-xl shadow-md shadow-indigo-600/30 transition-all duration-300 disabled:cursor-not-allowed"
           >
             Avançar Fase <ChevronRight size={13} />
           </motion.button>
         )}
+        {isLoading && (
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 text-xs font-semibold rounded-xl">
+            <Loader size={13} className="animate-spin" />
+            Atualizando...
+          </div>
+        )}
       </div>
 
       {/* Timeline horizontal scrollable */}
-      <div className="flex items-center gap-0 overflow-x-auto pb-2">
+      <div className={`flex items-center gap-0 overflow-x-auto pb-2 transition-opacity duration-300 ${isLoading ? 'opacity-60' : 'opacity-100'}`}>
         {items.map((fase, i) => (
           <div key={fase.id} className="flex items-center shrink-0">
             {/* Node */}
             <div className="flex flex-col items-center gap-1.5">
               <div className="relative flex items-center justify-center">
-                {fase.status === 'ativa' && (
+                {fase.status === 'ativa' && !isLoading && (
                   <span className="absolute w-7 h-7 rounded-full bg-indigo-500 opacity-30 animate-ping" />
                 )}
                 <motion.div
+                  key={`${fase.id}-${faseAtual}`}
                   initial={{ scale: 0.7, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: i * 0.06 }}
@@ -111,8 +120,12 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly }: 
 
             {/* Connector */}
             {i < items.length - 1 && (
-              <div
-                className={`h-0.5 w-8 mx-1 mb-5 rounded-full transition-all duration-500 ${
+              <motion.div
+                key={`connector-${i}`}
+                initial={{ scaleX: 0 }}
+                animate={{ scaleX: 1 }}
+                transition={{ duration: 0.5 }}
+                className={`h-0.5 w-8 mx-1 mb-5 rounded-full transition-all duration-500 origin-left ${
                   i < faseAtual ? 'bg-emerald-500' : 'bg-slate-700 dark:bg-slate-800'
                 }`}
               />
