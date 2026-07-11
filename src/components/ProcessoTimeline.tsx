@@ -29,10 +29,14 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, is
   } as FaseProcesso))
   
   const items = baseFases.map((f, i) => {
-    let status: FaseProcessoStatus
-    if (i < faseAtual) status = 'concluida'
-    else if (i === faseAtual) status = 'ativa'
-    else status = 'futura'
+    // Usar status do backend se disponível, senão calcular baseado em faseAtual
+    let status: FaseProcessoStatus = f.status as FaseProcessoStatus
+    
+    if (!f.status || f.status === 'futura') {
+      if (i < faseAtual) status = 'concluida'
+      else if (i === faseAtual) status = 'ativa'
+      else status = 'futura'
+    }
     
     return {
       ...f,
@@ -41,7 +45,11 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, is
     }
   })
 
-  const podeAvancar = !readonly && !isLoading && faseAtual < items.length - 1
+  // Encontrar índice da fase ativa
+  const faseAtivaIndex = items.findIndex(f => f.status === 'ativa')
+  const displayFaseAtual = faseAtivaIndex >= 0 ? faseAtivaIndex : faseAtual
+
+  const podeAvancar = !readonly && !isLoading && displayFaseAtual < items.length - 1
 
   return (
     <div className="space-y-3">
@@ -51,14 +59,14 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, is
             Esteira Processual
           </p>
           <p className="text-sm font-bold text-slate-800 dark:text-slate-100 mt-0.5">
-            Fase {faseAtual + 1} de {items.length}
+            Fase {displayFaseAtual + 1} de {items.length}: <span className="text-indigo-600 dark:text-indigo-400">{items[displayFaseAtual]?.label}</span>
           </p>
         </div>
         {podeAvancar && (
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.97 }}
-            onClick={() => onAvancar?.(faseAtual + 1)}
+            onClick={() => onAvancar?.(displayFaseAtual + 1)}
             disabled={isLoading}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-400 text-white text-xs font-semibold rounded-xl shadow-md shadow-indigo-600/30 transition-all duration-300 disabled:cursor-not-allowed"
           >
@@ -126,7 +134,7 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, is
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 0.5 }}
                 className={`h-0.5 w-8 mx-1 mb-5 rounded-full transition-all duration-500 origin-left ${
-                  i < faseAtual ? 'bg-emerald-500' : 'bg-slate-700 dark:bg-slate-800'
+                  i < displayFaseAtual ? 'bg-emerald-500' : 'bg-slate-700 dark:bg-slate-800'
                 }`}
               />
             )}
