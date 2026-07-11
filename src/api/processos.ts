@@ -10,10 +10,14 @@ export const processosApi = {
     return response.data
   },
   get: (id: string) => api.post<Processo>('/k1/lex/processos/get', { id }).then((r) => r.data),
-  create: (data: any) =>
-    api.post<Processo>('/k1/lex/processos', data).then((r) => r.data),
-  update: (id: string, data: any) =>
-    api.post<Processo>('/k1/lex/processos/update', { id, ...data }).then((r) => r.data),
+  create: (data: any) => {
+    console.log('processosApi.create: Payload being sent:', JSON.stringify(data, null, 2))
+    return api.post<Processo>('/k1/lex/processos', data).then((r) => r.data)
+  },
+  update: (id: string, data: any) => {
+    console.log('processosApi.update: Payload being sent:', { id, ...data })
+    return api.post<Processo>('/k1/lex/processos/update', { id, ...data }).then((r) => r.data)
+  },
   remove: (id: string) => api.post('/k1/lex/processos/delete', { id }).then((r) => r.data),
   avancarFase: async (id: string, novaFase: number) => {
     const payload = { processoId: id, faseAtual: novaFase }
