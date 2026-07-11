@@ -18,7 +18,6 @@ type FormData = {
   numero: string; titulo: string; descricao: string
   clienteId: string; vara: string; tribunal: string
   status?: StatusProcesso
-  fases?: string[]
 }
 
 export function ProcessosPage() {
@@ -44,7 +43,7 @@ export function ProcessosPage() {
   }>()
 
   const openCreate = () => { reset({}); setEditing(null); setCustomFases([]); setNovaFase(''); setOpen(true) }
-  const openEdit = (p: Processo) => { reset(p); setEditing(p); setOpen(true) }
+  const openEdit = (p: Processo) => { reset({ numero: p.numero, titulo: p.titulo, descricao: p.descricao, clienteId: p.clienteId, vara: p.vara, tribunal: p.tribunal, status: p.status }); setEditing(p); setOpen(true) }
   const close = () => setOpen(false)
 
   const openGuia = (p: Processo) => {
@@ -83,8 +82,8 @@ export function ProcessosPage() {
   }
 
   const onSubmit = (data: FormData) => {
-    const payload = { ...data, fases: customFases.length > 0 ? customFases : undefined }
-    if (editing) update.mutate({ id: editing.id, data: payload }, { onSuccess: close })
+    const payload = customFases.length > 0 ? { ...data, fases: customFases } : data
+    if (editing) update.mutate({ id: editing.id, data: payload as any }, { onSuccess: close })
     else create.mutate(payload as any, { onSuccess: close })
   }
 
