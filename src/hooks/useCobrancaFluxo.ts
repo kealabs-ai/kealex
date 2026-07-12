@@ -1,72 +1,52 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { api } from '../api/client'
-import type { CobrancaFase } from '../components/CobrancaFluxo'
+import { cobrancasApi } from '../api/cobrancas'
 
-export interface CobrancaFluxoData {
-  id: string
-  honorarioId: string
-  fase: CobrancaFase
-  dataInicio: string
-  dataUltimaAcao?: string
-  proximaAcao?: string
-  descricao: string
-  valor: number
-  historico: Array<{
-    data: string
-    fase: CobrancaFase
-    observacao?: string
-  }>
+const QK = 'cobrancas'
+
+export function useCobrancas() {
+  return useQuery({ queryKey: [QK], queryFn: cobrancasApi.list })
 }
 
-export function useCobrancaFluxo(honorarioId?: string) {
+export function useCobranca(id?: string) {
   return useQuery({
-    queryKey: ['cobrancaFluxo', honorarioId],
-    queryFn: async () => {
-      if (!honorarioId) return null
-      const { data } = await api.get(`/api/cobranca-fluxo/${honorarioId}`)
-      return data as CobrancaFluxoData
-    },
-    enabled: !!honorarioId,
+    queryKey: [QK, id],
+    queryFn: () => cobrancasApi.get(id!),
+    enabled: !!id,
   })
 }
 
-export function useCobrancaFluxoList() {
+export function useCobrancaTimeline(id?: string) {
   return useQuery({
-    queryKey: ['cobrancaFluxoList'],
-    queryFn: async () => {
-      const { data } = await api.get('/api/cobranca-fluxo')
-      return data as CobrancaFluxoData[]
-    },
+    queryKey: [QK, id, 'timeline'],
+    queryFn: () => cobrancasApi.timeline(id!),
+    enabled: !!id,
   })
 }
 
-export function useUpdateCobrancaFase() {
-  const queryClient = useQueryClient()
+function useCobrancaMutation<T>(mutationFn: (arg: T) => Promise<unknown>) {
+  const qc = useQueryClient()
   return useMutation({
-    mutationFn: async ({ honorarioId, novaFase, observacao }: { honorarioId: string; novaFase: CobrancaFase; observacao?: string }) => {
-      const { data } = await api.patch(`/api/cobranca-fluxo/${honorarioId}`, {
-        fase: novaFase,
-        observacao,
-      })
-      return data
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cobrancaFluxo'] })
-      queryClient.invalidateQueries({ queryKey: ['cobrancaFluxoList'] })
-      queryClient.invalidateQueries({ queryKey: ['honorarios'] })
-    },
+    mutationFn,
+    onSuccess: () => qc.invalidateQueries({ queryKey: [QK] }),
   })
 }
 
-export function useCreateCobrancaFluxo() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (data: { honorarioId: string; descricao: string; valor: number }) => {
-      const { data: response } = await api.post('/api/cobranca-fluxo', data)
-      return response
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['cobrancaFluxoList'] })
-    },
-  })
+export function useCreateCobranca() {
+  return useCobrancaMutation(cobrancasApi.create)
+}
+
+export function useProximaFase() {
+  return useCobrancaMutation((id: string) => cobrancasApi.proximaFase(id))
+}
+
+export function useMarcarPago() {
+  return useCobrancaMutation(({ id, observacao }: { id: string; observacao?: string }) =>
+    cobrancasApi.marcarPago(id, observacao),
+  )
+}
+
+export function useCancelarCobranca() {
+  return useCobrancaMutation(({ id, motivo }: { id: string; motivo?: string }) =>
+    cobrancasApi.cancelar(id, motivo),
+  )
 }

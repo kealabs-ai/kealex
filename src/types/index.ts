@@ -111,6 +111,21 @@ export interface Usuario extends BaseEntity {
   ativo: boolean
 }
 
+export type StatusCobranca = 'pendente' | 'pago' | 'cancelado'
+
+export interface Cobranca extends BaseEntity {
+  tenantId: string
+  processoId: string
+  clienteId: string
+  valorCentavos: number
+  status: StatusCobranca
+  faseAtual: number
+  faseLabel: string
+  dataVencimento: string | null
+  dataPagamento: string | null
+  motivoCancelamento: string | null
+}
+
 export interface DashboardFinanceiro {
   totalPendente: number
   totalPago: number
