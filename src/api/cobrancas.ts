@@ -2,18 +2,18 @@ import { api } from './client'
 import type { Cobranca } from '../types'
 
 export const cobrancasApi = {
-  list: () => api.get<Cobranca[]>('/v1/lex/cobrancas').then((r) => r.data),
-  get: (id: string) => api.post<Cobranca>('/v1/lex/cobrancas/get', { id }).then((r) => r.data),
+  list: () => api.get<Cobranca[]>('/k1/lex/cobrancas').then((r) => r.data),
+  get: (id: string) => api.post<Cobranca>('/k1/lex/cobrancas/get', { id }).then((r) => r.data),
   create: (data: { processoId: string; clienteId: string; valorCentavos: number; dataVencimento?: string }) =>
-    api.post<Cobranca>('/v1/lex/cobrancas', data).then((r) => r.data),
+    api.post<Cobranca>('/k1/lex/cobrancas', data).then((r) => r.data),
   proximaFase: (id: string) =>
-    api.post<Cobranca>('/v1/lex/cobrancas/proxima-fase', { id }).then((r) => r.data),
+    api.post<Cobranca>('/k1/lex/cobrancas/proxima-fase', { id }).then((r) => r.data),
   marcarPago: (id: string, observacao?: string) =>
-    api.post<Cobranca>('/v1/lex/cobrancas/marcar-pago', { id, observacao }).then((r) => r.data),
+    api.post<Cobranca>('/k1/lex/cobrancas/marcar-pago', { id, observacao }).then((r) => r.data),
   cancelar: (id: string, motivo?: string) =>
-    api.post<Cobranca>('/v1/lex/cobrancas/cancelar', { id, motivo }).then((r) => r.data),
+    api.post<Cobranca>('/k1/lex/cobrancas/cancelar', { id, motivo }).then((r) => r.data),
   timeline: (id: string) =>
-    api.post<CobrancaTimeline>('/v1/lex/cobrancas/timeline', { id }).then((r) => r.data),
+    api.post<CobrancaTimeline>('/k1/lex/cobrancas/timeline', { id }).then((r) => r.data),
 }
 
 export interface CobrancaTimeline {
