@@ -342,8 +342,8 @@ export function IAPage() {
                       <div className={`group relative max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                         <div className={`rounded-2xl px-4 py-3 ${
                           msg.role === 'user'
-                            ? 'bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-tr-sm shadow-lg shadow-indigo-200/70 dark:shadow-indigo-950/35'
-                            : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-tl-sm'
+                            ? 'bg-[#6320EE] text-white rounded-tr-sm shadow-lg shadow-violet-900/40'
+                            : 'bg-[#131926] border border-slate-700/60 shadow-sm rounded-tl-sm'
                         }`}>
                           {msg.role === 'user' ? (
                             <p className="text-sm leading-relaxed">{msg.content}</p>
