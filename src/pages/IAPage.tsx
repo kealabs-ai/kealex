@@ -132,7 +132,7 @@ export function IAPage() {
   const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-transparent">
+    <div className="flex flex-col h-screen bg-[radial-gradient(circle_at_top_left,_rgba(56,189,248,0.16),_transparent_35%),radial-gradient(circle_at_top_right,_rgba(129,140,248,0.16),_transparent_35%),linear-gradient(135deg,_#f8fbff_0%,_#f4f7ff_50%,_#f9f7ff_100%)] dark:bg-transparent">
       <TopBar
         icon={Sparkles}
         title="Kealex AI Hub"
@@ -222,7 +222,7 @@ export function IAPage() {
               >
                 {/* welcome */}
                 <div className="text-center mb-8">
-                  <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-indigo-200">
+                  <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-sky-500 via-indigo-500 to-violet-600 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-sky-200 dark:shadow-sky-950/40">
                     <Sparkles size={28} className="text-white" />
                   </div>
                   <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Olá, {user?.nome?.split(' ')[0]}!</h2>
@@ -278,7 +278,7 @@ export function IAPage() {
                       <button
                         key={a}
                         onClick={() => { setInput(a + ' '); textareaRef.current?.focus() }}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-600 dark:text-slate-400 hover:border-indigo-300 dark:hover:border-indigo-500/30 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all"
+                        className="flex items-center gap-1 px-3 py-1.5 bg-white/90 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 rounded-xl text-xs text-slate-600 dark:text-slate-400 hover:border-sky-300 dark:hover:border-sky-500/30 hover:text-sky-700 dark:hover:text-sky-300 hover:bg-sky-50/80 dark:hover:bg-sky-950/20 transition-all"
                       >
                         {a} <ChevronRight size={11} />
                       </button>
@@ -302,7 +302,7 @@ export function IAPage() {
                         disabled={!hasConfig}
                         className={`flex items-start gap-3 p-3.5 border rounded-2xl text-left transition-all group ${
                           hasConfig
-                            ? 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 hover:border-indigo-200 dark:hover:border-indigo-500/30 hover:shadow-sm hover:shadow-indigo-50 dark:hover:shadow-indigo-950/50'
+                            ? 'bg-white/90 dark:bg-slate-800/90 border-slate-200/70 dark:border-slate-700/70 hover:border-sky-200 dark:hover:border-sky-500/30 hover:shadow-sm hover:shadow-sky-100 dark:hover:shadow-sky-950/40'
                             : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 opacity-50 cursor-not-allowed'
                         }`}
                       >
@@ -329,7 +329,7 @@ export function IAPage() {
                     >
                       {/* avatar */}
                       {msg.role === 'assistant' ? (
-                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shrink-0 shadow-md shadow-indigo-200 mt-1">
+                        <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 via-indigo-500 to-violet-600 flex items-center justify-center shrink-0 shadow-md shadow-sky-200 dark:shadow-sky-950/40 mt-1">
                           <Bot size={15} className="text-white" />
                         </div>
                       ) : (
@@ -342,8 +342,8 @@ export function IAPage() {
                       <div className={`group relative max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                         <div className={`rounded-2xl px-4 py-3 ${
                           msg.role === 'user'
-                            ? 'bg-gradient-to-br from-indigo-600 to-indigo-500 text-white rounded-tr-sm'
-                            : 'bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 shadow-sm rounded-tl-sm'
+                            ? 'bg-gradient-to-br from-sky-600 via-indigo-600 to-violet-600 text-white rounded-tr-sm shadow-lg shadow-sky-200/70 dark:shadow-sky-950/35'
+                            : 'bg-white/90 dark:bg-slate-800/90 border border-slate-200/80 dark:border-slate-700/80 shadow-sm rounded-tl-sm backdrop-blur-sm'
                         }`}>
                           {msg.role === 'user' ? (
                             <p className="text-sm leading-relaxed">{msg.content}</p>
@@ -402,9 +402,9 @@ export function IAPage() {
           </div>
 
           {/* input area */}
-          <div className="shrink-0 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-indigo-950/40 p-4">
+          <div className="shrink-0 bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/80 dark:border-indigo-950/40 p-4 backdrop-blur">
             <div className="max-w-3xl mx-auto">
-              <div className="relative flex items-end gap-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-50 dark:focus-within:ring-indigo-950/50 transition-all">
+              <div className="relative flex items-end gap-3 bg-gradient-to-r from-slate-50 via-sky-50/60 to-violet-50/60 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 border border-slate-200/80 dark:border-slate-700 rounded-2xl px-4 py-3 focus-within:border-sky-400 focus-within:ring-2 focus-within:ring-sky-100 dark:focus-within:ring-sky-950/50 transition-all shadow-sm">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -419,7 +419,7 @@ export function IAPage() {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleSend()}
                   disabled={!input.trim() || streaming || !hasConfig}
-                  className="shrink-0 w-9 h-9 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-indigo-500 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-indigo-200 transition-opacity"
+                  className="shrink-0 w-9 h-9 flex items-center justify-center bg-gradient-to-br from-sky-600 via-indigo-600 to-violet-600 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-sky-200/70 dark:shadow-sky-950/35 transition-opacity"
                 >
                   {streaming ? (
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -439,11 +439,11 @@ export function IAPage() {
         </div>
 
         {/* Right: Document Editor */}
-        <div className="hidden lg:flex lg:w-[500px] flex-col bg-slate-50 dark:bg-slate-900/50 border-l border-slate-200 dark:border-indigo-950/40">
+        <div className="hidden lg:flex lg:w-[500px] flex-col bg-gradient-to-b from-slate-50/80 via-sky-50/50 to-violet-50/40 dark:from-slate-900/70 dark:via-slate-900/60 dark:to-slate-950/80 border-l border-slate-200/80 dark:border-indigo-950/40">
           <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center">
             {messages.length === 0 ? (
               <div className="text-center">
-                <div className="w-12 h-12 rounded-2xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-sky-100 to-violet-100 dark:from-sky-950/70 dark:to-violet-950/60 flex items-center justify-center mx-auto mb-3">
                   <Edit3 size={20} className="text-slate-400" />
                 </div>
                 <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Editor de Documentos</p>
@@ -452,7 +452,7 @@ export function IAPage() {
             ) : (
               <div className="w-full max-w-sm">
                 {/* Document preview */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl p-8 min-h-[600px] border border-slate-200 dark:border-slate-700">
+                <div className="bg-white/90 dark:bg-slate-800/90 rounded-2xl shadow-[0_20px_60px_-20px_rgba(79,70,229,0.25)] p-8 min-h-[600px] border border-slate-200/80 dark:border-slate-700/80 backdrop-blur-sm">
                   <div className="prose prose-sm dark:prose-invert max-w-none">
                     {messages
                       .filter((m) => m.role === 'assistant')
@@ -467,13 +467,13 @@ export function IAPage() {
 
                 {/* Document actions */}
                 <div className="flex gap-2 mt-4">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-xl transition-all">
+                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100/90 dark:bg-slate-800/90 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-xl transition-all">
                     <Copy size={12} /> Copiar
                   </button>
                   <button
                     onClick={handleGerarDocx}
                     disabled={generatingDocx || messages.filter((m) => m.role === 'assistant').length === 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-xl transition-all shadow-md shadow-indigo-600/30"
+                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-sky-600 to-violet-600 hover:from-sky-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-xl transition-all shadow-md shadow-sky-600/25"
                   >
                     {generatingDocx ? (
                       <>
