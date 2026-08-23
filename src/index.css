@@ -3,7 +3,7 @@
 @theme {
   --color-primary: #6366f1;
   --color-primary-dark: #4f46e5;
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   --color-space: #070514;
 }
 
@@ -85,6 +85,17 @@
   background: currentColor;
   animation: phase-ping 1.5s cubic-bezier(0,0,0.2,1) infinite;
   opacity: 0.4;
+}
+
+/* ── Cursor pointer global ── */
+a, button, [role="button"], label[for], select, input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"] {
+  cursor: pointer;
+}
+
+/* ── Smooth scroll global ── */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px; /* offset do header fixo */
 }
 
 /* ── Scrollbar ── */

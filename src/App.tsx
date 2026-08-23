@@ -6,6 +6,7 @@ import { ThemeProvider } from './context/ThemeContext'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ProtectedLayout } from './components/ProtectedLayout'
 import { LoginPage } from './pages/LoginPage'
+import { LandingPage } from './pages/site/LandingPage'
 import { ProcessosPage } from './pages/ProcessosPage'
 import { DocumentosPage } from './pages/DocumentosPage'
 import { PrazosPage } from './pages/PrazosPage'
@@ -32,10 +33,12 @@ export default function App() {
           <ThemeProvider>
             <BrowserRouter>
               <Routes>
-                <Route path="/login" element={<LoginPage />} />
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/entrar" element={<LoginPage />} />
+                <Route path="/login" element={<Navigate to="/entrar" replace />} />
                 <Route path="/error" element={<ErrorPage />} />
                 <Route element={<ProtectedLayout />}>
-                  <Route path="/" element={<Navigate to="/processos" replace />} />
+                  <Route path="/app" element={<Navigate to="/processos" replace />} />
                   <Route path="/processos" element={<ProcessosPage />} />
                   <Route path="/documentos" element={<DocumentosPage />} />
                   <Route path="/prazos" element={<PrazosPage />} />
