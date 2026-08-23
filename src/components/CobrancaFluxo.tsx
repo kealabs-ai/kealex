@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, AlertCircle, CheckCircle2, DollarSign, Ban, ChevronDown, User, FileText, Calendar, History } from 'lucide-react'
 import type { Cobranca } from '../types'
 import type { CobrancaTimeline } from '../api/cobrancas'
+import { ProgressStepper } from './ProgressStepper'
 
 export const FASES_COBRANCA = [
   { label: 'Pendente', descricao: 'Aguardando processamento', cor: 'border-slate-400 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300', dot: 'bg-slate-400', icone: <Clock size={14} /> },
@@ -91,43 +92,12 @@ export function CobrancaFluxoComponent({
           </div>
         </div>
 
-        {/* Barra de progresso das fases */}
-        <div className="relative mb-1">
-          <div className="flex items-center justify-between mb-3">
-            {FASES_COBRANCA.map((fase, idx) => {
-              const isAtual = idx === cobranca.faseAtual
-              const isCompleta = idx < cobranca.faseAtual
-              return (
-                <div key={fase.label} className="flex flex-col items-center gap-1 flex-1">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
-                    isAtual ? 'border-indigo-500 bg-indigo-500 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900' :
-                    isCompleta ? 'border-green-500 bg-green-500 text-white' :
-                    'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500'
-                  }`}>
-                    {isCompleta ? <CheckCircle2 size={13} /> : fase.icone}
-                  </div>
-                  <span className={`text-[10px] font-medium text-center leading-tight max-w-[56px] ${
-                    isAtual ? 'text-indigo-600 dark:text-indigo-400' :
-                    isCompleta ? 'text-green-600 dark:text-green-400' :
-                    'text-gray-400 dark:text-slate-500'
-                  }`}>{fase.label}</span>
-                  {/* Linha conectora */}
-                  {idx < FASES_COBRANCA.length - 1 && (
-                    <div className="absolute" style={{ display: 'none' }} />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          {/* Linha de progresso */}
-          <div className="absolute top-3.5 left-3.5 right-3.5 h-0.5 bg-gray-200 dark:bg-slate-700 -z-0">
-            <motion.div
-              className="h-full bg-gradient-to-r from-indigo-500 to-green-500 rounded-full"
-              initial={{ width: '0%' }}
-              animate={{ width: `${(cobranca.faseAtual / (FASES_COBRANCA.length - 1)) * 100}%` }}
-              transition={{ duration: 0.9, ease: 'easeOut' }}
-            />
-          </div>
+        {/* Progress Stepper das fases */}
+        <div className="mb-1">
+          <ProgressStepper
+            steps={FASES_COBRANCA.map((f) => ({ label: f.label, icon: f.icone }))}
+            current={cobranca.faseAtual}
+          />
         </div>
 
         {/* Info da fase atual */}
