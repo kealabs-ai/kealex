@@ -3,10 +3,11 @@ import { motion } from 'framer-motion'
 import {
   Briefcase, Bell, Calendar, Gavel, DollarSign, FileText,
   Users, Sparkles, Settings, Cloud, Database, Bot, Shield,
-  Scale, Sun, Moon, ChevronRight, TrendingUp,
+  Sun, Moon, ChevronRight, TrendingUp,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import logo from '../assets/logotipo_kealex.png'
 
 const advogadoLinks: Array<{ to: string; label: string; icon: any; badge?: string }> = [
   { to: '/processos', label: 'Processos & Fases', icon: Briefcase },
@@ -87,15 +88,9 @@ export function Sidebar() {
   return (
     <aside className="w-64 flex flex-col min-h-screen bg-slate-950 dark:bg-[#070514] border-r border-indigo-950/40 shrink-0">
       {/* Logo */}
-      <div className="px-5 py-5 border-b border-indigo-950/40">
+      <div className="px-5 py-4 border-b border-indigo-950/40">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-violet-600 via-indigo-600 to-indigo-500 rounded-xl shadow-lg shadow-indigo-600/30">
-            <Scale size={17} className="text-white" />
-          </div>
-          <div>
-            <span className="text-sm font-bold tracking-tight text-white">Kealex</span>
-            <p className="text-[10px] text-slate-500 -mt-0.5">Plataforma Jurídica</p>
-          </div>
+          <img src={logo} alt="Kealex" className={`h-8 w-auto object-contain transition-all ${isDark ? 'brightness-0 invert' : ''}`} />
           <button
             onClick={toggle}
             className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-300"

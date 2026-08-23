@@ -10,7 +10,7 @@ export const FASES_COBRANCA = [
   { label: 'Aguardando Pagamento', descricao: 'Aguardando confirmação', cor: 'border-blue-400 bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-300', dot: 'bg-blue-400', icone: <DollarSign size={14} /> },
   { label: 'Vencida', descricao: 'Prazo de pagamento vencido', cor: 'border-amber-400 bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300', dot: 'bg-amber-400', icone: <AlertCircle size={14} /> },
   { label: 'Em Cobrança', descricao: 'Cobrança ativa em andamento', cor: 'border-red-400 bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-300', dot: 'bg-red-400', icone: <AlertCircle size={14} /> },
-  { label: 'Pago', descricao: 'Pagamento recebido com sucesso', cor: 'border-green-400 bg-green-50 dark:bg-green-950/30 text-green-700 dark:text-green-300', dot: 'bg-green-500', icone: <CheckCircle2 size={14} /> },
+  { label: 'Pago', descricao: 'Pagamento recebido com sucesso', cor: 'border-green-500 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300', dot: 'bg-green-500', icone: <CheckCircle2 size={14} /> },
 ]
 
 const fmt = (c: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c / 100)
@@ -210,7 +210,7 @@ export function CobrancaFluxoComponent({
                         >
                           {/* Dot + linha vertical */}
                           <div className="flex flex-col items-center shrink-0">
-                            <div className={`w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 shrink-0 ${
+                            <div className={`w-3.5 h-3.5 rounded-full shrink-0 ${
                               isFirst ? 'bg-indigo-500' : fase ? fase.dot : 'bg-gray-400'
                             }`} />
                             {!isLast && (

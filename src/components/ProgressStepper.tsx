@@ -36,7 +36,7 @@ export function ProgressStepper({ steps, current }: ProgressStepperProps) {
                       ? 'bg-emerald-500 border-emerald-500 text-white shadow-md shadow-emerald-500/30'
                       : isActive
                       ? 'bg-indigo-600 border-indigo-400 text-white shadow-md shadow-indigo-500/40'
-                      : 'bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500'
+                      : 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-500'
                   }`}
                 >
                   {isCompleted ? <Check size={13} strokeWidth={3} /> : step.icon}
@@ -47,7 +47,7 @@ export function ProgressStepper({ steps, current }: ProgressStepperProps) {
                   ? 'text-emerald-600 dark:text-emerald-400'
                   : isActive
                   ? 'text-indigo-600 dark:text-indigo-400 font-bold'
-                  : 'text-gray-400 dark:text-slate-500'
+                  : 'text-slate-500 dark:text-slate-500'
               }`}>
                 {step.label}
               </span>
@@ -55,7 +55,7 @@ export function ProgressStepper({ steps, current }: ProgressStepperProps) {
 
             {/* Connector */}
             {!isLast && (
-              <div className="flex-1 h-0.5 mt-4 mx-1 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden self-start">
+              <div className="flex-1 h-0.5 mt-4 mx-1 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden self-start">
                 <motion.div
                   className="h-full bg-emerald-500 rounded-full"
                   initial={{ width: '0%' }}

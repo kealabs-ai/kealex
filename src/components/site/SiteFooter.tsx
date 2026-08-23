@@ -1,4 +1,4 @@
-import logo from '../../assets/logotipo_kealex.jpg'
+import logo from '../../assets/logotipo_kealex.png'
 
 export function SiteFooter() {
   return (
