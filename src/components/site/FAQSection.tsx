@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, Plus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 
 const FAQS = [
   { q: 'Preciso de cartão de crédito para o trial?', a: 'Não. O período de 14 dias é completamente gratuito e não exige cartão de crédito. Você só fornece dados de pagamento se decidir continuar após o trial.' },
