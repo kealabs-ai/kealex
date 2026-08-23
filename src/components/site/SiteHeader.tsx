@@ -87,8 +87,7 @@ export function SiteHeader() {
           <div className="hidden lg:flex items-center gap-3">
             <a
               href="/entrar"
-              target="_blank"
-              rel="noopener noreferrer"
+              onClick={(e) => { e.preventDefault(); window.open(window.location.origin + '/entrar', '_blank') }}
               className="text-sm font-semibold text-[#081B33] hover:text-[#00C2A8] transition-colors px-4 py-2"
             >
               Entrar
@@ -143,7 +142,7 @@ export function SiteHeader() {
                 </motion.a>
               ))}
               <div className="pt-3 flex flex-col gap-2 border-t border-slate-100 mt-2">
-                <a href="/entrar" target="_blank" rel="noopener noreferrer" className="text-center py-2.5 text-sm font-semibold text-[#081B33] border border-slate-200 rounded-xl">
+                <a href="/entrar" onClick={(e) => { e.preventDefault(); window.open(window.location.origin + '/entrar', '_blank') }} className="text-center py-2.5 text-sm font-semibold text-[#081B33] border border-slate-200 rounded-xl">
                   Entrar na Plataforma
                 </a>
                 <a href="#trial" onClick={(e) => { e.preventDefault(); scrollTo('trial'); setMobileOpen(false) }} className="text-center py-2.5 text-sm font-semibold bg-[#F96313] text-white rounded-xl">
