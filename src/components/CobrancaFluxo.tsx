@@ -225,24 +225,28 @@ export function CobrancaFluxoComponent({
                 <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-4">Nenhum evento registrado</p>
               ) : (
                 <div className="relative">
-                  {/* Linha vertical */}
-                  <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200 dark:bg-slate-700" />
                   <div className="space-y-4">
                     {timeline.timeline.map((evento, idx) => {
                       const fase = evento.fase_nova !== null ? FASES_COBRANCA[evento.fase_nova] : null
                       const isFirst = idx === 0
+                      const isLast = idx === timeline.timeline.length - 1
                       return (
                         <motion.div
                           key={evento.id}
-                          className="flex gap-3 relative"
+                          className="flex gap-3"
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: idx * 0.05 }}
                         >
-                          {/* Dot */}
-                          <div className={`w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 shrink-0 mt-0.5 z-10 ${
-                            isFirst ? 'bg-indigo-500' : fase ? fase.dot : 'bg-gray-400'
-                          }`} />
+                          {/* Dot + linha vertical */}
+                          <div className="flex flex-col items-center shrink-0">
+                            <div className={`w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 shrink-0 ${
+                              isFirst ? 'bg-indigo-500' : fase ? fase.dot : 'bg-gray-400'
+                            }`} />
+                            {!isLast && (
+                              <div className="w-px flex-1 mt-1 bg-gray-200 dark:bg-slate-700" />
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
                               <div>
