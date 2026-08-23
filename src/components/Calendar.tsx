@@ -193,11 +193,11 @@ export function Calendar({ prazos, onDateSelect }: CalendarProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <div className="mb-4">
-              <p className="text-sm font-medium text-gray-600 dark:text-slate-400">
+            <div className="mb-3">
+              <p className="text-[11px] font-medium text-gray-500 dark:text-slate-400">
                 {selectedDate.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
-              <h4 className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+              <h4 className="text-sm font-bold text-gray-900 dark:text-white mt-0.5">
                 {selectedDayPrazos.length} {selectedDayPrazos.length === 1 ? 'prazo' : 'prazos'}
               </h4>
             </div>
@@ -218,17 +218,17 @@ export function Calendar({ prazos, onDateSelect }: CalendarProps) {
                         <div className="flex-shrink-0 mt-0.5">
                           {getStatusIcon(prazo.status)}
                         </div>
-                        <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-0">
                           <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <h5 className="font-semibold text-gray-900 dark:text-white truncate">
+                            <div className="min-w-0 flex-1">
+                              <h5 className="text-xs font-semibold text-gray-900 dark:text-white break-words">
                                 {prazo.titulo}
                               </h5>
-                              <p className="text-sm text-gray-600 dark:text-slate-400 line-clamp-2 mt-1">
+                              <p className="text-[11px] text-gray-600 dark:text-slate-400 break-words mt-0.5">
                                 {prazo.descricao}
                               </p>
                             </div>
-                            <span className={`text-xs font-semibold px-2 py-1 rounded-full whitespace-nowrap ${
+                            <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full whitespace-nowrap shrink-0 ${
                               prazo.status === 'concluido'
                                 ? 'bg-green-200 dark:bg-green-900/40 text-green-800 dark:text-green-300'
                                 : prazo.status === 'vencido'
@@ -251,7 +251,7 @@ export function Calendar({ prazos, onDateSelect }: CalendarProps) {
                   exit={{ opacity: 0 }}
                 >
                   <Clock size={32} className="mx-auto text-gray-300 dark:text-slate-600 mb-2" />
-                  <p className="text-gray-500 dark:text-slate-400 text-sm">Nenhum prazo neste dia</p>
+                  <p className="text-gray-500 dark:text-slate-400 text-xs">Nenhum prazo neste dia</p>
                 </motion.div>
               )}
             </AnimatePresence>
