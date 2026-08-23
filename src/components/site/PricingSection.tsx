@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Check, Zap } from 'lucide-react'
-import { Link } from 'react-router-dom'
 
 const PLANS = [
   {

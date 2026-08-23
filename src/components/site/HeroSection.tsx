@@ -1,5 +1,4 @@
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
 import { ArrowRight, Play, ShieldCheck, CreditCard } from 'lucide-react'
 import heroImg from '../../assets/fundo_home_kealex.jpg'
 
