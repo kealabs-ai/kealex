@@ -101,7 +101,7 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, is
                       ? 'bg-emerald-500 border-emerald-500 shadow-md shadow-emerald-500/30'
                       : fase.status === 'ativa'
                       ? 'bg-indigo-600 border-indigo-400 shadow-md shadow-indigo-500/40'
-                      : 'bg-slate-800 border-slate-700 dark:bg-slate-800 dark:border-slate-700'
+                      : 'bg-slate-200 border-slate-300 dark:bg-slate-800 dark:border-slate-700'
                   }`}
                 >
                   {fase.status === 'concluida' ? (
@@ -109,7 +109,7 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, is
                   ) : fase.status === 'ativa' ? (
                     <div className="w-2 h-2 rounded-full bg-white" />
                   ) : (
-                    <div className="w-1.5 h-1.5 rounded-full bg-slate-600" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-slate-600" />
                   )}
                 </motion.div>
               </div>
@@ -119,7 +119,7 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, is
                     ? 'text-emerald-600 dark:text-emerald-400'
                     : fase.status === 'ativa'
                     ? 'text-indigo-600 dark:text-indigo-400 font-bold'
-                    : 'text-slate-400'
+                    : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 {fase.label}
@@ -134,7 +134,7 @@ export function ProcessoTimeline({ fases, faseAtual = 0, onAvancar, readonly, is
                 animate={{ scaleX: 1 }}
                 transition={{ duration: 0.5 }}
                 className={`h-0.5 w-8 mx-1 mb-5 rounded-full transition-all duration-500 origin-left ${
-                  i < displayFaseAtual ? 'bg-emerald-500' : 'bg-slate-700 dark:bg-slate-800'
+                  i < displayFaseAtual ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
                 }`}
               />
             )}

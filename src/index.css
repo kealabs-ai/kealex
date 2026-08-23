@@ -3,9 +3,140 @@
 @theme {
   --color-primary: #6366f1;
   --color-primary-dark: #4f46e5;
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
   --color-space: #070514;
+
+  /* ── Paleta Kealex site ── */
+  --kea-navy:   #081B33;
+  --kea-teal:   #00C2A8;
+  --kea-orange: #F96313;
+  --kea-slate:  #596B82;
 }
+
+/* ══════════════════════════════════════════
+   TEMA CLARO — paleta Kealex
+   Sobrescreve apenas as classes sem dark:
+══════════════════════════════════════════ */
+:root:not(.dark) {
+  /* Backgrounds */
+  --bg-app:        #F8FAFC;
+  --bg-sidebar:    #081B33;
+  --bg-card:       #FFFFFF;
+  --bg-topbar:     #FFFFFF;
+
+  /* Borders */
+  --border-main:   rgba(8, 27, 51, 0.10);
+  --border-sidebar:#0f2d4a;
+
+  /* Text */
+  --text-primary:  #081B33;
+  --text-secondary:#596B82;
+  --text-muted:    #8fa3b8;
+
+  /* Accent */
+  --accent-active: #00C2A8;
+  --accent-hover:  rgba(0, 194, 168, 0.10);
+}
+
+/* ── App shell light ── */
+:root:not(.dark) .bg-slate-50 { background-color: #F8FAFC !important; }
+:root:not(.dark) .bg-slate-950,
+:root:not(.dark) .bg-\[\#070514\] { background-color: #F8FAFC !important; }
+
+/* ── Sidebar light ── */
+:root:not(.dark) aside {
+  background-color: #081B33 !important;
+  border-color: rgba(255,255,255,0.06) !important;
+}
+:root:not(.dark) aside .border-indigo-950\/40 {
+  border-color: rgba(255,255,255,0.06) !important;
+}
+/* textos da sidebar ficam claros pois fundo é navy */
+:root:not(.dark) aside .text-slate-400 { color: #94a3b8 !important; }
+:root:not(.dark) aside .text-slate-500 { color: #64748b !important; }
+:root:not(.dark) aside .text-slate-600 { color: #64748b !important; }
+:root:not(.dark) aside .text-slate-200 { color: #e2e8f0 !important; }
+:root:not(.dark) aside .text-white     { color: #ffffff !important; }
+:root:not(.dark) aside .hover\:bg-white\/8:hover,
+:root:not(.dark) aside .hover\:bg-white\/5:hover { background-color: rgba(255,255,255,0.07) !important; }
+:root:not(.dark) aside .bg-white\/3 { background-color: rgba(255,255,255,0.05) !important; }
+
+/* ── TopBar light ── */
+:root:not(.dark) .bg-white { background-color: #FFFFFF !important; }
+:root:not(.dark) .border-slate-200 { border-color: #d1dce8 !important; }
+:root:not(.dark) .border-slate-100 { border-color: #e2e8f0 !important; }
+:root:not(.dark) .border-gray-200  { border-color: #d1dce8 !important; }
+:root:not(.dark) .border-gray-100  { border-color: #e2e8f0 !important; }
+:root:not(.dark) .text-slate-900 { color: #081B33 !important; }
+:root:not(.dark) .text-slate-800 { color: #0f2d4a !important; }
+:root:not(.dark) .text-slate-700 { color: #1e3a52 !important; }
+:root:not(.dark) .text-slate-600 { color: #2e4a63 !important; }
+:root:not(.dark) .text-slate-500 { color: #596B82 !important; }
+:root:not(.dark) .text-slate-400 { color: #7a90a8 !important; }
+:root:not(.dark) .text-gray-900  { color: #081B33 !important; }
+:root:not(.dark) .text-gray-800  { color: #0f2d4a !important; }
+:root:not(.dark) .text-gray-700  { color: #1e3a52 !important; }
+:root:not(.dark) .text-gray-600  { color: #2e4a63 !important; }
+:root:not(.dark) .text-gray-500  { color: #596B82 !important; }
+:root:not(.dark) .text-gray-400  { color: #7a90a8 !important; }
+:root:not(.dark) .placeholder-slate-400::placeholder { color: #7a90a8 !important; }
+:root:not(.dark) .placeholder-slate-500::placeholder { color: #596B82 !important; }
+:root:not(.dark) .hover\:bg-slate-100:hover { background-color: rgba(0,194,168,0.07) !important; }
+:root:not(.dark) .hover\:bg-slate-50:hover  { background-color: rgba(0,194,168,0.05) !important; }
+:root:not(.dark) .bg-slate-100 { background-color: #eef2f7 !important; }
+:root:not(.dark) .bg-gray-50   { background-color: #f4f7fa !important; }
+:root:not(.dark) .bg-gray-100  { background-color: #eef2f7 !important; }
+
+/* ── DataCard / borders light ── */
+:root:not(.dark) .shadow-sm { box-shadow: 0 1px 6px rgba(8,27,51,0.07) !important; }
+:root:not(.dark) .divide-slate-100 > * + * { border-color: #e2e8f0 !important; }
+:root:not(.dark) .divide-gray-100  > * + * { border-color: #e2e8f0 !important; }
+:root:not(.dark) .border-slate-700 { border-color: #d1dce8 !important; }
+:root:not(.dark) .border-gray-300  { border-color: #c8d5e3 !important; }
+:root:not(.dark) .border-slate-300 { border-color: #c8d5e3 !important; }
+
+/* ── Inputs / focus light ── */
+:root:not(.dark) .focus\:border-indigo-400:focus { border-color: #00C2A8 !important; }
+:root:not(.dark) .focus\:ring-indigo-500\/10:focus { --tw-ring-color: rgba(0,194,168,0.12) !important; }
+
+/* ── NavItem active light ── */
+:root:not(.dark) .bg-indigo-600 { background-color: #00C2A8 !important; }
+:root:not(.dark) .shadow-indigo-600\/30 { box-shadow: 0 4px 14px rgba(0,194,168,0.30) !important; }
+:root:not(.dark) .text-indigo-600 { color: #00C2A8 !important; }
+:root:not(.dark) .text-indigo-400 { color: #00C2A8 !important; }
+:root:not(.dark) .text-indigo-500 { color: #00C2A8 !important; }
+:root:not(.dark) .border-indigo-400 { border-color: #00C2A8 !important; }
+:root:not(.dark) .border-indigo-500 { border-color: #00C2A8 !important; }
+:root:not(.dark) .bg-indigo-500 { background-color: #00C2A8 !important; }
+:root:not(.dark) .bg-indigo-100 { background-color: rgba(0,194,168,0.12) !important; }
+:root:not(.dark) .bg-indigo-50 { background-color: rgba(0,194,168,0.07) !important; }
+:root:not(.dark) .hover\:bg-indigo-50\/30:hover { background-color: rgba(0,194,168,0.05) !important; }
+:root:not(.dark) .divide-slate-100 > * + * { border-color: rgba(8,27,51,0.07) !important; }
+
+/* ── Badges / pills / borders indigo light ── */
+:root:not(.dark) .bg-indigo-950\/40 { background-color: rgba(0,194,168,0.12) !important; }
+:root:not(.dark) .text-indigo-300  { color: #00C2A8 !important; }
+:root:not(.dark) .border-indigo-950\/60 { border-color: #c8d5e3 !important; }
+:root:not(.dark) .border-indigo-950\/40 { border-color: #d1dce8 !important; }
+:root:not(.dark) .border-indigo-950\/30 { border-color: #dde5ef !important; }
+
+/* ── Hover rows light ── */
+:root:not(.dark) .hover\:bg-indigo-50\/30:hover { background-color: rgba(0,194,168,0.04) !important; }
+:root:not(.dark) .hover\:bg-indigo-950\/20:hover { background-color: rgba(0,194,168,0.04) !important; }
+
+/* ── Skeleton light ── */
+:root:not(.dark) .shimmer {
+  background: linear-gradient(90deg, #e8f4f2 25%, #d0ece9 50%, #e8f4f2 75%) !important;
+  background-size: 200% 100% !important;
+}
+
+/* ── Avatar topbar light ── */
+:root:not(.dark) .from-slate-700 { --tw-gradient-from: #081B33 !important; }
+:root:not(.dark) .to-slate-900   { --tw-gradient-to:   #0f2d4a !important; }
+
+/* ── Scrollbar light ── */
+:root:not(.dark) ::-webkit-scrollbar-thumb { background: #00C2A8 !important; }
+:root:not(.dark) ::-webkit-scrollbar-thumb:hover { background: #009e88 !important; }
 
 /* ── Animations ── */
 @keyframes shimmer {
@@ -85,6 +216,17 @@
   background: currentColor;
   animation: phase-ping 1.5s cubic-bezier(0,0,0.2,1) infinite;
   opacity: 0.4;
+}
+
+/* ── Cursor pointer global ── */
+a, button, [role="button"], label[for], select, input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"] {
+  cursor: pointer;
+}
+
+/* ── Smooth scroll global ── */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 72px; /* offset do header fixo */
 }
 
 /* ── Scrollbar ── */

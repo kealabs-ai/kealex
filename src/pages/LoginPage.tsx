@@ -2,11 +2,13 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useLocation, Navigate } from 'react-router-dom'
+import { useNavigate, useLocation, Navigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { authApi } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
-import { Scale, Mail, Lock, ArrowRight, Sparkles } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Sparkles, ShieldCheck } from 'lucide-react'
+import fundoImg from '../assets/fundo_home_kealex.jpg'
+import logo from '../assets/logotipo_kealex.png'
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
@@ -25,119 +27,133 @@ export function LoginPage() {
     mutationFn: ({ email, senha }: FormData) => authApi.login(email, senha),
     onSuccess: (data) => {
       login(data)
-      navigate(from === '/login' ? '/processos' : from, { replace: true })
+      navigate(from === '/entrar' ? '/processos' : from, { replace: true })
     },
     onError: (error: any) => {
-      console.error('Login error:', error)
       const isTimeout = error.code === 'ECONNABORTED' || error.response?.status === 504
-      if (isTimeout) {
-        alert('Servidor não está respondendo. Verifique se o backend está rodando.')
-      }
+      if (isTimeout) alert('Servidor não está respondendo. Verifique se o backend está rodando.')
     },
   })
 
   if (user) return <Navigate to="/processos" replace />
 
   return (
-    <div className="min-h-screen flex">
-      {/* left panel */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gray-950 flex-col justify-between p-12 relative overflow-hidden">
-        {/* animated bg orbs */}
-        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-indigo-600/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-purple-600/20 rounded-full blur-3xl" />
+    <div className="min-h-screen flex font-sans">
+      {/* ── Painel esquerdo — imagem + copy ── */}
+      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden flex-col justify-between p-12">
+        {/* Imagem de fundo */}
+        <img
+          src={fundoImg}
+          alt="Kealex Platform"
+          className="absolute inset-0 w-full h-full object-cover object-center"
+        />
+        {/* Overlay navy */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#081B33]/90 via-[#081B33]/75 to-[#0f2d4a]/80" />
 
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-lg shadow-indigo-500/30">
-            <Scale size={20} className="text-white" />
-          </div>
-          <span className="text-xl font-bold text-white">Kealex</span>
+        {/* Ambient glow */}
+        <div className="absolute top-1/3 right-0 w-80 h-80 bg-[#00C2A8]/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-[#F96313]/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Logo */}
+        <div className="relative z-10">
+          <Link to="/">
+            <img src={logo} alt="Kealex" className="h-9 w-auto object-contain brightness-0 invert" />
+          </Link>
         </div>
 
-        <div className="relative z-10">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full px-3 py-1.5 mb-6">
-              <Sparkles size={13} className="text-indigo-400" />
-              <span className="text-xs text-indigo-300 font-medium">Plataforma Jurídica SaaS</span>
-            </div>
-            <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-              Gerencie seus<br />
-              <span className="bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
-                processos jurídicos
-              </span>
-            </h1>
-            <p className="text-gray-400 text-base leading-relaxed">
-              Controle processos, documentos, prazos e honorários em um único lugar com segurança e eficiência.
-            </p>
-          </motion.div>
+        {/* Copy central */}
+        <motion.div
+          className="relative z-10"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+        >
+          <div className="inline-flex items-center gap-2 bg-[#00C2A8]/15 border border-[#00C2A8]/30 rounded-full px-4 py-1.5 mb-6">
+            <Sparkles size={13} className="text-[#00C2A8]" />
+            <span className="text-xs font-semibold text-[#00C2A8] tracking-wide">Inteligência Artificial Jurídica Brasileira 2026</span>
+          </div>
 
-          <motion.div
-            className="grid grid-cols-3 gap-4 mt-10"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-          >
+          <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight mb-5">
+            Gerencie seu escritório.{' '}
+            <span className="bg-gradient-to-r from-[#00C2A8] to-[#38bdf8] bg-clip-text text-transparent">
+              A IA cuida do resto.
+            </span>
+          </h1>
+
+          <p className="text-slate-300 text-base leading-relaxed mb-10 max-w-md">
+            Da distribuição ao trânsito em julgado — processos, prazos, cobranças e documentos com IA treinada no CPC, CLT e jurisprudência STF/STJ.
+          </p>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4">
             {[
-              { label: 'Processos', value: '2.4k+' },
+              { label: 'Processos ativos', value: '2.4k+' },
               { label: 'Documentos', value: '18k+' },
               { label: 'Advogados', value: '340+' },
             ].map(({ label, value }) => (
-              <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-4">
-                <p className="text-2xl font-bold text-white">{value}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{label}</p>
+              <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
+                <p className="text-2xl font-extrabold text-white">{value}</p>
+                <p className="text-xs text-slate-400 mt-0.5">{label}</p>
               </div>
             ))}
-          </motion.div>
-        </div>
+          </div>
+        </motion.div>
 
-        <p className="relative z-10 text-xs text-gray-600">© 2025 Kealex. Todos os direitos reservados.</p>
+        {/* Footer */}
+        <div className="relative z-10 flex items-center justify-between">
+          <p className="text-xs text-slate-500">Kealabs AI © 2026. Todos os direitos reservados.</p>
+          <span className="flex items-center gap-1.5 text-xs text-slate-500">
+            <ShieldCheck size={12} className="text-[#00C2A8]" /> 100% LGPD
+          </span>
+        </div>
       </div>
 
-      {/* right panel */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-white">
+      {/* ── Painel direito — formulário ── */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-[#F8FAFC]">
         <motion.div
           className="w-full max-w-sm"
-          initial={{ opacity: 0, x: 20 }}
+          initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.45 }}
         >
-          <div className="lg:hidden flex items-center gap-2 mb-8">
-            <div className="p-2 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl">
-              <Scale size={18} className="text-white" />
-            </div>
-            <span className="text-lg font-bold text-gray-900">Kealex</span>
+          {/* Logo mobile */}
+          <div className="lg:hidden mb-8">
+            <Link to="/">
+              <img src={logo} alt="Kealex" className="h-8 w-auto object-contain" />
+            </Link>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-1">Bem-vindo de volta</h2>
-          <p className="text-sm text-gray-500 mb-8">Entre com suas credenciais para continuar</p>
+          {/* Heading */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-extrabold text-[#081B33] mb-1">Bem-vindo de volta</h2>
+            <p className="text-sm text-[#596B82]">Acesse sua plataforma jurídica com IA</p>
+          </div>
 
+          {/* Form */}
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">Email</label>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-[#081B33] uppercase tracking-wide">Email</label>
               <div className="relative">
-                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#596B82]" />
                 <input
                   {...register('email')}
                   type="email"
-                  placeholder="seu@email.com"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition-all"
+                  placeholder="seu@escritorio.com.br"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all text-[#081B33] placeholder-slate-400"
                 />
               </div>
               {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
             </div>
 
-            <div className="space-y-1">
-              <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide">Senha</label>
+            <div className="space-y-1.5">
+              <label className="block text-xs font-bold text-[#081B33] uppercase tracking-wide">Senha</label>
               <div className="relative">
-                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#596B82]" />
                 <input
                   {...register('senha')}
                   type="password"
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all text-[#081B33] placeholder-slate-400"
                 />
               </div>
               {errors.senha && <p className="text-xs text-red-500">{errors.senha.message}</p>}
@@ -158,7 +174,7 @@ export function LoginPage() {
               type="submit"
               disabled={mutation.isPending}
               whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white py-3 rounded-xl text-sm font-semibold hover:from-indigo-700 hover:to-indigo-600 disabled:opacity-60 transition-all shadow-lg shadow-indigo-200 mt-2"
+              className="w-full flex items-center justify-center gap-2 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-60 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-orange-200 mt-2"
             >
               {mutation.isPending ? (
                 <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -166,27 +182,30 @@ export function LoginPage() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
                 </svg>
               ) : (
-                <>Entrar <ArrowRight size={16} /></>
+                <>Acessar Plataforma <ArrowRight size={16} /></>
               )}
             </motion.button>
           </form>
 
-          <div className="mt-8 p-4 bg-gray-50 rounded-2xl border border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 mb-2">Credenciais de teste</p>
-            <div className="space-y-1">
-              {[
-                { role: 'Admin', email: 'admin@keahub.com', senha: 'admin123' },
-                { role: 'Advogado', email: 'adv@keahub.com', senha: 'adv123' },
-                { role: 'Cliente', email: 'cliente@keahub.com', senha: 'cli123' },
-              ].map(({ role, email, senha }) => (
-                <div key={role} className="flex items-center justify-between text-xs text-gray-500">
-                  <span className="font-medium text-gray-700 w-16">{role}</span>
-                  <span className="font-mono">{email}</span>
-                  <span className="font-mono text-gray-400">{senha}</span>
-                </div>
-              ))}
-            </div>
+          {/* Divider */}
+          <div className="flex items-center gap-3 my-6">
+            <div className="flex-1 h-px bg-slate-200" />
+            <span className="text-xs text-slate-400">ou</span>
+            <div className="flex-1 h-px bg-slate-200" />
           </div>
+
+          {/* Trial CTA */}
+          <Link
+            to="/#trial"
+            className="block text-center py-3 border-2 border-[#081B33] text-[#081B33] font-bold rounded-xl text-sm hover:bg-[#081B33] hover:text-white transition-all"
+          >
+            Começar Trial Gratuito — 14 dias
+          </Link>
+
+
+          <p className="text-xs text-slate-400 text-center mt-6">
+            Kealabs AI © 2026 · <a href="#" className="hover:text-[#00C2A8]">Privacidade</a> · <a href="#" className="hover:text-[#00C2A8]">LGPD</a>
+          </p>
         </motion.div>
       </div>
     </div>

@@ -18,8 +18,8 @@ export function ProtectedLayout() {
   const location = useLocation()
 
   if (!user) {
-    const from = location.pathname !== '/login' ? location : undefined
-    return <Navigate to="/login" state={{ from }} replace />
+    const from = location.pathname !== '/entrar' ? location : undefined
+    return <Navigate to="/entrar" state={{ from }} replace />
   }
 
   const required = roleRequired[location.pathname]
