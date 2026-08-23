@@ -82,16 +82,16 @@ export function PrazosPage() {
               <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-xl shrink-0">
                 <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400" />
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-amber-800 dark:text-amber-300">{vencendoList.length} prazo(s) vencendo nos próximos 7 dias</p>
-                <div className="flex flex-wrap gap-2 mt-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{vencendoList.length} prazo(s) vencendo nos próximos 7 dias</p>
+                <div className="flex flex-wrap gap-1.5 mt-2">
                   {vencendoList.map((p) => {
                     const dias = diasRestantes(p.dataVencimento)
                     return (
-                      <span key={p.id} className="inline-flex items-center gap-1.5 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-lg px-2.5 py-1 text-xs text-amber-700 dark:text-amber-300">
-                        <Clock size={11} />
-                        {p.titulo}
-                        <span className="font-bold">{dias <= 0 ? 'hoje' : `${dias}d`}</span>
+                      <span key={p.id} className="inline-flex items-center gap-1 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-lg px-2 py-0.5 text-[11px] text-amber-700 dark:text-amber-300 break-words max-w-full">
+                        <Clock size={10} className="shrink-0" />
+                        <span className="truncate max-w-[140px]">{p.titulo}</span>
+                        <span className="font-bold shrink-0">{dias <= 0 ? 'hoje' : `${dias}d`}</span>
                       </span>
                     )
                   })}
