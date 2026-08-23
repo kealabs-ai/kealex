@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, AlertCircle, CheckCircle2, DollarSign, Ban, ChevronDown, User, FileText, Calendar, History } from 'lucide-react'
 import type { Cobranca } from '../types'
 import type { CobrancaTimeline } from '../api/cobrancas'
+import { ProgressStepper } from './ProgressStepper'
 
 export const FASES_COBRANCA = [
   { label: 'Pendente', descricao: 'Aguardando processamento', cor: 'border-slate-400 bg-slate-50 dark:bg-slate-800/50 text-slate-700 dark:text-slate-300', dot: 'bg-slate-400', icone: <Clock size={14} /> },
@@ -91,43 +92,12 @@ export function CobrancaFluxoComponent({
           </div>
         </div>
 
-        {/* Barra de progresso das fases */}
-        <div className="relative mb-1">
-          <div className="flex items-center justify-between mb-3">
-            {FASES_COBRANCA.map((fase, idx) => {
-              const isAtual = idx === cobranca.faseAtual
-              const isCompleta = idx < cobranca.faseAtual
-              return (
-                <div key={fase.label} className="flex flex-col items-center gap-1 flex-1">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all ${
-                    isAtual ? 'border-indigo-500 bg-indigo-500 text-white shadow-lg shadow-indigo-200 dark:shadow-indigo-900' :
-                    isCompleta ? 'border-green-500 bg-green-500 text-white' :
-                    'border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-400 dark:text-slate-500'
-                  }`}>
-                    {isCompleta ? <CheckCircle2 size={13} /> : fase.icone}
-                  </div>
-                  <span className={`text-[10px] font-medium text-center leading-tight max-w-[56px] ${
-                    isAtual ? 'text-indigo-600 dark:text-indigo-400' :
-                    isCompleta ? 'text-green-600 dark:text-green-400' :
-                    'text-gray-400 dark:text-slate-500'
-                  }`}>{fase.label}</span>
-                  {/* Linha conectora */}
-                  {idx < FASES_COBRANCA.length - 1 && (
-                    <div className="absolute" style={{ display: 'none' }} />
-                  )}
-                </div>
-              )
-            })}
-          </div>
-          {/* Linha de progresso */}
-          <div className="absolute top-3.5 left-3.5 right-3.5 h-0.5 bg-gray-200 dark:bg-slate-700 -z-0">
-            <motion.div
-              className="h-full bg-gradient-to-r from-indigo-500 to-green-500 rounded-full"
-              initial={{ width: '0%' }}
-              animate={{ width: `${(cobranca.faseAtual / (FASES_COBRANCA.length - 1)) * 100}%` }}
-              transition={{ duration: 0.9, ease: 'easeOut' }}
-            />
-          </div>
+        {/* Progress Stepper das fases */}
+        <div className="mb-1">
+          <ProgressStepper
+            steps={FASES_COBRANCA.map((f) => ({ label: f.label, icon: f.icone }))}
+            current={cobranca.faseAtual}
+          />
         </div>
 
         {/* Info da fase atual */}
@@ -225,24 +195,28 @@ export function CobrancaFluxoComponent({
                 <p className="text-xs text-gray-400 dark:text-slate-500 text-center py-4">Nenhum evento registrado</p>
               ) : (
                 <div className="relative">
-                  {/* Linha vertical */}
-                  <div className="absolute left-[7px] top-2 bottom-2 w-px bg-gray-200 dark:bg-slate-700" />
                   <div className="space-y-4">
                     {timeline.timeline.map((evento, idx) => {
                       const fase = evento.fase_nova !== null ? FASES_COBRANCA[evento.fase_nova] : null
                       const isFirst = idx === 0
+                      const isLast = idx === timeline.timeline.length - 1
                       return (
                         <motion.div
                           key={evento.id}
-                          className="flex gap-3 relative"
+                          className="flex gap-3"
                           initial={{ opacity: 0, x: -8 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: idx * 0.05 }}
                         >
-                          {/* Dot */}
-                          <div className={`w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 shrink-0 mt-0.5 z-10 ${
-                            isFirst ? 'bg-indigo-500' : fase ? fase.dot : 'bg-gray-400'
-                          }`} />
+                          {/* Dot + linha vertical */}
+                          <div className="flex flex-col items-center shrink-0">
+                            <div className={`w-3.5 h-3.5 rounded-full border-2 border-white dark:border-slate-900 shrink-0 ${
+                              isFirst ? 'bg-indigo-500' : fase ? fase.dot : 'bg-gray-400'
+                            }`} />
+                            {!isLast && (
+                              <div className="w-px flex-1 mt-1 bg-gray-200 dark:bg-slate-700" />
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-start justify-between gap-2">
                               <div>
