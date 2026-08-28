@@ -112,7 +112,7 @@ export function HeroSection() {
               transition={{ delay: 0.6 }}
               className="absolute -bottom-4 -left-4 bg-white rounded-2xl shadow-lg border border-slate-100 px-4 py-3"
             >
-              <p className="text-xs text-slate-500 mb-0.5">Processos ativos</p>
+              <p className="text-xs text-slate-500 mb-0.5">Documentos em CDN</p>
               <p className="text-2xl font-extrabold text-[#081B33]">2.4k+</p>
             </motion.div>
             <motion.div
@@ -121,8 +121,8 @@ export function HeroSection() {
               transition={{ delay: 0.75 }}
               className="absolute -top-4 -right-4 bg-[#00C2A8] rounded-2xl shadow-lg px-4 py-3"
             >
-              <p className="text-xs text-white/80 mb-0.5">Advogados ativos</p>
-              <p className="text-2xl font-extrabold text-white">340+</p>
+              <p className="text-xs text-white/80 mb-0.5">Produtividade</p>
+              <p className="text-2xl font-extrabold text-white">46% +</p>
             </motion.div>
           </motion.div>
         </div>
