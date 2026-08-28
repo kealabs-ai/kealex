@@ -46,7 +46,7 @@ export function SiteFooter() {
         </div>
 
         <div className="border-t border-white/10 pt-7 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-          <p>Kealex é uma marca registrada Kealabs AI © 2026.</p>
+          <p>Kealabs AI © 2026. Todos os direitos reservados.</p>
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-[#00C2A8] animate-pulse" />
             <span>Todos os sistemas operacionais</span>

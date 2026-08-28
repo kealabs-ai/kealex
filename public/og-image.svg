@@ -1,0 +1,178 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <!-- Background gradient -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1200" y2="630" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#081B33"/>
+      <stop offset="60%" stop-color="#0d2a4a"/>
+      <stop offset="100%" stop-color="#0a3d3a"/>
+    </linearGradient>
+    <!-- Teal glow -->
+    <radialGradient id="glow1" cx="75%" cy="30%" r="40%">
+      <stop offset="0%" stop-color="#00C2A8" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#00C2A8" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Orange glow -->
+    <radialGradient id="glow2" cx="20%" cy="80%" r="35%">
+      <stop offset="0%" stop-color="#F96313" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#F96313" stop-opacity="0"/>
+    </radialGradient>
+    <!-- Card shadow -->
+    <filter id="shadow" x="-5%" y="-5%" width="110%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+    <!-- Subtle grid pattern -->
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#00C2A8" stroke-width="0.4" opacity="0.15"/>
+    </pattern>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#glow1)"/>
+  <rect width="1200" height="630" fill="url(#glow2)"/>
+
+  <!-- Left accent bar -->
+  <rect x="0" y="0" width="5" height="630" fill="url(#tealBar)"/>
+  <linearGradient id="tealBar" x1="0" y1="0" x2="0" y2="630" gradientUnits="userSpaceOnUse">
+    <stop offset="0%" stop-color="#00C2A8"/>
+    <stop offset="100%" stop-color="#F96313"/>
+  </linearGradient>
+
+  <!-- ── LOGO AREA ── -->
+  <!-- Logo background pill -->
+  <rect x="72" y="60" width="180" height="52" rx="12" fill="#ffffff" fill-opacity="0.07" stroke="#00C2A8" stroke-width="1" stroke-opacity="0.4"/>
+  <!-- "K" lettermark -->
+  <text x="96" y="97" font-family="'Segoe UI', Arial, sans-serif" font-size="32" font-weight="800" fill="#00C2A8">K</text>
+  <!-- Kealex wordmark -->
+  <text x="122" y="97" font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="700" fill="#ffffff" letter-spacing="1">ealex</text>
+  <!-- by Kealabs -->
+  <text x="96" y="116" font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#00C2A8" fill-opacity="0.8" letter-spacing="2">BY KEALABS AI</text>
+
+  <!-- ── BADGE ── -->
+  <rect x="72" y="148" width="268" height="30" rx="15" fill="#00C2A8" fill-opacity="0.15" stroke="#00C2A8" stroke-width="1" stroke-opacity="0.5"/>
+  <circle cx="92" cy="163" r="5" fill="#00C2A8"/>
+  <text x="106" y="168" font-family="'Segoe UI', Arial, sans-serif" font-size="12" font-weight="600" fill="#00C2A8" letter-spacing="1.5">SOFTWARE JURÍDICO COM IA · 2025</text>
+
+  <!-- ── HEADLINE ── -->
+  <text x="72" y="240" font-family="'Segoe UI', Arial, sans-serif" font-size="58" font-weight="800" fill="#ffffff" letter-spacing="-1">Seu escritório cresce.</text>
+  <text x="72" y="308" font-family="'Segoe UI', Arial, sans-serif" font-size="58" font-weight="800" fill="#00C2A8" letter-spacing="-1">A IA trabalha por você.</text>
+
+  <!-- Underline accent -->
+  <path d="M 72 320 Q 380 314 688 320" stroke="#00C2A8" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.6"/>
+
+  <!-- ── SUBHEADLINE ── -->
+  <text x="72" y="370" font-family="'Segoe UI', Arial, sans-serif" font-size="22" fill="#94a3b8" letter-spacing="0.2">
+    Processos · Prazos · Cobranças · Documentos · IA Jurídica Brasileira
+  </text>
+
+  <!-- ── STATS ROW ── -->
+  <!-- Stat 1 -->
+  <rect x="72" y="410" width="170" height="72" rx="14" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.15"/>
+  <text x="92" y="445" font-family="'Segoe UI', Arial, sans-serif" font-size="30" font-weight="800" fill="#00C2A8">46%</text>
+  <text x="92" y="468" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#94a3b8">mais produtividade</text>
+
+  <!-- Stat 2 -->
+  <rect x="258" y="410" width="170" height="72" rx="14" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.15"/>
+  <text x="278" y="445" font-family="'Segoe UI', Arial, sans-serif" font-size="30" font-weight="800" fill="#00C2A8">3h/dia</text>
+  <text x="278" y="468" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#94a3b8">economizadas</text>
+
+  <!-- Stat 3 -->
+  <rect x="444" y="410" width="170" height="72" rx="14" fill="#ffffff" fill-opacity="0.06" stroke="#ffffff" stroke-width="0.5" stroke-opacity="0.15"/>
+  <text x="464" y="445" font-family="'Segoe UI', Arial, sans-serif" font-size="30" font-weight="800" fill="#00C2A8">500+</text>
+  <text x="464" y="468" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#94a3b8">escritórios ativos</text>
+
+  <!-- ── CTA PILL ── -->
+  <rect x="72" y="510" width="260" height="48" rx="24" fill="#F96313"/>
+  <text x="202" y="540" font-family="'Segoe UI', Arial, sans-serif" font-size="16" font-weight="700" fill="#ffffff" text-anchor="middle" letter-spacing="0.5">Testar Grátis por 14 Dias →</text>
+
+  <!-- Trust line -->
+  <text x="72" y="580" font-family="'Segoe UI', Arial, sans-serif" font-size="13" fill="#64748b">Sem cartão de crédito · 100% LGPD · Cancele quando quiser</text>
+
+  <!-- ── RIGHT PANEL — Dashboard mockup ── -->
+  <!-- Main card -->
+  <rect x="720" y="60" width="430" height="510" rx="20" fill="#0f2d4a" stroke="#1e3a5f" stroke-width="1.5" filter="url(#shadow)"/>
+
+  <!-- Browser bar -->
+  <rect x="720" y="60" width="430" height="44" rx="20" fill="#0a2238"/>
+  <rect x="720" y="84" width="430" height="20" fill="#0a2238"/>
+  <!-- Traffic lights -->
+  <circle cx="748" cy="82" r="6" fill="#ff5f57"/>
+  <circle cx="768" cy="82" r="6" fill="#febc2e"/>
+  <circle cx="788" cy="82" r="6" fill="#28c840"/>
+  <!-- URL bar -->
+  <rect x="808" y="72" width="320" height="20" rx="6" fill="#0d2a4a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="968" y="86" font-family="'Segoe UI', Arial, sans-serif" font-size="11" fill="#64748b" text-anchor="middle">app.kealex.com.br</text>
+
+  <!-- Sidebar strip -->
+  <rect x="720" y="104" width="60" height="466" rx="0" fill="#081B33"/>
+  <rect x="720" y="104" width="60" height="466" rx="0" fill="#081B33"/>
+  <!-- Sidebar icons (simplified) -->
+  <rect x="733" y="124" width="34" height="6" rx="3" fill="#00C2A8" fill-opacity="0.9"/>
+  <rect x="733" y="144" width="34" height="4" rx="2" fill="#ffffff" fill-opacity="0.2"/>
+  <rect x="733" y="158" width="34" height="4" rx="2" fill="#ffffff" fill-opacity="0.2"/>
+  <rect x="733" y="172" width="34" height="4" rx="2" fill="#ffffff" fill-opacity="0.2"/>
+  <rect x="733" y="186" width="34" height="4" rx="2" fill="#ffffff" fill-opacity="0.2"/>
+  <rect x="733" y="200" width="34" height="4" rx="2" fill="#ffffff" fill-opacity="0.2"/>
+
+  <!-- Main content area -->
+  <!-- Top stats row -->
+  <rect x="792" y="112" width="100" height="52" rx="10" fill="#0d2a4a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="842" y="133" font-family="'Segoe UI', Arial, sans-serif" font-size="9" fill="#64748b" text-anchor="middle">Processos</text>
+  <text x="842" y="152" font-family="'Segoe UI', Arial, sans-serif" font-size="20" font-weight="800" fill="#ffffff" text-anchor="middle">248</text>
+
+  <rect x="902" y="112" width="100" height="52" rx="10" fill="#0d2a4a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="952" y="133" font-family="'Segoe UI', Arial, sans-serif" font-size="9" fill="#64748b" text-anchor="middle">Prazos Hoje</text>
+  <text x="952" y="152" font-family="'Segoe UI', Arial, sans-serif" font-size="20" font-weight="800" fill="#F96313" text-anchor="middle">7</text>
+
+  <rect x="1012" y="112" width="118" height="52" rx="10" fill="#00C2A8" fill-opacity="0.15" stroke="#00C2A8" stroke-width="1" stroke-opacity="0.4"/>
+  <text x="1071" y="133" font-family="'Segoe UI', Arial, sans-serif" font-size="9" fill="#00C2A8" text-anchor="middle">Receita/mês</text>
+  <text x="1071" y="152" font-family="'Segoe UI', Arial, sans-serif" font-size="18" font-weight="800" fill="#00C2A8" text-anchor="middle">R$ 48k</text>
+
+  <!-- Chart area -->
+  <rect x="792" y="176" width="338" height="120" rx="10" fill="#0d2a4a" stroke="#1e3a5f" stroke-width="1"/>
+  <text x="808" y="196" font-family="'Segoe UI', Arial, sans-serif" font-size="10" fill="#64748b">Faturamento — últimos 6 meses</text>
+  <!-- Chart bars -->
+  <rect x="812" y="240" width="28" height="40" rx="3" fill="#00C2A8" fill-opacity="0.3"/>
+  <rect x="852" y="225" width="28" height="55" rx="3" fill="#00C2A8" fill-opacity="0.4"/>
+  <rect x="892" y="215" width="28" height="65" rx="3" fill="#00C2A8" fill-opacity="0.5"/>
+  <rect x="932" y="205" width="28" height="75" rx="3" fill="#00C2A8" fill-opacity="0.65"/>
+  <rect x="972" y="195" width="28" height="85" rx="3" fill="#00C2A8" fill-opacity="0.8"/>
+  <rect x="1012" y="210" width="28" height="70" rx="3" fill="#F96313" fill-opacity="0.9"/>
+  <!-- Chart line -->
+  <polyline points="826,240 866,225 906,215 946,205 986,195 1026,210" stroke="#00C2A8" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Process list -->
+  <rect x="792" y="308" width="338" height="30" rx="8" fill="#0d2a4a" stroke="#1e3a5f" stroke-width="1"/>
+  <circle cx="810" cy="323" r="5" fill="#00C2A8" fill-opacity="0.7"/>
+  <rect x="822" y="318" width="120" height="5" rx="2.5" fill="#ffffff" fill-opacity="0.25"/>
+  <rect x="822" y="327" width="80" height="4" rx="2" fill="#ffffff" fill-opacity="0.12"/>
+  <rect x="1080" y="319" width="36" height="8" rx="4" fill="#00C2A8" fill-opacity="0.3"/>
+  <text x="1098" y="326" font-family="'Segoe UI', Arial, sans-serif" font-size="8" fill="#00C2A8" text-anchor="middle">Ativo</text>
+
+  <rect x="792" y="346" width="338" height="30" rx="8" fill="#0d2a4a" stroke="#1e3a5f" stroke-width="1"/>
+  <circle cx="810" cy="361" r="5" fill="#F96313" fill-opacity="0.7"/>
+  <rect x="822" y="356" width="100" height="5" rx="2.5" fill="#ffffff" fill-opacity="0.25"/>
+  <rect x="822" y="365" width="70" height="4" rx="2" fill="#ffffff" fill-opacity="0.12"/>
+  <rect x="1080" y="357" width="36" height="8" rx="4" fill="#F96313" fill-opacity="0.3"/>
+  <text x="1098" y="364" font-family="'Segoe UI', Arial, sans-serif" font-size="8" fill="#F96313" text-anchor="middle">Prazo</text>
+
+  <rect x="792" y="384" width="338" height="30" rx="8" fill="#0d2a4a" stroke="#1e3a5f" stroke-width="1"/>
+  <circle cx="810" cy="399" r="5" fill="#00C2A8" fill-opacity="0.7"/>
+  <rect x="822" y="394" width="140" height="5" rx="2.5" fill="#ffffff" fill-opacity="0.25"/>
+  <rect x="822" y="403" width="90" height="4" rx="2" fill="#ffffff" fill-opacity="0.12"/>
+  <rect x="1080" y="395" width="36" height="8" rx="4" fill="#00C2A8" fill-opacity="0.3"/>
+  <text x="1098" y="402" font-family="'Segoe UI', Arial, sans-serif" font-size="8" fill="#00C2A8" text-anchor="middle">Ativo</text>
+
+  <!-- AI Chat bubble -->
+  <rect x="792" y="426" width="338" height="70" rx="12" fill="#00C2A8" fill-opacity="0.08" stroke="#00C2A8" stroke-width="1" stroke-opacity="0.3"/>
+  <circle cx="812" cy="446" r="10" fill="#00C2A8" fill-opacity="0.2"/>
+  <text x="812" y="450" font-family="'Segoe UI', Arial, sans-serif" font-size="10" fill="#00C2A8" text-anchor="middle" font-weight="700">AI</text>
+  <rect x="830" y="438" width="180" height="6" rx="3" fill="#00C2A8" fill-opacity="0.4"/>
+  <rect x="830" y="450" width="140" height="5" rx="2.5" fill="#00C2A8" fill-opacity="0.25"/>
+  <rect x="830" y="461" width="100" height="5" rx="2.5" fill="#00C2A8" fill-opacity="0.15"/>
+  <text x="1100" y="468" font-family="'Segoe UI', Arial, sans-serif" font-size="9" fill="#00C2A8" text-anchor="middle">Kealex AI</text>
+
+  <!-- Bottom domain -->
+  <text x="935" y="590" font-family="'Segoe UI', Arial, sans-serif" font-size="14" fill="#1e3a5f" text-anchor="middle" letter-spacing="2">kealex.com.br</text>
+</svg>
