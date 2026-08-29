@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Briefcase, Bell, Calendar, Gavel, DollarSign, FileText,
@@ -25,6 +25,7 @@ const clienteLinks: Array<{ to: string; label: string; icon: any; badge?: string
   { to: '/prazos', label: 'Prazos', icon: Calendar },
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
   { to: '/documentos', label: 'Documentos', icon: FileText },
+  { to: '/lgpd', label: 'LGPD & Privacidade', icon: Shield },
 ]
 
 const adminLinks: Array<{ to: string; label: string; icon: any; badge?: string }> = [

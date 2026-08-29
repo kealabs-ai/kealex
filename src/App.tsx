@@ -7,6 +7,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { ProtectedLayout } from './components/ProtectedLayout'
 import { LoginPage } from './pages/LoginPage'
 import { LandingPage } from './pages/site/LandingPage'
+import { LGPDPage } from './pages/site/LGPDPage'
 import { ProcessosPage } from './pages/ProcessosPage'
 import { DocumentosPage } from './pages/DocumentosPage'
 import { PrazosPage } from './pages/PrazosPage'
@@ -34,6 +35,8 @@ export default function App() {
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
+                <Route path="/lgpd" element={<LGPDPage />} />
+                <Route path="/privacidade" element={<LGPDPage />} />
                 <Route path="/entrar" element={<LoginPage />} />
                 <Route path="/login" element={<Navigate to="/entrar" replace />} />
                 <Route path="/error" element={<ErrorPage />} />

@@ -3,10 +3,13 @@ import { SiteHeader } from '../../components/site/SiteHeader'
 import { HeroSection } from '../../components/site/HeroSection'
 import { DiagnosticoSection } from '../../components/site/DiagnosticoSection'
 import { BeforeAfterSection } from '../../components/site/BeforeAfterSection'
+import { TestimonialsSection } from '../../components/site/TestimonialsSection'
 import { FeaturesSection } from '../../components/site/FeaturesSection'
+import { PlatformShowcaseSection } from '../../components/site/PlatformShowcaseSection'
 import { AISimulatorSection } from '../../components/site/AISimulatorSection'
 import { ROICalculatorSection } from '../../components/site/ROICalculatorSection'
 import { PricingSection } from '../../components/site/PricingSection'
+import { TrustSection } from '../../components/site/TrustSection'
 import { FAQSection } from '../../components/site/FAQSection'
 import { TrialSection } from '../../components/site/TrialSection'
 import { SiteFooter } from '../../components/site/SiteFooter'
@@ -38,10 +41,13 @@ export function LandingPage() {
         <HeroSection />
         <DiagnosticoSection />
         <BeforeAfterSection />
+        <TestimonialsSection />
         <FeaturesSection />
+        <PlatformShowcaseSection />
         <AISimulatorSection />
         <ROICalculatorSection />
         <PricingSection />
+        <TrustSection />
         <FAQSection />
         <TrialSection />
       </main>
