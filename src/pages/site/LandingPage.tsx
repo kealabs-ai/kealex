@@ -6,7 +6,6 @@ import { BeforeAfterSection } from '../../components/site/BeforeAfterSection'
 import { TestimonialsSection } from '../../components/site/TestimonialsSection'
 import { FeaturesSection } from '../../components/site/FeaturesSection'
 import { PlatformShowcaseSection } from '../../components/site/PlatformShowcaseSection'
-import { AISimulatorSection } from '../../components/site/AISimulatorSection'
 import { ROICalculatorSection } from '../../components/site/ROICalculatorSection'
 import { PricingSection } from '../../components/site/PricingSection'
 import { TrustSection } from '../../components/site/TrustSection'
@@ -44,7 +43,6 @@ export function LandingPage() {
         <TestimonialsSection />
         <FeaturesSection />
         <PlatformShowcaseSection />
-        <AISimulatorSection />
         <ROICalculatorSection />
         <PricingSection />
         <TrustSection />
