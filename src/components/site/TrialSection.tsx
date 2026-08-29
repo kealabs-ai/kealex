@@ -33,9 +33,9 @@ export function TrialSection() {
               onClick={() => setOpen(true)}
               className="inline-flex items-center gap-2 bg-[#F96313] hover:bg-[#e0550f] text-white font-bold px-8 py-4 rounded-xl transition-all shadow-xl shadow-orange-900/30 text-base"
             >
-              Começar Grátis por 14 Dias <ArrowRight size={18} />
+              Começar Teste Grátis de 7 Dias <ArrowRight size={18} />
             </button>
-            <p className="text-xs text-slate-500 mt-4">Sem cartão · Cancele quando quiser · 100% LGPD</p>
+            <p className="text-xs text-slate-500 mt-3">Sem cartão de crédito · Cancele quando quiser · 100% LGPD</p>
           </motion.div>
         </div>
       </section>
@@ -60,8 +60,8 @@ export function TrialSection() {
                 <>
                   <div className="bg-[#081B33] px-7 py-5 flex items-start justify-between">
                     <div>
-                      <h3 className="text-lg font-bold text-white">Começar Trial Gratuito</h3>
-                      <p className="text-xs text-slate-400 mt-0.5">14 dias grátis · Sem cartão de crédito</p>
+                      <h3 className="text-lg font-bold text-white">Começar Teste Grátis de 7 Dias</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">Sem cartão de crédito · Cancele quando quiser</p>
                     </div>
                     <button onClick={() => setOpen(false)} className="text-slate-400 hover:text-white mt-0.5">
                       <X size={18} />
@@ -101,7 +101,7 @@ export function TrialSection() {
                       type="submit"
                       className="w-full bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3 rounded-xl transition-all mt-2 flex items-center justify-center gap-2"
                     >
-                      Criar Conta Grátis <ArrowRight size={16} />
+                      Começar Teste Grátis de 7 Dias <ArrowRight size={16} />
                     </button>
                     <p className="text-xs text-slate-400 text-center">
                       Ao continuar, você concorda com os Termos de Uso e Política de Privacidade (LGPD).

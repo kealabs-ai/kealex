@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, LogOut, type LucideIcon } from 'lucide-react'
+import { ChevronDown, LogOut, ExternalLink, type LucideIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 interface TopbarProps {
@@ -40,6 +41,16 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
 
         <div className="flex items-center gap-4">
           {rightContent ?? actions}
+
+          {/* Voltar ao site — visível apenas para clientes */}
+          {user?.role === 'cliente' && (
+            <Link
+              to="/"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#00C2A8] border border-slate-200 dark:border-slate-700 hover:border-[#00C2A8]/50 px-3 py-1.5 rounded-lg transition-all"
+            >
+              <ExternalLink size={12} /> Voltar ao site
+            </Link>
+          )}
 
           {/* Avatar e Menu — só mostra se não vier no rightContent */}
           {!rightContent && (

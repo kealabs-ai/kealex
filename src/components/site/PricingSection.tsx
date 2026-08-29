@@ -1,67 +1,85 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Check, Zap, Star, MessageCircle, Phone } from 'lucide-react'
+import { Check, Star, ArrowRight, Phone, Zap } from 'lucide-react'
 
 const PLANS = [
   {
-    name: 'Starter',
+    id: 'autonomo',
+    name: 'Autônomo · Solo',
     monthly: 197,
-    desc: 'Para profissionais autônomos e pequenos negócios que precisam sair das planilhas.',
+    annual: 167,
+    badge: null,
+    highlight: false,
+    roi: 'Menos do que o valor de uma consulta por mês para blindar seus prazos e automatizar seu escritório.',
+    roiEmoji: '⚖️',
+    desc: 'Para advogados recém-formados e autônomos que precisam sair das planilhas e nunca mais perder um prazo.',
     features: [
       'Até 2 usuários',
-      '1.000 ações/requisições por mês',
       'Processos, Prazos e Documentos',
-      'Gestão financeira básica',
+      'Controle de Intimações com IA',
+      'Portal do Cliente (link seguro)',
+      'Financeiro básico (honorários)',
+      'Kealex AI — 200 consultas/mês',
       'Suporte via e-mail',
     ],
-    cta: 'Começar Grátis',
-    highlight: false,
-    badge: null,
+    cta: 'Começar Teste Grátis de 7 Dias →',
+    ctaStyle: 'bg-[#081B33] hover:bg-[#0f2d4a] text-white',
   },
   {
-    name: 'Professional',
-    monthly: 497,
-    desc: 'Para PMEs que querem escalar com IA e integrações sem aumentar o time.',
+    id: 'escritorio',
+    name: 'Escritório · Crescimento',
+    monthly: 397,
+    annual: 337,
+    badge: 'Mais Popular',
+    highlight: true,
+    roi: 'Menos do que o custo de um estagiário por mês. Com IA que trabalha 24h, automatiza cobranças e escala seu escritório.',
+    roiEmoji: '🚀',
+    desc: 'Para escritórios em crescimento que querem escalar sem aumentar o time. IA completa, cobrança automática e relatórios.',
     features: [
       'Até 10 usuários',
-      '5.000 ações/requisições por mês',
-      'Todos os módulos + IA integrada',
-      'API & Webhooks para integrações',
+      'Todos os módulos do plano Solo',
+      'Cobrança automática (Boleto/Pix via Asaas)',
+      'Honorários de êxito automatizados',
+      'Kealex AI — ilimitado',
+      'Relatórios financeiros avançados',
+      'Audiências e Intimações integradas',
       'Suporte prioritário via WhatsApp',
       'Onboarding assistido',
     ],
-    cta: 'Quero o Professional',
-    highlight: true,
-    badge: 'Mais Popular',
+    cta: 'Começar Teste Grátis de 7 Dias →',
+    ctaStyle: 'bg-[#F96313] hover:bg-[#e0550f] text-white shadow-lg shadow-orange-200',
   },
   {
-    name: 'Enterprise',
-    monthly: 997,
-    desc: 'Para operações robustas que exigem escala, segurança e suporte dedicado.',
+    id: 'enterprise',
+    name: 'Corporativo',
+    monthly: null,
+    annual: null,
+    badge: null,
+    highlight: false,
+    roi: 'Solução sob medida para grandes escritórios e departamentos jurídicos com volume e compliance avançado.',
+    roiEmoji: '🏛️',
+    desc: 'Para operações robustas com múltiplas unidades, volume customizado de IA e SLA contratual garantido.',
     features: [
       'Usuários ilimitados',
-      'Volume customizado de IA',
-      'Onboarding assistido completo',
+      'Volume de IA customizado',
+      'Infraestrutura dedicada',
       'Gerente de conta dedicado',
       'SLA contratual garantido',
-      'Infraestrutura dedicada',
+      'Onboarding completo assistido',
+      'Integrações via API & Webhooks',
     ],
     cta: 'Falar com Especialista',
-    highlight: false,
-    badge: null,
-    isEnterprise: true,
+    ctaStyle: 'bg-white border-2 border-[#081B33] text-[#081B33] hover:bg-[#081B33] hover:text-white',
   },
 ]
 
 export function PricingSection() {
   const [annual, setAnnual] = useState(false)
 
-  const price = (monthly: number) =>
-    annual ? Math.round(monthly * 10) : monthly
-
   return (
     <section id="precos" className="py-20 bg-[#F8FAFC]" aria-label="Planos e preços do Kealex">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
         <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
@@ -70,13 +88,12 @@ export function PricingSection() {
         >
           <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Planos e Preços</p>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-[#081B33] mb-4">
-            Invista menos do que um estagiário.
-            <br />
+            Invista menos do que um estagiário.{' '}
             <span className="text-[#00C2A8]">Produza como um time completo.</span>
           </h2>
-          <p className="text-[#596B82] mb-7">14 dias grátis em qualquer plano. Sem cartão de crédito.</p>
+          <p className="text-[#596B82] mb-7 text-sm">7 dias grátis em qualquer plano. Sem cartão de crédito.</p>
 
-          {/* Toggle */}
+          {/* Toggle mensal/anual */}
           <div className="inline-flex items-center gap-3 bg-white border border-slate-200 rounded-xl p-1">
             <button
               onClick={() => setAnnual(false)}
@@ -89,15 +106,16 @@ export function PricingSection() {
               className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 ${annual ? 'bg-[#081B33] text-white' : 'text-slate-500'}`}
             >
               Anual
-              <span className="text-[10px] bg-[#00C2A8] text-white px-1.5 py-0.5 rounded-full font-bold">-17%</span>
+              <span className="text-[10px] bg-[#00C2A8] text-white px-1.5 py-0.5 rounded-full font-bold">-15%</span>
             </button>
           </div>
         </motion.div>
 
+        {/* Cards */}
         <div className="grid lg:grid-cols-3 gap-6 mb-8">
           {PLANS.map((plan, i) => (
             <motion.div
-              key={plan.name}
+              key={plan.id}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -109,51 +127,56 @@ export function PricingSection() {
               }`}
             >
               {plan.badge && (
-                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#F96313] text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg shadow-orange-200">
+                <span className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#F96313] text-white text-xs font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg shadow-orange-200 whitespace-nowrap">
                   <Star size={11} fill="currentColor" /> {plan.badge}
                 </span>
               )}
 
-              <div className="mb-6">
+              {/* Nome e desc */}
+              <div className="mb-5">
                 <h3 className={`text-lg font-bold mb-1 ${plan.highlight ? 'text-white' : 'text-[#081B33]'}`}>
                   {plan.name}
                 </h3>
-                <p className={`text-xs mb-4 leading-relaxed ${plan.highlight ? 'text-slate-400' : 'text-[#596B82]'}`}>
+                <p className={`text-xs leading-relaxed mb-4 ${plan.highlight ? 'text-slate-400' : 'text-[#596B82]'}`}>
                   {plan.desc}
                 </p>
-                <div className="flex items-end gap-1">
-                  {plan.isEnterprise ? (
-                    <>
-                      <span className={`text-sm font-semibold mb-1 ${plan.highlight ? 'text-slate-300' : 'text-slate-500'}`}>A partir de</span>
-                      <span className="text-4xl font-extrabold text-[#081B33]">
-                        R$ {price(plan.monthly).toLocaleString('pt-BR')}
-                      </span>
-                      <span className="text-sm mb-1 text-slate-400">/{annual ? 'ano' : 'mês'}</span>
-                    </>
-                  ) : (
-                    <>
-                      <span className={`text-4xl font-extrabold ${plan.highlight ? 'text-white' : 'text-[#081B33]'}`}>
-                        R$ {price(plan.monthly).toLocaleString('pt-BR')}
-                      </span>
-                      <span className={`text-sm mb-1 ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>
-                        /{annual ? 'ano' : 'mês'}
-                      </span>
-                    </>
-                  )}
-                </div>
-                {annual && !plan.isEnterprise && (
-                  <p className="text-xs text-[#00C2A8] mt-1">
-                    Equivale a R$ {plan.monthly}/mês — 2 meses grátis
+
+                {/* Preço */}
+                {plan.monthly ? (
+                  <div className="flex items-end gap-1.5">
+                    <span className={`text-4xl font-extrabold leading-none ${plan.highlight ? 'text-white' : 'text-[#081B33]'}`}>
+                      R$ {annual ? plan.annual : plan.monthly}
+                    </span>
+                    <span className={`text-sm mb-1 ${plan.highlight ? 'text-slate-400' : 'text-slate-400'}`}>/mês</span>
+                  </div>
+                ) : (
+                  <p className={`text-2xl font-extrabold ${plan.highlight ? 'text-white' : 'text-[#081B33]'}`}>
+                    Sob consulta
                   </p>
                 )}
+                {annual && plan.monthly && (
+                  <p className="text-xs text-[#00C2A8] mt-1">
+                    Cobrado anualmente · 2 meses grátis
+                  </p>
+                )}
+
+                {/* ROI framing */}
+                <div className={`mt-3 rounded-xl px-3 py-2.5 ${plan.highlight ? 'bg-white/10' : 'bg-[#00C2A8]/8 border border-[#00C2A8]/20'}`}>
+                  <p className={`text-[11px] leading-relaxed ${plan.highlight ? 'text-slate-300' : 'text-[#596B82]'}`}>
+                    <span className="mr-1">{plan.roiEmoji}</span>
+                    {plan.roi}
+                  </p>
+                </div>
+
                 {plan.highlight && (
-                  <div className="mt-3 flex items-center gap-1.5 text-xs text-[#00C2A8]">
+                  <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#00C2A8]">
                     <Zap size={12} fill="currentColor" />
                     <span>Escolhido por 68% dos novos clientes</span>
                   </div>
                 )}
               </div>
 
+              {/* Features */}
               <ul className="space-y-2.5 flex-1 mb-7">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm">
@@ -163,31 +186,29 @@ export function PricingSection() {
                 ))}
               </ul>
 
-              <a
-                href={plan.isEnterprise ? 'mailto:contato@kealabs.com.br' : '#trial'}
-                className={`block text-center py-3 rounded-xl text-sm font-bold transition-all ${
-                  plan.highlight
-                    ? 'bg-[#F96313] hover:bg-[#e0550f] text-white shadow-lg shadow-orange-900/30'
-                    : plan.isEnterprise
-                    ? 'bg-white border-2 border-[#081B33] text-[#081B33] hover:bg-[#081B33] hover:text-white'
-                    : 'bg-[#081B33] hover:bg-[#0f2d4a] text-white'
-                }`}
-              >
-                {plan.isEnterprise ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Phone size={14} /> {plan.cta}
-                  </span>
-                ) : plan.highlight ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <MessageCircle size={14} /> {plan.cta}
-                  </span>
-                ) : plan.cta}
-              </a>
+              {/* CTA */}
+              <div>
+                <a
+                  href={plan.id === 'enterprise' ? 'mailto:contato@kealabs.com.br' : '#trial'}
+                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all ${plan.ctaStyle}`}
+                >
+                  {plan.id === 'enterprise' ? (
+                    <><Phone size={14} /> {plan.cta}</>
+                  ) : (
+                    <>{plan.cta} <ArrowRight size={14} /></>
+                  )}
+                </a>
+                {plan.id !== 'enterprise' && (
+                  <p className={`text-center text-[11px] mt-2 ${plan.highlight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Sem cartão de crédito · Cancele quando quiser
+                  </p>
+                )}
+              </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Guarantee strip */}
+        {/* Garantia */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -196,8 +217,8 @@ export function PricingSection() {
         >
           <span className="text-2xl" aria-hidden="true">🛡️</span>
           <p className="text-sm text-[#596B82]">
-            <strong className="text-[#081B33]">Garantia de 14 dias.</strong>{' '}
-            Se não gostar, devolvemos 100% do valor pago no primeiro mês. Sem burocracia.
+            <strong className="text-[#081B33]">Garantia de 7 dias.</strong>{' '}
+            Se não gostar, devolvemos 100% do valor pago. Sem burocracia, sem perguntas.
           </p>
         </motion.div>
       </div>

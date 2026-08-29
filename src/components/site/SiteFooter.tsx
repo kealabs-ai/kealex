@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import logo from '../../assets/logotipo_kealex.png'
 
 export function SiteFooter() {
@@ -38,9 +39,15 @@ export function SiteFooter() {
           <div>
             <p className="text-xs font-bold text-white uppercase tracking-widest mb-4">Legal & Suporte</p>
             <ul className="space-y-2.5 text-sm">
-              {['Termos de Uso', 'Política de Privacidade', 'LGPD', 'Suporte', 'Contato'].map((l) => (
+              {['Termos de Uso', 'Política de Privacidade', 'Suporte', 'Contato'].map((l) => (
                 <li key={l}><a href="#" className="hover:text-[#00C2A8] transition-colors">{l}</a></li>
               ))}
+              <li>
+                <Link to="/lgpd" className="hover:text-[#00C2A8] transition-colors flex items-center gap-1.5">
+                  LGPD
+                  <span className="text-[9px] font-bold bg-[#00C2A8]/20 text-[#00C2A8] px-1.5 py-0.5 rounded-full">Lei 13.709</span>
+                </Link>
+              </li>
             </ul>
           </div>
         </div>

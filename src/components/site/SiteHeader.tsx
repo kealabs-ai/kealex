@@ -4,11 +4,11 @@ import { Menu, X } from 'lucide-react'
 import logo from '../../assets/logotipo_kealex.png'
 
 const NAV = [
-  { label: 'Benefícios', href: 'beneficios' },
   { label: 'Diagnóstico', href: 'diagnostico', highlight: true },
+  { label: 'Benefícios', href: 'beneficios' },
   { label: 'Recursos', href: 'recursos' },
-  { label: 'Kealex AI', href: 'kealex-ai' },
-  { label: 'ROI', href: 'roi' },
+  { label: 'Plataforma', href: 'plataforma' },
+  { label: 'Depoimentos', href: 'depoimentos' },
   { label: 'Preços', href: 'precos' },
   { label: 'FAQ', href: 'faq' },
 ]

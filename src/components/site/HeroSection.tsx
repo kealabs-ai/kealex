@@ -73,12 +73,12 @@ export function HeroSection() {
             </div>
 
             {/* CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 mb-8">
+            <div className="flex flex-col sm:flex-row gap-3 mb-4">
               <a
                 href="#trial"
                 className="inline-flex items-center justify-center gap-2 bg-[#F96313] hover:bg-[#e0550f] text-white font-bold px-7 py-3.5 rounded-xl transition-all shadow-lg shadow-orange-200 text-sm"
               >
-                Testar Grátis por 14 Dias <ArrowRight size={16} />
+                Começar Teste Grátis de 7 Dias <ArrowRight size={16} />
               </a>
               <a
                 href="#precos"
@@ -87,6 +87,9 @@ export function HeroSection() {
                 <Play size={15} className="text-[#00C2A8]" /> Ver Planos e Preços
               </a>
             </div>
+            <p className="text-xs text-[#596B82] mb-8">
+              Sem necessidade de cartão de crédito · Cancele quando quiser
+            </p>
 
             {/* Trust badges */}
             <div className="flex flex-wrap items-center gap-4 text-xs text-[#596B82]">
