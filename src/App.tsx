@@ -8,6 +8,7 @@ import { ProtectedLayout } from './components/ProtectedLayout'
 import { LoginPage } from './pages/LoginPage'
 import { LandingPage } from './pages/site/LandingPage'
 import { LGPDPage } from './pages/site/LGPDPage'
+import { TermosPage } from './pages/site/TermosPage'
 import { ProcessosPage } from './pages/ProcessosPage'
 import { DocumentosPage } from './pages/DocumentosPage'
 import { PrazosPage } from './pages/PrazosPage'
@@ -37,6 +38,8 @@ export default function App() {
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/lgpd" element={<LGPDPage />} />
                 <Route path="/privacidade" element={<LGPDPage />} />
+                <Route path="/termos" element={<TermosPage />} />
+                <Route path="/termos-de-uso" element={<TermosPage />} />
                 <Route path="/entrar" element={<LoginPage />} />
                 <Route path="/login" element={<Navigate to="/entrar" replace />} />
                 <Route path="/error" element={<ErrorPage />} />

@@ -9,6 +9,7 @@ const NAV = [
   { label: 'Recursos', href: 'recursos' },
   { label: 'Plataforma', href: 'plataforma' },
   { label: 'Depoimentos', href: 'depoimentos' },
+  { label: 'Calculadora de ROI', href: 'roi' },
   { label: 'Preços', href: 'precos' },
   { label: 'FAQ', href: 'faq' },
 ]
