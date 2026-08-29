@@ -5,6 +5,7 @@ import logo from '../../assets/logotipo_kealex.png'
 
 const NAV = [
   { label: 'Benefícios', href: 'beneficios' },
+  { label: 'Diagnóstico', href: 'diagnostico', highlight: true },
   { label: 'Recursos', href: 'recursos' },
   { label: 'Kealex AI', href: 'kealex-ai' },
   { label: 'ROI', href: 'roi' },
@@ -63,9 +64,12 @@ export function SiteHeader() {
                 key={item.label}
                 onClick={() => scrollTo(item.href)}
                 className={`text-sm font-medium transition-colors relative pb-1 group ${
-                  active === item.href ? 'text-[#00C2A8]' : 'text-slate-600 hover:text-[#081B33]'
+                  active === item.href ? 'text-[#00C2A8]' : item.highlight ? 'text-[#F96313] hover:text-[#e0550f]' : 'text-slate-600 hover:text-[#081B33]'
                 }`}
               >
+                {item.highlight && active !== item.href && (
+                  <span className="absolute -top-1 -right-2 w-1.5 h-1.5 rounded-full bg-[#F96313] animate-pulse" />
+                )}
                 {item.label}
                 {/* underline ativo — desliza entre itens */}
                 {active === item.href && (
