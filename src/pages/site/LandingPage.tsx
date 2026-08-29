@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { SiteHeader } from '../../components/site/SiteHeader'
 import { HeroSection } from '../../components/site/HeroSection'
+import { DiagnosticoSection } from '../../components/site/DiagnosticoSection'
 import { BeforeAfterSection } from '../../components/site/BeforeAfterSection'
 import { FeaturesSection } from '../../components/site/FeaturesSection'
 import { AISimulatorSection } from '../../components/site/AISimulatorSection'
@@ -9,6 +10,7 @@ import { PricingSection } from '../../components/site/PricingSection'
 import { FAQSection } from '../../components/site/FAQSection'
 import { TrialSection } from '../../components/site/TrialSection'
 import { SiteFooter } from '../../components/site/SiteFooter'
+import { KeaLexAdvisorWidget } from '../../components/site/KeaLexAdvisorWidget'
 
 export function LandingPage() {
   const [progress, setProgress] = useState(0)
@@ -34,6 +36,7 @@ export function LandingPage() {
       <SiteHeader />
       <main>
         <HeroSection />
+        <DiagnosticoSection />
         <BeforeAfterSection />
         <FeaturesSection />
         <AISimulatorSection />
@@ -43,6 +46,7 @@ export function LandingPage() {
         <TrialSection />
       </main>
       <SiteFooter />
+      <KeaLexAdvisorWidget />
     </div>
   )
 }

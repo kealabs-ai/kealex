@@ -138,6 +138,15 @@
 :root:not(.dark) ::-webkit-scrollbar-thumb { background: #00C2A8 !important; }
 :root:not(.dark) ::-webkit-scrollbar-thumb:hover { background: #009e88 !important; }
 
+/* ── Pulse CTA animation ── */
+@keyframes pulse-cta {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 99, 19, 0.5); }
+  50% { box-shadow: 0 0 0 8px rgba(249, 99, 19, 0); }
+}
+.animate-pulse-cta {
+  animation: pulse-cta 2s ease-in-out infinite;
+}
+
 /* ── Animations ── */
 @keyframes shimmer {
   0% { background-position: -200% 0; }
