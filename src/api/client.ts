@@ -1,10 +1,7 @@
 import axios from 'axios'
 
-// Usar proxy local para evitar CORS em desenvolvimento
-const isDev = import.meta.env.DEV
-const baseURL = isDev 
-  ? '/api'  // Proxy local do Vite - será redirecionado para https://srv1023256.hstgr.cloud
-  : 'https://srv1023256.hstgr.cloud'
+// Em dev usa proxy do Vite, em prod usa proxy reverso do Apache (.htaccess)
+const baseURL = import.meta.env.DEV ? '/api' : ''
 
 export const api = axios.create({ 
   baseURL,
