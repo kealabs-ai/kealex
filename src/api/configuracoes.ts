@@ -130,8 +130,8 @@ export interface DatabaseEnv {
 
 export const configuracoesApi = {
   // Geral
-  getGeral: () => api.get<CfgGeral>('/v1/lex/configuracoes/geral').then((r) => r.data).catch(() => null),
-  saveGeral: (data: Partial<CfgGeral>) => api.post<CfgGeral>('/v1/lex/configuracoes/geral', data).then((r) => r.data),
+  getGeral: () => api.get<CfgGeral>('/k1/lex/configuracoes/geral').then((r) => r.data).catch(() => null),
+  saveGeral: (data: Partial<CfgGeral>) => api.post<CfgGeral>('/k1/lex/configuracoes/geral', data).then((r) => r.data),
 
   // CDN
   getCdn: () => api.get<CfgCdn>('/k1/lex/configuracoes/cdn').then((r) => r.data).catch(() => null),
