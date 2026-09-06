@@ -22,6 +22,15 @@ const PLANS = [
       'Kealex AI — 200 consultas/mês',
       'Suporte via e-mail',
     ],
+    integrations: [
+      'DataJud · CNJ',
+      'Tribunais Superiores (STF, STJ, TST, TSE, STM)',
+      'Justiça Federal',
+      'Justiça Estadual',
+      'Justiça do Trabalho',
+      'Justiça Eleitoral',
+      'Justiça Militar',
+    ],
     cta: 'Começar Teste Grátis de 7 Dias →',
     ctaStyle: 'bg-[#081B33] hover:bg-[#0f2d4a] text-white',
   },
@@ -185,6 +194,23 @@ export function PricingSection() {
                   </li>
                 ))}
               </ul>
+
+              {'integrations' in plan && plan.integrations && (
+                <div className="mb-7 border border-slate-100 rounded-xl overflow-hidden">
+                  <div className="flex items-center gap-2 bg-slate-50 px-3 py-2 border-b border-slate-100">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Integrações DataJud</span>
+                    <span className="text-[9px] font-bold bg-[#00C2A8] text-white px-1.5 py-0.5 rounded-full ml-auto">Incluso</span>
+                  </div>
+                  <ul className="divide-y divide-slate-50">
+                    {plan.integrations.map((item) => (
+                      <li key={item} className="flex items-center gap-2 px-3 py-1.5 text-xs text-slate-600">
+                        <span className="w-1.5 h-1.5 rounded-full bg-[#00C2A8] shrink-0" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {/* CTA */}
               <div>

@@ -1,5 +1,11 @@
 Options -MultiViews
 RewriteEngine On
+
+# Proxy reverso para o backend (evita CORS)
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^k1/(.*)$ https://srv1023256.hstgr.cloud/k1/$1 [P,L]
+
+# SPA fallback
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d
 RewriteRule ^ /index.html [QSA,L]
