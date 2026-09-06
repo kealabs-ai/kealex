@@ -1,7 +1,8 @@
 import axios from 'axios'
 
-// Em dev usa proxy do Vite, em prod usa proxy reverso do Apache (.htaccess)
-const baseURL = import.meta.env.DEV ? '/api' : ''
+const baseURL = import.meta.env.DEV
+  ? '/api'
+  : 'https://srv1023256.hstgr.cloud'
 
 export const api = axios.create({ 
   baseURL,
