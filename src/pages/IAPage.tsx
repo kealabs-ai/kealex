@@ -342,8 +342,8 @@ export function IAPage() {
                       <div className={`group relative max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                         <div className={`rounded-2xl px-4 py-3 ${
                           msg.role === 'user'
-                            ? 'bg-[#6320EE] text-white rounded-tr-sm shadow-lg shadow-violet-900/40'
-                            : 'bg-[#131926] border border-slate-700/60 shadow-sm rounded-tl-sm'
+                            ? 'chat-bubble-user rounded-tr-sm'
+                            : 'chat-bubble-assistant rounded-tl-sm'
                         }`}>
                           {msg.role === 'user' ? (
                             <p className="text-sm leading-relaxed">{msg.content}</p>
@@ -402,9 +402,9 @@ export function IAPage() {
           </div>
 
           {/* input area */}
-          <div className="shrink-0 bg-white/80 dark:bg-slate-900/80 border-t border-slate-200/80 dark:border-indigo-950/40 p-4 backdrop-blur">
+          <div className="chat-input-bar shrink-0 border-t p-4 backdrop-blur">
             <div className="max-w-3xl mx-auto">
-              <div className="relative flex items-end gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-4 py-3 focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 dark:focus-within:ring-indigo-950/50 transition-all shadow-sm">
+              <div className="chat-input-box relative flex items-end gap-3 rounded-2xl px-4 py-3 transition-all">
                 <textarea
                   ref={textareaRef}
                   value={input}
@@ -419,7 +419,7 @@ export function IAPage() {
                   whileTap={{ scale: 0.9 }}
                   onClick={() => handleSend()}
                   disabled={!input.trim() || streaming || !hasConfig}
-                  className="shrink-0 w-9 h-9 flex items-center justify-center bg-gradient-to-br from-indigo-600 to-violet-600 text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-indigo-200/70 dark:shadow-indigo-950/35 transition-opacity"
+                  className="chat-send-btn shrink-0 w-9 h-9 flex items-center justify-center text-white rounded-xl disabled:opacity-40 disabled:cursor-not-allowed transition-opacity"
                 >
                   {streaming ? (
                     <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
@@ -439,7 +439,7 @@ export function IAPage() {
         </div>
 
         {/* Right: Document Editor */}
-        <div className="hidden lg:flex lg:w-[500px] flex-col bg-slate-50/80 dark:bg-slate-900/70 border-l border-slate-200 dark:border-slate-800">
+        <div className="chat-doc-panel hidden lg:flex lg:w-[500px] flex-col border-l">
           <div className="flex-1 overflow-y-auto p-6 flex flex-col items-center justify-center">
             {messages.length === 0 ? (
               <div className="text-center">
@@ -451,13 +451,12 @@ export function IAPage() {
               </div>
             ) : (
               <div className="w-full max-w-sm">
-                {/* Document preview */}
-                <div className="bg-white/90 dark:bg-slate-800/90 rounded-2xl shadow-[0_20px_60px_-20px_rgba(79,70,229,0.25)] p-8 min-h-[600px] border border-slate-200/80 dark:border-slate-700/80 backdrop-blur-sm">
+                <div className="chat-doc-card rounded-2xl p-8 min-h-[600px] border">
                   <div className="prose prose-sm dark:prose-invert max-w-none">
                     {messages
                       .filter((m) => m.role === 'assistant')
                       .map((m) => (
-                        <div key={m.id} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap break-words font-sans">
+                        <div key={m.id} className="text-xs leading-relaxed whitespace-pre-wrap break-words font-sans">
                           {m.content.slice(0, 2000)}
                           {m.content.length > 2000 && '...'}
                         </div>
@@ -465,15 +464,14 @@ export function IAPage() {
                   </div>
                 </div>
 
-                {/* Document actions */}
                 <div className="flex gap-2 mt-4">
-                  <button className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-xl transition-all">
+                  <button className="chat-doc-btn-secondary flex-1 flex items-center justify-center gap-2 px-3 py-2 text-xs font-medium rounded-xl transition-all">
                     <Copy size={12} /> Copiar
                   </button>
                   <button
                     onClick={handleGerarDocx}
                     disabled={generatingDocx || messages.filter((m) => m.role === 'assistant').length === 0}
-                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-xl transition-all shadow-md shadow-indigo-600/25"
+                    className="chat-doc-btn-primary flex-1 flex items-center justify-center gap-2 px-3 py-2 text-white text-xs font-medium rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {generatingDocx ? (
                       <>
@@ -484,9 +482,7 @@ export function IAPage() {
                         Gerando...
                       </>
                     ) : (
-                      <>
-                        <Download size={12} /> .docx
-                      </>
+                      <><Download size={12} /> .docx</>
                     )}
                   </button>
                 </div>

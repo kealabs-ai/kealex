@@ -57,7 +57,23 @@ export function DataCard({ children, className = '', delay = 0 }: DataCardProps)
   )
 }
 
-export function SkeletonRow() {
+export function SkeletonRow({ variant = 'table' }: { variant?: 'table' | 'list' }) {
+  if (variant === 'list') {
+    return (
+      <div className="p-4 flex items-start gap-4">
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-24 rounded shimmer" />
+          <div className="h-4 w-2/3 rounded shimmer" />
+          <div className="h-3 w-1/2 rounded shimmer" />
+        </div>
+        <div className="flex gap-2">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-8 w-8 rounded-lg shimmer" />
+          ))}
+        </div>
+      </div>
+    )
+  }
   return (
     <tr>
       {[...Array(5)].map((_, i) => (
