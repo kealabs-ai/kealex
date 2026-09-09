@@ -7,16 +7,21 @@ export default defineConfig({
   appType: 'spa',
   server: {
     proxy: {
+      '/k1': {
+        target: 'https://srv1023256.hstgr.cloud',
+        changeOrigin: true,
+        secure: false,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq, req) => {
+            console.log('[Proxy]', req.method, req.url, '->', 'https://srv1023256.hstgr.cloud' + proxyReq.path)
+          })
+        },
+      },
       '/api': {
         target: 'https://srv1023256.hstgr.cloud',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
         secure: false,
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq, req) => {
-            console.log('[Proxy]', req.method, req.url, '->', proxyReq.path)
-          })
-        },
       },
     },
   },

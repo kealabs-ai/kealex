@@ -129,7 +129,7 @@ export function ProcessosPage() {
           </div>
           <div className="divide-y divide-slate-100 dark:divide-indigo-950/30">
             {isLoading ? (
-              [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
+              [...Array(4)].map((_, i) => <SkeletonRow key={i} variant="list" />)
             ) : displayProcessos.length === 0 ? (
               <div className="p-8"><EmptyState message="Nenhum processo encontrado" icon={<Briefcase size={28} className="text-slate-300" />} /></div>
             ) : (

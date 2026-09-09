@@ -64,7 +64,7 @@ export function IATab() {
       
       // Se for Groq e tiver chave, carregar modelos
       if (cfg.provider === 'groq') {
-        const keyToUse = cfg.api_key || defaultGroqKey
+        const keyToUse = cfg.groq_api_key || cfg.api_key || defaultGroqKey
         if (keyToUse) loadGroqModels(keyToUse)
       }
     }
@@ -82,19 +82,21 @@ export function IATab() {
         }
       })
       
-      // Extrair apenas modelos Llama 3.x válidos (não incluir meta-llama/llama-4)
-      const models = response.data.data
+      const allModels = response.data.data
+      console.log('[Admin IA] Modelos Groq (bruto):', allModels.map((m: any) => ({ id: m.id, active: m.active, owned_by: m.owned_by })))
+
+      const models = allModels
         .filter((m: any) => {
           const id = m.id.toLowerCase()
-          return m.active && 
-                 (id.startsWith('llama-3.') || id.startsWith('gemma')) &&
-                 !id.includes('guard') && 
-                 !id.includes('meta-llama/')
+          return !id.includes('whisper') &&
+                 !id.includes('guard') &&
+                 !id.includes('tts') &&
+                 !id.includes('vision')
         })
         .map((m: any) => m.id)
         .sort()
-      
-      console.log('[Admin IA] Modelos Groq carregados:', models)
+
+      console.log('[Admin IA] Modelos Groq filtrados:', models)
       setGroqModels(models.length > 0 ? models : [
         'llama-3.3-70b-versatile',
         'llama-3.1-70b-versatile',
