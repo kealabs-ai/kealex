@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const baseURL = import.meta.env.DEV
-  ? '/api'
+  ? ''
   : 'https://srv1023256.hstgr.cloud'
 
 export const api = axios.create({ 

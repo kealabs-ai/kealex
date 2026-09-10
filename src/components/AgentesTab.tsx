@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Edit2, Trash2, Eye, EyeOff, Bot, Globe, Lock, CheckCircle } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, Bot, Globe, Lock, CheckCircle, RefreshCw } from 'lucide-react'
 import { DataCard } from './Cards'
 import { Button, Input, Textarea, Select } from './UI'
 import { Modal } from './Modal'
 import { useAgentes, useCreateAgente, useUpdateAgente, useDeleteAgente } from '../hooks/useAgentes'
+import { useModelosDisponiveis } from '../hooks/useConfiguracoes'
+import axios from 'axios'
 import type { AgenteIA, AIProvider } from '../types'
 
 export function AgentesTab() {
@@ -182,7 +184,16 @@ function AgenteModal({
   onClose: () => void
   isSaving: boolean
 }) {
+  const fallbackCerebras = ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b']
+  const fallbackGroq = ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+
+  const { data: modelosDisponiveis } = useModelosDisponiveis()
   const [showAdvanced, setShowAdvanced] = useState(false)
+  const [groqModels, setGroqModels] = useState<string[]>(
+    // inicia com o modelo atual para não aparecer vazio antes do carregamento
+    agente?.provider === 'groq' && agente?.modelo ? [agente.modelo] : []
+  )
+  const [loadingGroq, setLoadingGroq] = useState(false)
   const [form, setForm] = useState({
     nome: agente?.nome || '',
     descricao: agente?.descricao || '',
@@ -195,9 +206,46 @@ function AgenteModal({
     publico: agente?.publico ?? true,
   })
 
-  const modelos = {
-    cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
-    groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+  const loadGroqModels = async (apiKey: string) => {
+    if (!apiKey || apiKey.length < 20) return
+    setLoadingGroq(true)
+    try {
+      const res = await axios.get('https://api.groq.com/openai/v1/models', {
+        headers: { Authorization: `Bearer ${apiKey}` }
+      })
+      const models = res.data.data
+        .filter((m: any) => {
+          const id = m.id.toLowerCase()
+          return !id.includes('whisper') && !id.includes('guard') && !id.includes('tts') && !id.includes('vision')
+        })
+        .map((m: any) => m.id)
+        .sort()
+      setGroqModels(models.length > 0
+        ? (models.includes(form.modelo) ? models : [form.modelo, ...models])
+        : fallbackGroq
+      )
+    } catch {
+      setGroqModels(fallbackGroq)
+    } finally {
+      setLoadingGroq(false)
+    }
+  }
+
+  useEffect(() => {
+    if (form.provider === 'groq' && form.api_key) loadGroqModels(form.api_key)
+  }, [])
+
+  const modelosPorProvider = {
+    cerebras: modelosDisponiveis?.cerebras
+      ? (modelosDisponiveis.cerebras.includes(form.modelo) ? modelosDisponiveis.cerebras : [form.modelo, ...modelosDisponiveis.cerebras])
+      : fallbackCerebras,
+    groq: groqModels.length > 0 ? groqModels : (modelosDisponiveis?.groq || fallbackGroq),
+  }
+
+  const handleProviderChange = (newProvider: AIProvider) => {
+    const defaultModelo = newProvider === 'groq' ? fallbackGroq[0] : fallbackCerebras[0]
+    setForm({ ...form, provider: newProvider, modelo: defaultModelo })
+    if (newProvider === 'groq' && form.api_key) loadGroqModels(form.api_key)
   }
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -206,10 +254,11 @@ function AgenteModal({
     onSave(form)
   }
 
+  const models = modelosPorProvider[form.provider]
+
   return (
     <Modal onClose={onClose} title={agente ? 'Editar Agente' : 'Novo Agente'}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Nome e Descrição */}
         <div className="space-y-3">
           <Input
             label="Nome do Agente"
@@ -218,7 +267,6 @@ function AgenteModal({
             placeholder="Ex: Assistente Jurídico Trabalhista"
             required
           />
-
           <Input
             label="Descrição (opcional)"
             value={form.descricao}
@@ -227,33 +275,43 @@ function AgenteModal({
           />
         </div>
 
-        {/* Provider e Modelo em grid */}
         <div className="grid grid-cols-2 gap-3">
           <Select
             label="Provider"
             value={form.provider}
-            onChange={(e) => setForm({ 
-              ...form, 
-              provider: e.target.value as AIProvider,
-              modelo: e.target.value === 'groq' ? 'llama-3.3-70b-versatile' : 'llama-3.3-70b'
-            })}
+            onChange={(e) => handleProviderChange(e.target.value as AIProvider)}
           >
             <option value="cerebras">Cerebras</option>
             <option value="groq">Groq</option>
           </Select>
 
-          <Select
-            label="Modelo"
-            value={form.modelo}
-            onChange={(e) => setForm({ ...form, modelo: e.target.value })}
-          >
-            {modelos[form.provider].map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </Select>
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Modelo</label>
+              {form.provider === 'groq' && form.api_key && (
+                <button
+                  type="button"
+                  onClick={() => loadGroqModels(form.api_key)}
+                  disabled={loadingGroq}
+                  className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 disabled:opacity-50"
+                >
+                  <RefreshCw size={11} className={loadingGroq ? 'animate-spin' : ''} />
+                  {loadingGroq ? 'Carregando...' : 'Atualizar'}
+                </button>
+              )}
+            </div>
+            <select
+              value={form.modelo}
+              onChange={(e) => setForm({ ...form, modelo: e.target.value })}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm text-gray-800 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300"
+            >
+              {models.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
         </div>
 
-        {/* API Key */}
         <Input
           label="API Key"
           type="password"
@@ -263,30 +321,17 @@ function AgenteModal({
           required
         />
 
-        {/* Toggles compactos */}
         <div className="flex gap-2">
           <label className="flex-1 flex items-center justify-between p-2.5 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
             <span className="text-xs font-medium text-gray-900">Ativo</span>
-            <input
-              type="checkbox"
-              checked={form.ativo}
-              onChange={(e) => setForm({ ...form, ativo: e.target.checked })}
-              className="w-4 h-4"
-            />
+            <input type="checkbox" checked={form.ativo} onChange={(e) => setForm({ ...form, ativo: e.target.checked })} className="w-4 h-4" />
           </label>
-
           <label className="flex-1 flex items-center justify-between p-2.5 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors">
             <span className="text-xs font-medium text-gray-900">Público</span>
-            <input
-              type="checkbox"
-              checked={form.publico}
-              onChange={(e) => setForm({ ...form, publico: e.target.checked })}
-              className="w-4 h-4"
-            />
+            <input type="checkbox" checked={form.publico} onChange={(e) => setForm({ ...form, publico: e.target.checked })} className="w-4 h-4" />
           </label>
         </div>
 
-        {/* Configurações Avançadas (Collapsible) */}
         <div className="border-t pt-3">
           <button
             type="button"
@@ -294,31 +339,18 @@ function AgenteModal({
             className="flex items-center justify-between w-full text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors"
           >
             <span>Configurações Avançadas</span>
-            <svg
-              className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+            <svg className={`w-4 h-4 transition-transform ${showAdvanced ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
           </button>
-
           {showAdvanced && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="space-y-3 mt-3"
-            >
+            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} className="space-y-3 mt-3">
               <Input
                 label="Max Tokens"
                 type="number"
                 value={form.max_tokens}
                 onChange={(e) => setForm({ ...form, max_tokens: parseInt(e.target.value) })}
               />
-
               <Textarea
                 label="System Prompt (opcional)"
                 value={form.system_prompt}
@@ -330,14 +362,9 @@ function AgenteModal({
           )}
         </div>
 
-        {/* Botões de Ação */}
         <div className="flex gap-3 pt-3 border-t">
-          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
-            Cancelar
-          </Button>
-          <Button type="submit" loading={isSaving} className="flex-1">
-            {agente ? 'Salvar' : 'Criar'}
-          </Button>
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">Cancelar</Button>
+          <Button type="submit" loading={isSaving} className="flex-1">{agente ? 'Salvar' : 'Criar'}</Button>
         </div>
       </form>
     </Modal>

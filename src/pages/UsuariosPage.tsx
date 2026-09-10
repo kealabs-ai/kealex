@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Users, Search, ShieldCheck } from 'lucide-react'
+import { Plus, Pencil, Trash2, Users, Search, ShieldCheck, Eye, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react'
 import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario } from '../hooks/useUsuarios'
 import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
@@ -25,6 +25,8 @@ export function UsuariosPage() {
   const update = useUpdateUsuario()
   const remove = useDeleteUsuario()
   const [editing, setEditing] = useState<Usuario | null>(null)
+  const [viewing, setViewing] = useState<Usuario | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Usuario | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
@@ -35,6 +37,10 @@ export function UsuariosPage() {
   const onSubmit = (data: FormData) => {
     if (editing) update.mutate({ id: editing.id, data }, { onSuccess: close })
     else create.mutate(data as any, { onSuccess: close })
+  }
+  const toggleAtivo = (u: Usuario) => update.mutate({ id: u.id, data: { ativo: !u.ativo } })
+  const handleDelete = () => {
+    if (confirmDelete) remove.mutate(confirmDelete.id, { onSuccess: () => setConfirmDelete(null) })
   }
 
   const filtered = (isAdmin ? usuarios : usuarios?.filter((u) => u.role === 'cliente'))?.filter((u) =>
@@ -74,8 +80,8 @@ export function UsuariosPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100">
-                {['Usuário', 'Email', 'Role', 'Status', ''].map((h) => (
-                  <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide">{h}</th>
+                {['Usuário', 'Email', 'Role', 'Status', 'Ações'].map((h) => (
+                  <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide ${h === 'Ações' ? 'text-right' : 'text-left'}`}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -113,9 +119,13 @@ export function UsuariosPage() {
                           <Badge label={u.ativo ? 'Ativo' : 'Inativo'} variant={u.ativo ? 'green' : 'red'} />
                         </td>
                         <td className="px-4 py-3.5">
-                          <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openEdit(u)} className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Pencil size={14} /></button>
-                            <button onClick={() => remove.mutate(u.id)} className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                          <div className="flex gap-1.5 justify-end">
+                            <button title="Ver detalhes" onClick={() => setViewing(u)} className="p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors"><Eye size={15} /></button>
+                            <button title={u.ativo ? 'Desativar' : 'Ativar'} onClick={() => toggleAtivo(u)} className={`p-2 rounded-lg transition-colors ${u.ativo ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
+                              {u.ativo ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
+                            </button>
+                            <button title="Editar" onClick={() => openEdit(u)} className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"><Pencil size={15} /></button>
+                            <button title="Excluir" onClick={() => setConfirmDelete(u)} className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 size={15} /></button>
                           </div>
                         </td>
                       </motion.tr>
@@ -127,6 +137,51 @@ export function UsuariosPage() {
           </table>
         </DataCard>
       </div>
+
+      {viewing && (
+        <Modal title="Detalhes do Usuário" subtitle={viewing.email} onClose={() => setViewing(null)} size="sm">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold text-white" style={{ background: roleColors[viewing.role] }}>
+                {viewing.nome.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">{viewing.nome}</p>
+                <p className="text-sm text-gray-500">{viewing.email}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Role</p>
+                {roleBadge(viewing.role)}
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Status</p>
+                <Badge label={viewing.ativo ? 'Ativo' : 'Inativo'} variant={viewing.ativo ? 'green' : 'red'} />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <Button variant="secondary" onClick={() => setViewing(null)}>Fechar</Button>
+              <Button icon={<Pencil size={14} />} onClick={() => { setViewing(null); openEdit(viewing) }}>Editar</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {confirmDelete && (
+        <Modal title="Confirmar Exclusão" onClose={() => setConfirmDelete(null)} size="sm">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl">
+              <AlertTriangle size={20} className="text-red-500 shrink-0" />
+              <p className="text-sm text-red-700">Tem certeza que deseja excluir <strong>{confirmDelete.nome}</strong>? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancelar</Button>
+              <Button variant="danger" icon={<Trash2 size={14} />} loading={remove.isPending} onClick={handleDelete}>Excluir</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {open && (
         <Modal title={editing ? 'Editar Usuário' : 'Novo Usuário'} subtitle="Defina as permissões de acesso" onClose={close}>
