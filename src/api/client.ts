@@ -27,8 +27,8 @@ api.interceptors.response.use(
         localStorage.removeItem('kealex_token')
         localStorage.removeItem('kealex_user')
         // Apenas redirecionar se não estiver na página de login
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login'
+        if (window.location.pathname !== '/entrar') {
+          window.location.href = '/entrar'
         }
       }
     }

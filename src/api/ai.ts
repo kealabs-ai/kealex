@@ -1,4 +1,5 @@
 import OpenAI from 'openai'
+import { logger } from '../utils/logger'
 
 export type AIProvider = 'cerebras' | 'groq'
 
@@ -60,13 +61,7 @@ export async function sendMessage(
     ? 'https://api.groq.com/openai/v1'
     : 'https://api.cerebras.ai/v1'
 
-  console.log('🔧 Configuração da requisição:', {
-    provider: config.provider,
-    baseURL,
-    modelo: config.modelo,
-    apiKeyPresent: !!config.apiKey,
-    messagesCount: messages.length
-  })
+  logger.info('AI request:', config.provider, config.modelo, messages.length, 'msgs') // provider/model only — no user content logged
 
   const client = new OpenAI({
     apiKey: config.apiKey,
@@ -77,12 +72,20 @@ export async function sendMessage(
   const systemPrompt = config.systemPrompt || SYSTEM_PROMPT
 
   try {
+    const maxTokens = 2048
+    const inputLimit = 32_000
+    const trimmedMessages = messages.map((m) => ({
+      role: m.role,
+      content: m.content.slice(0, inputLimit),
+    }))
+
     const stream = await client.chat.completions.create({
       model: config.modelo,
       stream: true,
+      max_tokens: maxTokens,
       messages: [
         { role: 'system', content: systemPrompt },
-        ...messages.map((m) => ({ role: m.role, content: m.content })),
+        ...trimmedMessages,
       ],
     })
 
@@ -91,12 +94,7 @@ export async function sendMessage(
       if (delta) onChunk(delta)
     }
   } catch (error: any) {
-    console.error('❌ Erro detalhado:', {
-      message: error.message,
-      status: error.status,
-      error: error.error,
-      response: error.response?.data
-    })
+    logger.error('AI request failed', error)
     throw error
   }
 }

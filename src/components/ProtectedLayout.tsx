@@ -1,25 +1,34 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Sidebar } from './Sidebar'
+import { useTrial } from '../hooks/useTrial'
 import type { Role } from '../types'
 
 const roleRequired: Record<string, Role[]> = {
-  '/usuarios': ['admin'],
-  '/clientes': ['admin', 'advogado'],
-  '/admin': ['admin'],
-  '/financeiro': ['admin', 'advogado', 'cliente'],
-  '/prazos': ['admin', 'advogado', 'cliente'],
+  '/usuarios':   ['admin'],
+  '/clientes':   ['admin', 'advogado'],
+  '/admin':      ['admin'],
+  '/cobranca':   ['admin', 'advogado'],
   '/intimacoes': ['admin', 'advogado'],
   '/audiencias': ['admin', 'advogado'],
+  '/financeiro': ['admin', 'advogado', 'cliente'],
+  '/prazos':     ['admin', 'advogado', 'cliente'],
+  '/processos':  ['admin', 'advogado', 'cliente'],
+  '/documentos': ['admin', 'advogado', 'cliente'],
 }
 
 export function ProtectedLayout() {
   const { user, role } = useAuth()
   const location = useLocation()
+  const { isExpired } = useTrial()
 
   if (!user) {
     const from = location.pathname !== '/entrar' ? location : undefined
     return <Navigate to="/entrar" state={{ from }} replace />
+  }
+
+  if (isExpired) {
+    return <Navigate to="/trial-expirado" replace />
   }
 
   const required = roleRequired[location.pathname]

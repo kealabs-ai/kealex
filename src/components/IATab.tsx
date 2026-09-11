@@ -5,11 +5,14 @@ import { Button, Input, Textarea } from '../components/UI'
 import { DataCard } from '../components/Cards'
 import { type AIProvider } from '../api/ai'
 import { useConfigIa, useModelosDisponiveis } from '../hooks/useConfiguracoes'
+import { useToast } from '../components/Toast'
+import { logger } from '../utils/logger'
 import axios from 'axios'
 
 export function IATab() {
   const { data: cfg, save, isSaving, isLoading } = useConfigIa()
   const { data: modelosDisponiveis, isLoading: isLoadingModelos } = useModelosDisponiveis()
+  const { success, error: toastError, warning } = useToast()
   const [saved, setSaved] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
   const [loadingGroqModels, setLoadingGroqModels] = useState(false)
@@ -26,43 +29,27 @@ export function IATab() {
   // Carregar configuração do backend
   useEffect(() => {
     if (cfg) {
-      console.log('[Admin IA] Configuração carregada:', {
-        provider: cfg.provider,
-        cerebras_key: cfg.cerebras_api_key ? 'Configurada' : 'Vazia',
-        groq_key: cfg.groq_api_key ? 'Configurada' : 'Vazia',
-        api_key: cfg.api_key ? 'Configurada' : 'Vazia',
-        ativo: cfg.ativo
-      })
-      
-      // Se não tiver API key configurada, usar a do .env
       const defaultGroqKey = import.meta.env.GROQ_API_KEY || ''
       const apiKey = cfg.api_key || (cfg.provider === 'groq' ? defaultGroqKey : '')
-      
-      // Validar se o modelo atual é válido
       const modelosPorProvider = modelosDisponiveis || {
         cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
         groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
       }
-      
       const provider = (cfg.provider || 'cerebras') as AIProvider
       const modelosValidos = provider === 'groq' ? modelosPorProvider.groq : modelosPorProvider.cerebras
       const modeloAtual = cfg.modelo || 'llama-3.3-70b'
       const modeloValido = modelosValidos.includes(modeloAtual) ? modeloAtual : modelosValidos[0]
-      
       if (modeloAtual !== modeloValido) {
-        console.warn(`[Admin IA] Modelo "${modeloAtual}" inválido, usando "${modeloValido}"`)
+        logger.warn('[IATab] Modelo inválido, usando fallback:', modeloValido)
       }
-      
       setFields({
-        provider:      provider,
+        provider,
         api_key:       apiKey,
         modelo:        modeloValido,
         max_tokens:    String(cfg.max_tokens || 8192),
         system_prompt: cfg.system_prompt || '',
         ativo:         cfg.ativo ?? true,
       })
-      
-      // Se for Groq e tiver chave, carregar modelos
       if (cfg.provider === 'groq') {
         const keyToUse = cfg.groq_api_key || cfg.api_key || defaultGroqKey
         if (keyToUse) loadGroqModels(keyToUse)
@@ -74,41 +61,21 @@ export function IATab() {
   const loadGroqModels = async (apiKey: string) => {
     setLoadingGroqModels(true)
     try {
-      console.log('[Admin IA] Carregando modelos do Groq...')
       const response = await axios.get('https://api.groq.com/openai/v1/models', {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
+        headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
       })
-      
       const allModels = response.data.data
-      console.log('[Admin IA] Modelos Groq (bruto):', allModels.map((m: any) => ({ id: m.id, active: m.active, owned_by: m.owned_by })))
-
       const models = allModels
         .filter((m: any) => {
           const id = m.id.toLowerCase()
-          return !id.includes('whisper') &&
-                 !id.includes('guard') &&
-                 !id.includes('tts') &&
-                 !id.includes('vision')
+          return !id.includes('whisper') && !id.includes('guard') && !id.includes('tts') && !id.includes('vision')
         })
         .map((m: any) => m.id)
         .sort()
-
-      console.log('[Admin IA] Modelos Groq filtrados:', models)
-      setGroqModels(models.length > 0 ? models : [
-        'llama-3.3-70b-versatile',
-        'llama-3.1-70b-versatile',
-        'llama-3.1-8b-instant'
-      ])
+      setGroqModels(models.length > 0 ? models : ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant'])
     } catch (error: any) {
-      console.error('[Admin IA] Erro ao carregar modelos Groq:', error)
-      setGroqModels([
-        'llama-3.3-70b-versatile',
-        'llama-3.1-70b-versatile',
-        'llama-3.1-8b-instant'
-      ])
+      logger.error('[IATab] Erro ao carregar modelos Groq', error)
+      setGroqModels(['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant'])
     } finally {
       setLoadingGroqModels(false)
     }
@@ -116,53 +83,30 @@ export function IATab() {
 
   // Handler para trocar provider
   const handleProviderChange = (newProvider: AIProvider) => {
-    console.log('[Admin IA] Trocando provider para:', newProvider)
-    
-    // Carregar API Key do novo provider (prioriza backend, fallback para .env)
     const defaultGroqKey = import.meta.env.VITE_GROQ_API_KEY || ''
     const apiKey = newProvider === 'groq'
       ? (cfg?.groq_api_key || defaultGroqKey)
       : (cfg?.cerebras_api_key || '')
-    
-    // Usar modelos dinâmicos do backend ou fallback para constantes locais
     const modelosPorProvider = modelosDisponiveis || {
       cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
       groq: groqModels.length > 0 ? groqModels : ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
     }
-    
-    const modelo = newProvider === 'groq' 
+    const modelo = newProvider === 'groq'
       ? (modelosPorProvider.groq[0] || 'llama-3.3-70b-versatile')
       : (modelosPorProvider.cerebras[0] || 'llama-3.3-70b')
-    
-    console.log('[Admin IA] API Key do novo provider:', apiKey ? 'Configurada' : 'Vazia')
-    
-    // Se trocar para Groq e tiver API key, carregar modelos
-    if (newProvider === 'groq' && apiKey) {
-      loadGroqModels(apiKey)
-    }
-    
-    setFields(prev => ({
-      ...prev,
-      provider: newProvider,
-      api_key: apiKey,
-      modelo: modelo
-    }))
+    if (newProvider === 'groq' && apiKey) loadGroqModels(apiKey)
+    setFields(prev => ({ ...prev, provider: newProvider, api_key: apiKey, modelo }))
   }
 
   const set = (k: keyof typeof fields) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-      const value = e.target.value
-      console.log(`[Admin IA] Atualizando ${k}:`, value)
-      setFields((prev) => ({ ...prev, [k]: value }))
-    }
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+      setFields((prev) => ({ ...prev, [k]: e.target.value }))
 
   const handleSave = async () => {
-    // Validar se o modelo é válido antes de enviar
     if (!models.includes(fields.modelo)) {
-      alert(`O modelo "${fields.modelo}" não é válido para o provider ${providerName}. Selecione um modelo da lista.`)
+      warning(`Modelo "${fields.modelo}" inválido para ${providerName}. Selecione um modelo da lista.`)
       return
     }
-    
     const payload = {
       provider: fields.provider,
       api_key: fields.api_key,
@@ -171,18 +115,14 @@ export function IATab() {
       system_prompt: fields.system_prompt || undefined,
       ativo: fields.ativo,
     }
-    
-    console.log('[Admin IA] Salvando configuração:', payload)
-    
     try {
-      const result = await save(payload)
-      console.log('[Admin IA] Configuração salva com sucesso:', result)
+      await save(payload)
       setSaved(true)
+      success('Configuração salva com sucesso!')
       setTimeout(() => setSaved(false), 3000)
     } catch (error: any) {
-      console.error('[Admin IA] Erro ao salvar:', error)
-      const errorMsg = error.response?.data?.detail || error.message || 'Erro ao salvar configuração'
-      alert(errorMsg)
+      logger.error('[IATab] Erro ao salvar', error)
+      toastError(error.response?.data?.detail || error.message || 'Erro ao salvar configuração')
     }
   }
 

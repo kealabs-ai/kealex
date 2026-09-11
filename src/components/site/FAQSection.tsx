@@ -8,8 +8,8 @@ const FAQS = [
     a: 'A maioria dos clientes está operacional em menos de 1 hora. O onboarding é guiado e não exige conhecimento técnico. Nos planos Professional e Enterprise, um especialista da Kealabs acompanha a configuração inicial.',
   },
   {
-    q: 'Preciso de cartão de crédito para o trial de 14 dias?',
-    a: 'Não. O período de 14 dias é completamente gratuito e não exige nenhum dado de pagamento. Você só fornece informações de cobrança se decidir continuar após o trial.',
+    q: 'Preciso de cartão de crédito para o trial de 7 dias?',
+    a: 'Não. O período de 7 dias é completamente gratuito e não exige nenhum dado de pagamento. Você só fornece informações de cobrança se decidir continuar após o trial.',
   },
   {
     q: 'Meus dados e os dos meus clientes estão seguros?',

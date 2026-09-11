@@ -1,4 +1,5 @@
 import { useForm } from 'react-hook-form'
+import { useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
@@ -6,9 +7,11 @@ import { useNavigate, useLocation, Navigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { authApi } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
-import { Mail, Lock, ArrowRight, Sparkles, ShieldCheck } from 'lucide-react'
+import { Mail, Lock, ArrowRight, Sparkles, ShieldCheck, Eye, EyeOff } from 'lucide-react'
+import { useToast } from '../components/Toast'
 import fundoImg from '../assets/fundo_home_kealex.jpg'
 import logo from '../assets/logotipo_kealex.png'
+import { TrialModal } from '../components/site/TrialModal'
 
 const schema = z.object({
   email: z.string().email('Email inválido'),
@@ -22,6 +25,9 @@ export function LoginPage() {
   const location = useLocation()
   const from = (location.state as any)?.from?.pathname ?? '/processos'
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
+  const { error: toastError } = useToast()
+  const [showPassword, setShowPassword] = useState(false)
+  const [trialOpen, setTrialOpen] = useState(false)
 
   const mutation = useMutation({
     mutationFn: ({ email, senha }: FormData) => authApi.login(email, senha),
@@ -31,7 +37,7 @@ export function LoginPage() {
     },
     onError: (error: any) => {
       const isTimeout = error.code === 'ECONNABORTED' || error.response?.status === 504
-      if (isTimeout) alert('Servidor não está respondendo. Verifique se o backend está rodando.')
+      if (isTimeout) toastError('Servidor não está respondendo. Verifique se o backend está rodando.')
     },
   })
 
@@ -132,31 +138,43 @@ export function LoginPage() {
           {/* Form */}
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-[#081B33] uppercase tracking-wide">Email</label>
+              <label htmlFor="email" className="block text-xs font-bold text-[#081B33] uppercase tracking-wide">Email</label>
               <div className="relative">
                 <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#596B82]" />
                 <input
                   {...register('email')}
+                  id="email"
                   type="email"
                   placeholder="seu@escritorio.com.br"
+                  autoComplete="email"
                   className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all text-[#081B33] placeholder-slate-400"
                 />
               </div>
-              {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+              {errors.email && <p className="text-xs text-red-500" role="alert">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-[#081B33] uppercase tracking-wide">Senha</label>
+              <label htmlFor="senha" className="block text-xs font-bold text-[#081B33] uppercase tracking-wide">Senha</label>
               <div className="relative">
                 <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#596B82]" />
                 <input
                   {...register('senha')}
-                  type="password"
+                  id="senha"
+                  type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all text-[#081B33] placeholder-slate-400"
+                  autoComplete="current-password"
+                  className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all text-[#081B33] placeholder-slate-400"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#596B82] hover:text-[#081B33] transition-colors"
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
               </div>
-              {errors.senha && <p className="text-xs text-red-500">{errors.senha.message}</p>}
+              {errors.senha && <p className="text-xs text-red-500" role="alert">{errors.senha.message}</p>}
             </div>
 
             {mutation.isError && (
@@ -195,16 +213,19 @@ export function LoginPage() {
           </div>
 
           {/* Trial CTA */}
-          <Link
-            to="/#trial"
-            className="block text-center py-3 border-2 border-[#081B33] text-[#081B33] font-bold rounded-xl text-sm hover:bg-[#081B33] hover:text-white transition-all"
+          <button
+            type="button"
+            onClick={() => setTrialOpen(true)}
+            className="w-full block text-center py-3 border-2 border-[#081B33] text-[#081B33] font-bold rounded-xl text-sm hover:bg-[#081B33] hover:text-white transition-all"
           >
-            Começar Trial Gratuito — 14 dias
-          </Link>
+            Começar Trial Gratuito — 7 dias
+          </button>
+
+          <TrialModal open={trialOpen} onClose={() => setTrialOpen(false)} />
 
 
           <p className="text-xs text-slate-400 text-center mt-6">
-            Kealabs AI © 2026 · <a href="#" className="hover:text-[#00C2A8]">Privacidade</a> · <a href="#" className="hover:text-[#00C2A8]">LGPD</a>
+            Kealabs AI © 2026 · <Link to="/privacidade" className="hover:text-[#00C2A8] transition-colors">Privacidade</Link> · <Link to="/lgpd" className="hover:text-[#00C2A8] transition-colors">LGPD</Link>
           </p>
         </motion.div>
       </div>

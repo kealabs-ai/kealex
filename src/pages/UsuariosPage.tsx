@@ -120,12 +120,12 @@ export function UsuariosPage() {
                         </td>
                         <td className="px-4 py-3.5">
                           <div className="flex gap-1.5 justify-end">
-                            <button title="Ver detalhes" onClick={() => setViewing(u)} className="p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors"><Eye size={15} /></button>
-                            <button title={u.ativo ? 'Desativar' : 'Ativar'} onClick={() => toggleAtivo(u)} className={`p-2 rounded-lg transition-colors ${u.ativo ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
+                            <button title="Ver detalhes" aria-label={`Ver detalhes de ${u.nome}`} onClick={() => setViewing(u)} className="p-2 rounded-lg bg-cyan-50 text-cyan-600 hover:bg-cyan-100 transition-colors"><Eye size={15} /></button>
+                            <button title={u.ativo ? 'Desativar' : 'Ativar'} aria-label={u.ativo ? `Desativar ${u.nome}` : `Ativar ${u.nome}`} onClick={() => toggleAtivo(u)} className={`p-2 rounded-lg transition-colors ${u.ativo ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-gray-100 text-gray-400 hover:bg-gray-200'}`}>
                               {u.ativo ? <ToggleRight size={15} /> : <ToggleLeft size={15} />}
                             </button>
-                            <button title="Editar" onClick={() => openEdit(u)} className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"><Pencil size={15} /></button>
-                            <button title="Excluir" onClick={() => setConfirmDelete(u)} className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 size={15} /></button>
+                            <button title="Editar" aria-label={`Editar ${u.nome}`} onClick={() => openEdit(u)} className="p-2 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 transition-colors"><Pencil size={15} /></button>
+                            <button title="Excluir" aria-label={`Excluir ${u.nome}`} onClick={() => setConfirmDelete(u)} className="p-2 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"><Trash2 size={15} /></button>
                           </div>
                         </td>
                       </motion.tr>

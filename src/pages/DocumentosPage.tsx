@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, FileText, ExternalLink, Search, Download, Upload } from 'lucide-react'
+import { Plus, Pencil, Trash2, FileText, ExternalLink, Search, Download, Upload, AlertTriangle } from 'lucide-react'
 import { useDocumentos, useCreateDocumento, useUpdateDocumento, useDeleteDocumento } from '../hooks/useDocumentos'
 import { useProcessos } from '../hooks/useProcessos'
 import { Modal } from '../components/Modal'
@@ -28,16 +28,14 @@ export function DocumentosPage() {
   const remove = useDeleteDocumento()
   
   const [editing, setEditing] = useState<Documento | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Documento | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [uploadMode, setUploadMode] = useState<'url' | 'file'>('url')
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const { register, handleSubmit, reset } = useForm<FormData>()
 
-  // Log para debug
-  console.log('DocumentosPage render:', { documentos, isLoading, error, user })
-
-  // Tratar erro
+  // Log para debug removido — não expor dados em produção
   if (error) {
     console.error('Erro ao carregar documentos:', error)
   }
@@ -140,13 +138,13 @@ export function DocumentosPage() {
                       <td className="px-4 py-3.5 text-gray-500 dark:text-slate-400 font-mono text-xs">{fmtBytes(d.tamanhoBytes)}</td>
                       <td className="px-4 py-3.5">{statusDocumentoBadge(d.status)}</td>
                       <td className="px-4 py-3.5">
-                        <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                          <a href={d.urlArquivo} download className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 rounded-lg transition-colors" title="Download"><Download size={14} /></a>
-                          <a href={d.urlArquivo} target="_blank" rel="noreferrer" className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-950/30 rounded-lg transition-colors" title="Abrir"><ExternalLink size={14} /></a>
+                        <div className="flex gap-1.5 justify-end">
+                          <a href={d.urlArquivo} download aria-label={`Baixar ${d.nome}`} style={{ padding: 7, borderRadius: 8, background: '#d1fae5', color: '#059669', display: 'flex', textDecoration: 'none' }} title="Download"><Download size={14} /></a>
+                          <a href={d.urlArquivo} target="_blank" rel="noreferrer" aria-label={`Abrir ${d.nome}`} style={{ padding: 7, borderRadius: 8, background: '#ecfeff', color: '#0891b2', display: 'flex', textDecoration: 'none' }} title="Abrir"><ExternalLink size={14} /></a>
                           {!isCliente && (
                             <>
-                              <button onClick={() => openEdit(d)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors" title="Editar"><Pencil size={14} /></button>
-                              <button onClick={() => remove.mutate(d.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors" title="Excluir"><Trash2 size={14} /></button>
+                              <button onClick={() => openEdit(d)} aria-label={`Editar ${d.nome}`} style={{ padding: 7, borderRadius: 8, background: '#eef2ff', color: '#4f46e5', border: 'none', cursor: 'pointer', display: 'flex' }} title="Editar"><Pencil size={14} /></button>
+                              <button onClick={() => setConfirmDelete(d)} aria-label={`Excluir ${d.nome}`} style={{ padding: 7, borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', display: 'flex' }} title="Excluir"><Trash2 size={14} /></button>
                             </>
                           )}
                         </div>
@@ -159,6 +157,21 @@ export function DocumentosPage() {
           </table>
         </DataCard>
       </div>
+
+      {confirmDelete && (
+        <Modal title="Confirmar Exclusão" onClose={() => setConfirmDelete(null)} size="sm">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl">
+              <AlertTriangle size={20} className="text-red-500 shrink-0" />
+              <p className="text-sm text-red-700">Excluir o documento <strong>{confirmDelete.nome}</strong>? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancelar</Button>
+              <Button variant="danger" icon={<Trash2 size={14} />} loading={remove.isPending} onClick={() => remove.mutate(confirmDelete.id, { onSuccess: () => setConfirmDelete(null) })}>Excluir</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {open && !isCliente && (
         <Modal title={editing ? 'Editar Documento' : 'Novo Documento'} subtitle="Adicione um documento ao processo" onClose={close}>

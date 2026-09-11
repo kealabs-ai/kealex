@@ -21,12 +21,7 @@ type FormData = {
   status?: StatusHonorario; dataPagamento?: string
 }
 
-const fmt = (c: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c / 100)
-
-const diasRestantes = (data: string) => {
-  const diff = new Date(data).getTime() - Date.now()
-  return Math.ceil(diff / (1000 * 60 * 60 * 24))
-}
+import { fmt, diasRestantes } from '../utils/formatters'
 
 export function FinanceiroPage() {
   const { user } = useAuth()
@@ -35,11 +30,12 @@ export function FinanceiroPage() {
   const { data: honorarios, isLoading, error } = useHonorarios()
   const { data: dashboard } = useDashboardFinanceiro()
   const { data: processos } = useProcessos()
-  const { data: clientes } = !isCliente ? useClientes() : { data: undefined }
+  const { data: clientes } = useClientes()
   const create = useCreateHonorario()
   const update = useUpdateHonorario()
   const remove = useDeleteHonorario()
   const [editing, setEditing] = useState<Honorario | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Honorario | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
@@ -57,7 +53,7 @@ export function FinanceiroPage() {
   }
   const close = () => setOpen(false)
   const onSubmit = (data: FormData) => {
-    const payload = { ...data, valorCentavos: Number(data.valorCentavos) }
+    const payload = { ...data, valorCentavos: Math.round(Number(data.valorCentavos) * 100) }
     if (editing) update.mutate({ id: editing.id, data: payload }, { onSuccess: close })
     else create.mutate(payload, { onSuccess: close })
   }
@@ -384,9 +380,9 @@ export function FinanceiroPage() {
                       <td className="px-4 py-3.5">{statusHonorarioBadge(h.status)}</td>
                       <td className="px-4 py-3.5">
                         {!isCliente && (
-                          <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openEdit(h)} className="p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-colors"><Pencil size={14} /></button>
-                            <button onClick={() => remove.mutate(h.id)} className="p-1.5 text-slate-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                          <div className="flex gap-1.5 justify-end">
+                            <button onClick={() => openEdit(h)} aria-label={`Editar ${h.descricao}`} style={{ padding: 7, borderRadius: 8, background: '#eef2ff', color: '#4f46e5', border: 'none', cursor: 'pointer', display: 'flex' }} title="Editar"><Pencil size={14} /></button>
+                            <button onClick={() => setConfirmDelete(h)} aria-label={`Excluir ${h.descricao}`} style={{ padding: 7, borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', display: 'flex' }} title="Excluir"><Trash2 size={14} /></button>
                           </div>
                         )}
                       </td>
@@ -398,6 +394,21 @@ export function FinanceiroPage() {
           </table>
         </DataCard>
       </div>
+
+      {confirmDelete && (
+        <Modal title="Confirmar Exclusão" onClose={() => setConfirmDelete(null)} size="sm">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-950/30 rounded-xl">
+              <Trash2 size={20} className="text-red-500 shrink-0" />
+              <p className="text-sm text-red-700 dark:text-red-400">Excluir o honorário <strong>{confirmDelete.descricao}</strong>? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancelar</Button>
+              <Button variant="danger" icon={<Trash2 size={14} />} loading={remove.isPending} onClick={() => remove.mutate(confirmDelete.id, { onSuccess: () => setConfirmDelete(null) })}>Excluir</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {open && !isCliente && (
         <Modal title={editing ? 'Editar Honorário' : 'Novo Honorário'} subtitle="Registre os honorários do processo jurídico" onClose={close} size="lg">
@@ -414,7 +425,7 @@ export function FinanceiroPage() {
             </div>
             <Input label="Descrição" {...register('descricao')} placeholder="Ex: Honorários advocatícios" />
             <div className="grid grid-cols-2 gap-3">
-              <Input label="Valor (centavos)" {...register('valorCentavos')} type="number" placeholder="Ex: 150000 = R$ 1.500,00" />
+              <Input label="Valor (R$)" {...register('valorCentavos')} type="number" step="0.01" placeholder="Ex: 1500.00" />
               <Input label="Data de Vencimento" {...register('dataVencimento')} type="date" />
             </div>
             {editing && (

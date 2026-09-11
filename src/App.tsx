@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
+import { ToastProvider } from './components/Toast'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ProtectedLayout } from './components/ProtectedLayout'
 import { LoginPage } from './pages/LoginPage'
@@ -22,6 +23,8 @@ import { IntimacoesPage } from './pages/IntimacoesPage'
 import { AudienciasPage } from './pages/AudienciasPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ErrorPage } from './pages/ErrorPage'
+import { TrialExpiradoPage } from './pages/TrialExpiradoPage'
+import { CookieConsent } from './components/CookieConsent'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 30, retry: 1 } },
@@ -33,6 +36,7 @@ export default function App() {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ThemeProvider>
+            <ToastProvider>
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
@@ -42,6 +46,7 @@ export default function App() {
                 <Route path="/termos-de-uso" element={<TermosPage />} />
                 <Route path="/entrar" element={<LoginPage />} />
                 <Route path="/login" element={<Navigate to="/entrar" replace />} />
+                <Route path="/trial-expirado" element={<TrialExpiradoPage />} />
                 <Route path="/error" element={<ErrorPage />} />
                 <Route element={<ProtectedLayout />}>
                   <Route path="/app" element={<Navigate to="/processos" replace />} />
@@ -59,10 +64,12 @@ export default function App() {
                 </Route>
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
+              <CookieConsent />
             </BrowserRouter>
+            </ToastProvider>
           </ThemeProvider>
         </AuthProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
+        {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
       </QueryClientProvider>
     </ErrorBoundary>
   )

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, UserCheck, Search, Phone, Mail } from 'lucide-react'
+import { Plus, Pencil, Trash2, UserCheck, Search, Phone, Mail, AlertTriangle } from 'lucide-react'
 import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente } from '../hooks/useClientes'
 import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
@@ -20,14 +20,12 @@ export function ClientesPage() {
   const update = useUpdateCliente()
   const remove = useDeleteCliente()
   const [editing, setEditing] = useState<Cliente | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Cliente | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
 
-  // Tratar erro
-  if (error) {
-    console.error('Erro ao carregar clientes:', error)
-  }
+  if (error) console.error('Erro ao carregar clientes')
 
   // Garantir que seja array
   const clientesList = Array.isArray(clientes) ? clientes : []
@@ -122,9 +120,9 @@ export function ClientesPage() {
                         </td>
                         <td className="px-4 py-3.5 text-gray-500 dark:text-slate-400 font-mono text-xs">{c.cpfCnpj ?? <span className="text-gray-300 dark:text-slate-600">—</span>}</td>
                         <td className="px-4 py-3.5">
-                          <div className="flex gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button onClick={() => openEdit(c)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 rounded-lg transition-colors"><Pencil size={14} /></button>
-                            <button onClick={() => remove.mutate(c.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition-colors"><Trash2 size={14} /></button>
+                          <div className="flex gap-1.5 justify-end">
+                            <button onClick={() => openEdit(c)} aria-label={`Editar ${c.nome}`} style={{ padding: 7, borderRadius: 8, background: '#eef2ff', color: '#4f46e5', border: 'none', cursor: 'pointer', display: 'flex' }} title="Editar"><Pencil size={14} /></button>
+                            <button onClick={() => setConfirmDelete(c)} aria-label={`Excluir ${c.nome}`} style={{ padding: 7, borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', display: 'flex' }} title="Excluir"><Trash2 size={14} /></button>
                           </div>
                         </td>
                       </motion.tr>
@@ -136,6 +134,21 @@ export function ClientesPage() {
           </table>
         </DataCard>
       </div>
+
+      {confirmDelete && (
+        <Modal title="Confirmar Exclusão" onClose={() => setConfirmDelete(null)} size="sm">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl">
+              <AlertTriangle size={20} className="text-red-500 shrink-0" />
+              <p className="text-sm text-red-700">Tem certeza que deseja excluir <strong>{confirmDelete.nome}</strong>? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancelar</Button>
+              <Button variant="danger" icon={<Trash2 size={14} />} loading={remove.isPending} onClick={() => remove.mutate(confirmDelete.id, { onSuccess: () => setConfirmDelete(null) })}>Excluir</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {open && (
         <Modal

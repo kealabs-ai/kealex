@@ -102,7 +102,7 @@ export function SiteHeader() {
               onClick={(e) => { e.preventDefault(); scrollTo('trial') }}
               className="text-sm font-semibold bg-[#F96313] hover:bg-[#e0550f] text-white px-5 py-2.5 rounded-xl transition-colors shadow-md shadow-orange-200"
             >
-              Testar 14 Dias Grátis
+              Testar 7 Dias Grátis
             </a>
           </div>
 
@@ -151,7 +151,7 @@ export function SiteHeader() {
                   Entrar na Plataforma
                 </a>
                 <a href="#trial" onClick={(e) => { e.preventDefault(); scrollTo('trial'); setMobileOpen(false) }} className="text-center py-2.5 text-sm font-semibold bg-[#F96313] text-white rounded-xl">
-                  Testar 14 Dias Grátis
+                  Testar 7 Dias Grátis
                 </a>
               </div>
             </div>

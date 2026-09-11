@@ -133,6 +133,8 @@ export interface DashboardFinanceiro {
   totalGeral: number
 }
 
+export type Plano = 'trial' | 'starter' | 'professional' | 'enterprise'
+
 export interface AuthUser {
   id: string
   tenantId?: string
@@ -140,6 +142,8 @@ export interface AuthUser {
   email: string
   role: Role
   accessToken: string
+  trialStartedAt?: string  // ISO date — retornado pelo backend no login
+  plano?: Plano
 }
 
 export type AIProvider = 'cerebras' | 'groq'

@@ -99,30 +99,100 @@
 :root:not(.dark) .focus\:border-indigo-400:focus { border-color: #00C2A8 !important; }
 :root:not(.dark) .focus\:ring-indigo-500\/10:focus { --tw-ring-color: rgba(0,194,168,0.12) !important; }
 
-/* ── NavItem active light ── */
-:root:not(.dark) .bg-indigo-600 { background-color: #00C2A8 !important; }
-:root:not(.dark) .shadow-indigo-600\/30 { box-shadow: 0 4px 14px rgba(0,194,168,0.30) !important; }
-:root:not(.dark) .text-indigo-600 { color: #00C2A8 !important; }
-:root:not(.dark) .text-indigo-400 { color: #00C2A8 !important; }
-:root:not(.dark) .text-indigo-500 { color: #00C2A8 !important; }
+/* ── NavItem active light — escopo restrito à sidebar e nav ── */
+/* Apenas o item ativo da sidebar usa teal como cor primária */
+:root:not(.dark) aside .bg-indigo-600,
+:root:not(.dark) nav .bg-indigo-600 { background-color: #00C2A8 !important; }
+:root:not(.dark) aside .shadow-indigo-600\/30,
+:root:not(.dark) nav .shadow-indigo-600\/30 { box-shadow: 0 4px 14px rgba(0,194,168,0.30) !important; }
+
+/* Textos teal — apenas fora de badges semânticos (emerald/red/amber/blue/purple/cyan) */
+:root:not(.dark) .text-indigo-600:not([class*="emerald"]):not([class*="red"]):not([class*="amber"]):not([class*="blue"]):not([class*="purple"]):not([class*="cyan"]) { color: #007A6A !important; }
+:root:not(.dark) .text-indigo-500:not([class*="emerald"]):not([class*="red"]):not([class*="amber"]):not([class*="blue"]):not([class*="purple"]):not([class*="cyan"]) { color: #007A6A !important; }
+:root:not(.dark) .text-indigo-400:not([class*="emerald"]):not([class*="red"]):not([class*="amber"]):not([class*="blue"]):not([class*="purple"]):not([class*="cyan"]) { color: #009e88 !important; }
+:root:not(.dark) .text-indigo-300:not([class*="emerald"]):not([class*="red"]):not([class*="amber"]):not([class*="blue"]):not([class*="purple"]):not([class*="cyan"]) { color: #009e88 !important; }
+
+/* Borders indigo → teal */
 :root:not(.dark) .border-indigo-400 { border-color: #00C2A8 !important; }
 :root:not(.dark) .border-indigo-500 { border-color: #00C2A8 !important; }
-:root:not(.dark) .bg-indigo-500 { background-color: #00C2A8 !important; }
-:root:not(.dark) .bg-indigo-100 { background-color: rgba(0,194,168,0.12) !important; }
-:root:not(.dark) .bg-indigo-50 { background-color: rgba(0,194,168,0.07) !important; }
-:root:not(.dark) .hover\:bg-indigo-50\/30:hover { background-color: rgba(0,194,168,0.05) !important; }
-:root:not(.dark) .divide-slate-100 > * + * { border-color: rgba(8,27,51,0.07) !important; }
 
-/* ── Badges / pills / borders indigo light ── */
-:root:not(.dark) .bg-indigo-950\/40 { background-color: rgba(0,194,168,0.12) !important; }
-:root:not(.dark) .text-indigo-300  { color: #00C2A8 !important; }
+/* Backgrounds indigo — apenas fora de badges semânticos */
+:root:not(.dark) .bg-indigo-600:not(aside *):not(nav *) { background-color: #00C2A8 !important; }
+:root:not(.dark) .bg-indigo-500 { background-color: #00C2A8 !important; }
+:root:not(.dark) .bg-indigo-100 { background-color: rgba(0,194,168,0.10) !important; }
+:root:not(.dark) .bg-indigo-50  { background-color: rgba(0,194,168,0.06) !important; }
+
+/* Badges / pills / borders indigo */
+:root:not(.dark) .bg-indigo-950\/40 { background-color: rgba(0,194,168,0.10) !important; }
 :root:not(.dark) .border-indigo-950\/60 { border-color: #c8d5e3 !important; }
 :root:not(.dark) .border-indigo-950\/40 { border-color: #d1dce8 !important; }
 :root:not(.dark) .border-indigo-950\/30 { border-color: #dde5ef !important; }
 
-/* ── Hover rows light ── */
-:root:not(.dark) .hover\:bg-indigo-50\/30:hover { background-color: rgba(0,194,168,0.04) !important; }
+/* Hover rows */
+:root:not(.dark) .hover\:bg-indigo-50\/30:hover  { background-color: rgba(0,194,168,0.04) !important; }
 :root:not(.dark) .hover\:bg-indigo-950\/20:hover { background-color: rgba(0,194,168,0.04) !important; }
+
+:root:not(.dark) .divide-slate-100 > * + * { border-color: rgba(8,27,51,0.07) !important; }
+
+/* ══════════════════════════════════════════
+   BADGES SEMÂNTICOS — proteção de contraste
+   Garante que emerald/red/amber/blue/purple/cyan
+   nunca sejam sobrescritos pelas regras acima
+══════════════════════════════════════════ */
+
+/* Verde (emerald) — ex: ativo, pago, concluído */
+:root:not(.dark) .bg-emerald-50  { background-color: #ecfdf5 !important; }
+:root:not(.dark) .bg-emerald-100 { background-color: #d1fae5 !important; }
+:root:not(.dark) .text-emerald-700 { color: #047857 !important; }
+:root:not(.dark) .text-emerald-600 { color: #059669 !important; }
+:root:not(.dark) .text-emerald-500 { color: #10b981 !important; }
+:root:not(.dark) .ring-emerald-200 { --tw-ring-color: #a7f3d0 !important; }
+:root:not(.dark) .bg-emerald-500   { background-color: #10b981 !important; }
+
+/* Vermelho (red) — ex: vencido, rejeitado, encerrado */
+:root:not(.dark) .bg-red-50   { background-color: #fef2f2 !important; }
+:root:not(.dark) .bg-red-100  { background-color: #fee2e2 !important; }
+:root:not(.dark) .text-red-700 { color: #b91c1c !important; }
+:root:not(.dark) .text-red-600 { color: #dc2626 !important; }
+:root:not(.dark) .text-red-500 { color: #ef4444 !important; }
+:root:not(.dark) .ring-red-200 { --tw-ring-color: #fecaca !important; }
+:root:not(.dark) .bg-red-500   { background-color: #ef4444 !important; }
+
+/* Âmbar (amber) — ex: pendente */
+:root:not(.dark) .bg-amber-50   { background-color: #fffbeb !important; }
+:root:not(.dark) .bg-amber-100  { background-color: #fef3c7 !important; }
+:root:not(.dark) .text-amber-700 { color: #b45309 !important; }
+:root:not(.dark) .text-amber-600 { color: #d97706 !important; }
+:root:not(.dark) .text-amber-500 { color: #f59e0b !important; }
+:root:not(.dark) .ring-amber-200 { --tw-ring-color: #fde68a !important; }
+:root:not(.dark) .bg-amber-500   { background-color: #f59e0b !important; }
+
+/* Azul (blue) — ex: role advogado */
+:root:not(.dark) .bg-blue-50   { background-color: #eff6ff !important; }
+:root:not(.dark) .bg-blue-100  { background-color: #dbeafe !important; }
+:root:not(.dark) .text-blue-700 { color: #1d4ed8 !important; }
+:root:not(.dark) .text-blue-600 { color: #2563eb !important; }
+:root:not(.dark) .text-blue-500 { color: #3b82f6 !important; }
+:root:not(.dark) .ring-blue-200 { --tw-ring-color: #bfdbfe !important; }
+:root:not(.dark) .bg-blue-500   { background-color: #3b82f6 !important; }
+
+/* Roxo (purple) — ex: role admin */
+:root:not(.dark) .bg-purple-50   { background-color: #faf5ff !important; }
+:root:not(.dark) .bg-purple-100  { background-color: #f3e8ff !important; }
+:root:not(.dark) .text-purple-700 { color: #7e22ce !important; }
+:root:not(.dark) .text-purple-600 { color: #9333ea !important; }
+:root:not(.dark) .text-purple-500 { color: #a855f7 !important; }
+:root:not(.dark) .ring-purple-200 { --tw-ring-color: #e9d5ff !important; }
+:root:not(.dark) .bg-purple-500   { background-color: #a855f7 !important; }
+
+/* Ciano (cyan) — ex: role cliente */
+:root:not(.dark) .bg-cyan-50   { background-color: #ecfeff !important; }
+:root:not(.dark) .bg-cyan-100  { background-color: #cffafe !important; }
+:root:not(.dark) .text-cyan-700 { color: #0e7490 !important; }
+:root:not(.dark) .text-cyan-600 { color: #0891b2 !important; }
+:root:not(.dark) .text-cyan-500 { color: #06b6d4 !important; }
+:root:not(.dark) .ring-cyan-200 { --tw-ring-color: #a5f3fc !important; }
+:root:not(.dark) .bg-cyan-500   { background-color: #06b6d4 !important; }
 
 /* ── Skeleton light ── */
 :root:not(.dark) .shimmer {
