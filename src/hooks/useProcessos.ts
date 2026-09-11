@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { processosApi } from '../api/processos'
+import { logger } from '../utils/logger'
 import type { Processo } from '../types'
 
 export const PROCESSOS_KEY = ['processos']
@@ -7,12 +8,7 @@ export const PROCESSOS_KEY = ['processos']
 export function useProcessos() {
   return useQuery({ 
     queryKey: PROCESSOS_KEY, 
-    queryFn: async () => {
-      console.log('useProcessos: Fetching processos...')
-      const result = await processosApi.list()
-      console.log('useProcessos: Received processos:', result?.length ?? 0)
-      return result
-    },
+    queryFn: () => processosApi.list(),
     staleTime: 0,
     gcTime: 0
   })
@@ -49,21 +45,9 @@ export function useDeleteProcesso() {
 export function useAvancarFase() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, faseAtual }: { id: string; faseAtual: number }) => {
-      console.log('useAvancarFase: Calling API with', { id, faseAtual })
-      return processosApi.avancarFase(id, faseAtual)
-    },
-    onSuccess: (data) => {
-      console.log('useAvancarFase: Success', data)
-      qc.invalidateQueries({ queryKey: PROCESSOS_KEY })
-    },
-    onError: (error: any) => {
-      console.error('useAvancarFase error:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message,
-        full: error,
-      })
-    },
+    mutationFn: ({ id, faseAtual }: { id: string; faseAtual: number }) =>
+      processosApi.avancarFase(id, faseAtual),
+    onSuccess: () => qc.invalidateQueries({ queryKey: PROCESSOS_KEY }),
+    onError: (error: any) => logger.error('useAvancarFase error', error),
   })
 }

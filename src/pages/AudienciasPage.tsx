@@ -3,30 +3,11 @@ import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Gavel, Plus, Calendar, MapPin, Users, Sparkles, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import { TopBar } from '../components/TopBar'
-import { DataCard, EmptyState, StatCard } from '../components/Cards'
+import { DataCard, EmptyState, StatCard, SkeletonRow } from '../components/Cards'
 import { Modal } from '../components/Modal'
 import { Button, Input, Select, Textarea } from '../components/UI'
-import type { Audiencia, StatusAudiencia } from '../types'
-
-const MOCK_AUDIENCIAS: Audiencia[] = [
-  {
-    id: '1', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    processoId: 'p1', processoTitulo: 'Ação de Indenização por Danos Morais',
-    tipo: 'Conciliação', dataHora: new Date(Date.now() + 5 * 86400000).toISOString(),
-    local: '3ª Vara Cível — Fórum João Mendes Jr.', juiz: 'Dr. Carlos Mendes',
-    partes: 'João Silva (Autor) x Empresa XYZ Ltda (Réu)',
-    roteiro: `## Roteiro de Audiência — Conciliação\n\n**Objetivo:** Buscar acordo extrajudicial.\n\n### Pontos-chave para negociação:\n1. Dano moral comprovado por documentos juntados às fls. 45-67\n2. Valor pleiteado: R$ 15.000,00 — aceitar mínimo de R$ 8.000,00\n3. Prazo de pagamento: à vista ou em até 3 parcelas\n\n### Perguntas para a parte contrária:\n- Qual a proposta de acordo da empresa?\n- Há reconhecimento do dano?\n\n### Teses de blindagem:\n- Precedente STJ: REsp 1.234.567 — dano moral in re ipsa`,
-    status: 'agendada',
-  },
-  {
-    id: '2', createdAt: new Date(Date.now() - 10 * 86400000).toISOString(), updatedAt: new Date().toISOString(),
-    processoId: 'p2', processoTitulo: 'Ação Trabalhista — Rescisão Indireta',
-    tipo: 'Instrução', dataHora: new Date(Date.now() - 2 * 86400000).toISOString(),
-    local: '5ª Vara do Trabalho de São Paulo', juiz: 'Dra. Ana Paula Ferreira',
-    partes: 'Maria Santos (Reclamante) x Comércio ABC Ltda (Reclamada)',
-    status: 'realizada',
-  },
-]
+import { useAudiencias, useCreateAudiencia, useUpdateAudiencia } from '../hooks/useIntimacoes'
+import type { StatusAudiencia } from '../types'
 
 const statusConfig: Record<StatusAudiencia, { label: string; color: string }> = {
   agendada: { label: 'Agendada', color: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20' },
@@ -37,15 +18,19 @@ const statusConfig: Record<StatusAudiencia, { label: string; color: string }> = 
 
 type FormData = {
   processoTitulo: string; tipo: string; dataHora: string
-  local: string; juiz: string; partes: string
+  local: string; juiz: string; partes: string; observacoes?: string
 }
 
 export function AudienciasPage() {
-  const [audiencias, setAudiencias] = useState<Audiencia[]>(MOCK_AUDIENCIAS)
+  const { data, isLoading } = useAudiencias()
+  const create = useCreateAudiencia()
+  const update = useUpdateAudiencia()
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [gerandoRoteiro, setGerandoRoteiro] = useState<string | null>(null)
   const { register, handleSubmit, reset } = useForm<FormData>()
+
+  const audiencias = Array.isArray(data) ? data : []
 
   const stats = [
     { label: 'Total', value: audiencias.length, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Gavel size={18} /> },
@@ -55,31 +40,23 @@ export function AudienciasPage() {
   ]
 
   const onSubmit = (data: FormData) => {
-    const nova: Audiencia = {
-      id: String(Date.now()), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-      processoId: 'new', ...data, status: 'agendada',
-    }
-    setAudiencias((prev) => [nova, ...prev])
-    reset()
-    setOpen(false)
+    create.mutate(
+      { processoId: '', ...data, status: 'agendada' } as any,
+      { onSuccess: () => { reset(); setOpen(false) } }
+    )
   }
 
   const gerarRoteiro = (id: string) => {
+    const aud = audiencias.find((a) => a.id === id)
+    if (!aud) return
     setGerandoRoteiro(id)
+    const roteiro = `## Roteiro Gerado por IA — ${aud.tipo}\n\n**Processo:** ${aud.processoTitulo}\n\n### Objetivos da Audiência:\n1. Apresentar teses principais\n2. Ouvir testemunhas arroladas\n3. Requerer produção de provas\n\n### Perguntas para Testemunhas:\n- Descreva os fatos ocorridos\n- Confirma que estava presente no local?\n- Qual sua relação com as partes?\n\n### Teses de Blindagem:\n- Documentação probatória robusta\n- Precedentes favoráveis no STJ/STF\n\n### Pedidos a Formular:\n- Juntada de documentos\n- Oitiva de testemunhas\n- Perícia técnica (se cabível)`
     setTimeout(() => {
-      setAudiencias((prev) =>
-        prev.map((a) =>
-          a.id === id
-            ? {
-                ...a,
-                roteiro: `## Roteiro Gerado por IA — ${a.tipo}\n\n**Processo:** ${a.processoTitulo}\n\n### Objetivos da Audiência:\n1. Apresentar teses principais\n2. Ouvir testemunhas arroladas\n3. Requerer produção de provas\n\n### Perguntas para Testemunhas:\n- Descreva os fatos ocorridos em [data]\n- Confirma que estava presente no local?\n- Qual sua relação com as partes?\n\n### Teses de Blindagem:\n- Documentação probatória robusta\n- Precedentes favoráveis no STJ/STF\n- Nulidades processuais a arguir\n\n### Pedidos a Formular:\n- Juntada de documentos\n- Oitiva de testemunhas\n- Perícia técnica (se cabível)`,
-              }
-            : a
-        )
+      update.mutate(
+        { id, data: { roteiro } },
+        { onSuccess: () => { setGerandoRoteiro(null); setExpanded(id) } }
       )
-      setGerandoRoteiro(null)
-      setExpanded(id)
-    }, 2000)
+    }, 1500)
   }
 
   return (
@@ -102,13 +79,13 @@ export function AudienciasPage() {
 
         <DataCard delay={0.2}>
           <div className="p-4 border-b border-slate-100 dark:border-indigo-950/40">
-            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-              Próximas Audiências
-            </p>
+            <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Próximas Audiências</p>
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-indigo-950/30">
-            {audiencias.length === 0 ? (
+            {isLoading ? (
+              [...Array(3)].map((_, i) => <SkeletonRow key={i} variant="list" />)
+            ) : audiencias.length === 0 ? (
               <EmptyState message="Nenhuma audiência cadastrada" icon={<Gavel size={28} className="text-slate-300" />} />
             ) : (
               <AnimatePresence>
@@ -127,7 +104,6 @@ export function AudienciasPage() {
                       className="p-4 hover:bg-slate-50 dark:hover:bg-indigo-950/20 transition-all duration-200"
                     >
                       <div className="flex items-start gap-4">
-                        {/* Date badge */}
                         <div className={`shrink-0 text-center p-2.5 rounded-xl min-w-[52px] ${isFutura ? 'bg-indigo-600 shadow-md shadow-indigo-600/30' : 'bg-slate-100 dark:bg-slate-800'}`}>
                           <p className={`text-lg font-bold leading-none ${isFutura ? 'text-white' : 'text-slate-500'}`}>
                             {dataHora.getDate()}
@@ -168,7 +144,6 @@ export function AudienciasPage() {
                             )}
                           </div>
 
-                          {/* Roteiro expandível */}
                           <AnimatePresence>
                             {isExpanded && aud.roteiro && (
                               <motion.div
@@ -239,10 +214,10 @@ export function AudienciasPage() {
               <Input label="Juiz(a)" {...register('juiz')} placeholder="Dr(a). Nome" />
               <Input label="Partes" {...register('partes')} placeholder="Autor x Réu" />
             </div>
-            <Textarea label="Observações" {...register('partes')} rows={2} placeholder="Notas adicionais..." />
+            <Textarea label="Observações" {...register('observacoes')} rows={2} placeholder="Notas adicionais..." />
             <div className="flex justify-end gap-2 pt-2 border-t border-slate-100 dark:border-indigo-950/40">
               <Button variant="secondary" type="button" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit">Salvar</Button>
+              <Button type="submit" loading={create.isPending}>Salvar</Button>
             </div>
           </form>
         </Modal>

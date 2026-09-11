@@ -2,45 +2,9 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Search, Sparkles, Clock, CheckCircle, Eye, AlertTriangle, RefreshCw, FileText } from 'lucide-react'
 import { TopBar } from '../components/TopBar'
-import { DataCard, EmptyState, StatCard } from '../components/Cards'
-import type { Intimacao, StatusIntimacao } from '../types'
-
-// Mock data — substituir por hook real quando API estiver pronta
-const MOCK_INTIMACOES: Intimacao[] = [
-  {
-    id: '1', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    diario: 'DJSP — Diário da Justiça do Estado de São Paulo',
-    dataPublicacao: new Date().toISOString(),
-    conteudo: 'Fica intimado o advogado Dr. João Silva, OAB/SP 123.456, para apresentar contrarrazões ao recurso de apelação interposto pela parte contrária, no prazo de 15 (quinze) dias úteis, nos autos do processo nº 1001234-56.2024.8.26.0100.',
-    resumoIA: 'Prazo de 15 dias úteis para contrarrazões de apelação. Processo nº 1001234-56.2024.8.26.0100. Ação urgente requerida.',
-    prazoCalculado: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-    processoNumero: '1001234-56.2024.8.26.0100',
-    processoTitulo: 'Ação de Indenização por Danos Morais',
-    status: 'nova',
-  },
-  {
-    id: '2', createdAt: new Date(Date.now() - 86400000).toISOString(), updatedAt: new Date().toISOString(),
-    diario: 'DJe — Diário da Justiça Eletrônico Federal',
-    dataPublicacao: new Date(Date.now() - 86400000).toISOString(),
-    conteudo: 'Designada audiência de conciliação para o dia 15/02/2025, às 14h00, na 3ª Vara Cível da Comarca de São Paulo, para os autos do processo nº 0009876-54.2024.8.26.0100.',
-    resumoIA: 'Audiência de conciliação agendada para 15/02/2025 às 14h. Comparecer obrigatório.',
-    prazoCalculado: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-    processoNumero: '0009876-54.2024.8.26.0100',
-    processoTitulo: 'Ação de Cobrança',
-    status: 'lida',
-  },
-  {
-    id: '3', createdAt: new Date(Date.now() - 2 * 86400000).toISOString(), updatedAt: new Date().toISOString(),
-    diario: 'DJSP — Diário da Justiça do Estado de São Paulo',
-    dataPublicacao: new Date(Date.now() - 2 * 86400000).toISOString(),
-    conteudo: 'Sentença proferida nos autos em epígrafe. Prazo para interposição de recurso de apelação: 15 dias úteis.',
-    resumoIA: 'Sentença proferida. Prazo de 15 dias úteis para apelação. Verificar teor da sentença imediatamente.',
-    prazoCalculado: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
-    processoNumero: '0005432-10.2023.8.26.0100',
-    processoTitulo: 'Ação Trabalhista — Rescisão Indireta',
-    status: 'respondida',
-  },
-]
+import { DataCard, EmptyState, StatCard, SkeletonRow } from '../components/Cards'
+import { useIntimacoes, useUpdateIntimacao } from '../hooks/useIntimacoes'
+import type { StatusIntimacao } from '../types'
 
 const statusConfig: Record<StatusIntimacao, { label: string; color: string; icon: any }> = {
   nova: { label: 'Nova', color: 'bg-rose-500/15 text-rose-400 border-rose-500/20', icon: AlertTriangle },
@@ -61,10 +25,12 @@ function IntimacaoBadge({ status }: { status: StatusIntimacao }) {
 }
 
 export function IntimacoesPage() {
+  const { data, isLoading, refetch, isRefetching } = useIntimacoes()
+  const updateIntimacao = useUpdateIntimacao()
   const [search, setSearch] = useState('')
-  const [scanning, setScanning] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [intimacoes, setIntimacoes] = useState<Intimacao[]>(MOCK_INTIMACOES)
+
+  const intimacoes = Array.isArray(data) ? data : []
 
   const filtered = intimacoes.filter(
     (i) =>
@@ -75,13 +41,8 @@ export function IntimacoesPage() {
 
   const novas = intimacoes.filter((i) => i.status === 'nova').length
 
-  const handleScan = () => {
-    setScanning(true)
-    setTimeout(() => setScanning(false), 2500)
-  }
-
   const markAs = (id: string, status: StatusIntimacao) => {
-    setIntimacoes((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)))
+    updateIntimacao.mutate({ id, data: { status } })
   }
 
   const stats = [
@@ -100,12 +61,12 @@ export function IntimacoesPage() {
         actions={
           <motion.button
             whileTap={{ scale: 0.96 }}
-            onClick={handleScan}
-            disabled={scanning}
+            onClick={() => refetch()}
+            disabled={isRefetching}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all duration-300 disabled:opacity-60"
           >
-            <RefreshCw size={14} className={scanning ? 'animate-spin' : ''} />
-            {scanning ? 'Varrendo DJe...' : 'Varrer Diários'}
+            <RefreshCw size={14} className={isRefetching ? 'animate-spin' : ''} />
+            {isRefetching ? 'Atualizando...' : 'Atualizar'}
           </motion.button>
         }
       />
@@ -114,28 +75,6 @@ export function IntimacoesPage() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.07} />)}
         </div>
-
-        {scanning && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center gap-3 p-4 bg-indigo-950/50 border border-indigo-500/20 rounded-2xl"
-          >
-            <div className="flex gap-1">
-              {[0, 0.15, 0.3].map((d) => (
-                <motion.div
-                  key={d}
-                  className="w-2 h-2 bg-indigo-400 rounded-full"
-                  animate={{ y: [0, -6, 0] }}
-                  transition={{ duration: 0.6, repeat: Infinity, delay: d }}
-                />
-              ))}
-            </div>
-            <p className="text-sm text-indigo-300">
-              <span className="font-semibold">Kealex AI</span> está varrendo os Diários de Justiça e interpretando publicações...
-            </p>
-          </motion.div>
-        )}
 
         <DataCard delay={0.2}>
           <div className="flex items-center gap-3 p-4 border-b border-slate-100 dark:border-indigo-950/40">
@@ -151,7 +90,9 @@ export function IntimacoesPage() {
           </div>
 
           <div className="divide-y divide-slate-100 dark:divide-indigo-950/30">
-            {filtered.length === 0 ? (
+            {isLoading ? (
+              [...Array(3)].map((_, i) => <SkeletonRow key={i} variant="list" />)
+            ) : filtered.length === 0 ? (
               <EmptyState message="Nenhuma intimação encontrada" icon={<Bell size={28} className="text-slate-300" />} />
             ) : (
               <AnimatePresence>
@@ -186,7 +127,6 @@ export function IntimacoesPage() {
                           {item.diario} • {new Date(item.dataPublicacao).toLocaleDateString('pt-BR')}
                         </p>
 
-                        {/* Resumo IA */}
                         {item.resumoIA && (
                           <div className="flex items-start gap-2 p-3 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-100 dark:border-indigo-500/15 rounded-xl mb-2">
                             <Sparkles size={13} className="text-indigo-500 shrink-0 mt-0.5" />
@@ -203,7 +143,6 @@ export function IntimacoesPage() {
                           </div>
                         )}
 
-                        {/* Conteúdo expandível */}
                         <AnimatePresence>
                           {expanded === item.id && (
                             <motion.div
@@ -232,7 +171,8 @@ export function IntimacoesPage() {
                         {item.status === 'nova' && (
                           <button
                             onClick={() => markAs(item.id, 'lida')}
-                            className="px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-all"
+                            disabled={updateIntimacao.isPending}
+                            className="px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-all disabled:opacity-50"
                           >
                             Marcar lida
                           </button>

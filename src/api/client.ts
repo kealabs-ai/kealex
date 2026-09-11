@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const baseURL = import.meta.env.DEV
-  ? '/api'
+  ? ''
   : 'https://srv1023256.hstgr.cloud'
 
 export const api = axios.create({ 
@@ -27,8 +27,8 @@ api.interceptors.response.use(
         localStorage.removeItem('kealex_token')
         localStorage.removeItem('kealex_user')
         // Apenas redirecionar se não estiver na página de login
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login'
+        if (window.location.pathname !== '/entrar') {
+          window.location.href = '/entrar'
         }
       }
     }

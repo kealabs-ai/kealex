@@ -10,7 +10,7 @@ import { Button } from '../components/UI'
 import { TopBar } from '../components/TopBar'
 import type { CobrancaTimeline } from '../api/cobrancas'
 
-const fmt = (c: number) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(c / 100)
+import { fmt } from '../utils/formatters'
 
 // Componente wrapper para carregar a timeline de cada cobrança sob demanda
 function CobrancaCard({

@@ -1,16 +1,22 @@
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
-import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle, RefreshCw } from 'lucide-react'
-import { DataCard, StatCard } from '../components/Cards'
+import { Topbar } from '../components/TopBar'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle, RefreshCw, Search, Plus, Pencil, Trash2, Eye, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { useConfigDatabase, useSaveConfigDatabase, useDatabaseEnv } from '../hooks/useConfiguracoes'
+import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario } from '../hooks/useUsuarios'
 import { IATab } from '../components/IATab'
 import { AgentesTab } from '../components/AgentesTab'
 import { AgentesDebugPanel } from '../components/AgentesDebugPanel'
-import { Topbar } from '../components/TopBar'
-import { Input, Select, Button, Textarea } from '../components/UI'
-import { useState, useEffect } from 'react'
-import { useConfigDatabase, useSaveConfigDatabase, useDatabaseEnv } from '../hooks/useConfiguracoes'
+import { Modal } from '../components/Modal'
+import { StatCard, DataCard, SkeletonRow } from '../components/Cards'
+import { Button, Input, Select, Textarea } from '../components/UI'
+import type { Role, Usuario } from '../types'
 
 type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'seguranca' | 'notificacoes'
+type FormUsuario = { nome: string; email: string; senha?: string; role: Role; ativo: boolean }
+type UsuariosTabState = { editing: Usuario | null; viewing: Usuario | null; confirmDelete: Usuario | null; open: boolean }
 
 export function AdminPage() {
   const [searchParams] = useSearchParams()
@@ -636,94 +642,212 @@ function DatabaseTab() {
 
 // ============ USUÁRIOS ============
 function UsuariosTab() {
-  const [config, setConfig] = useState({
-    registro_publico: false,
-    aprovacao_manual: true,
-    senha_min_length: '8',
-    sessao_timeout: '60',
-  })
+  const { data: usuarios, isLoading } = useUsuarios()
+  const create = useCreateUsuario()
+  const update = useUpdateUsuario()
+  const remove = useDeleteUsuario()
+  const [state, setState] = useState<UsuariosTabState>({ editing: null, viewing: null, confirmDelete: null, open: false })
+  const [search, setSearch] = useState('')
+  const { register, handleSubmit, reset } = useForm<FormUsuario>()
+
+  const openCreate = () => { reset({ role: 'advogado', ativo: true }); setState({ editing: null, viewing: null, confirmDelete: null, open: true }) }
+  const openEdit = (u: Usuario) => { reset({ nome: u.nome, email: u.email, role: u.role, ativo: u.ativo }); setState({ editing: u, viewing: null, confirmDelete: null, open: true }) }
+  const close = () => setState(s => ({ ...s, open: false }))
+  const toggleAtivo = (u: Usuario) => update.mutate({ id: u.id, data: { ativo: !u.ativo } })
+
+  const onSubmit = (data: FormUsuario) => {
+    if (state.editing) update.mutate({ id: state.editing.id, data }, { onSuccess: close })
+    else create.mutate(data as any, { onSuccess: close })
+  }
+
+  const filtered = usuarios?.filter((u) =>
+    u.nome.toLowerCase().includes(search.toLowerCase()) ||
+    u.email.toLowerCase().includes(search.toLowerCase())
+  ) ?? []
+
+  const roleColors: Record<Role, string> = {
+    admin:    'linear-gradient(135deg,#8b5cf6,#6366f1)',
+    advogado: 'linear-gradient(135deg,#3b82f6,#06b6d4)',
+    cliente:  'linear-gradient(135deg,#10b981,#059669)',
+  }
+
+  const roleLabel: Record<Role, string> = { admin: 'Admin', advogado: 'Advogado', cliente: 'Cliente' }
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-3 gap-4">
-        <StatCard
-          label="Total de Usuários"
-          value="1,247"
-          icon={<Users size={20} />}
-          gradient="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-        />
-        <StatCard
-          label="Admins"
-          value="8"
-          icon={<Shield size={20} />}
-          gradient="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-        />
-        <StatCard
-          label="Novos (30d)"
-          value="142"
-          icon={<Activity size={20} />}
-          gradient="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-        />
+      {/* Stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[
+          { label: 'Total',     value: usuarios?.length ?? 0,                                    gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)' },
+          { label: 'Admins',    value: usuarios?.filter(u => u.role === 'admin').length ?? 0,    gradient: roleColors.admin },
+          { label: 'Advogados', value: usuarios?.filter(u => u.role === 'advogado').length ?? 0, gradient: roleColors.advogado },
+          { label: 'Clientes',  value: usuarios?.filter(u => u.role === 'cliente').length ?? 0,  gradient: roleColors.cliente },
+        ].map((s, i) => (
+          <StatCard key={s.label} label={s.label} value={s.value} icon={<Users size={18} />} gradient={s.gradient} delay={i * 0.07} />
+        ))}
       </div>
 
-      <DataCard className="p-6 space-y-4">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">Políticas de Usuários</h2>
-
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="text-sm font-medium text-gray-900">Registro Público</p>
-              <p className="text-xs text-gray-500">Permitir que novos usuários se cadastrem</p>
-            </div>
-            <button
-              onClick={() => setConfig({ ...config, registro_publico: !config.registro_publico })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                config.registro_publico ? 'bg-emerald-500' : 'bg-gray-300'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                config.registro_publico ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
+      <DataCard delay={0.15}>
+        {/* Header */}
+        <div className="flex items-center justify-between gap-3 p-4 border-b border-gray-100">
+          <div className="relative flex-1 max-w-sm">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nome ou email..."
+              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-50 transition-all"
+            />
           </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-            <div>
-              <p className="text-sm font-medium text-gray-900">Aprovação Manual</p>
-              <p className="text-xs text-gray-500">Novos usuários precisam de aprovação do admin</p>
-            </div>
-            <button
-              onClick={() => setConfig({ ...config, aprovacao_manual: !config.aprovacao_manual })}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                config.aprovacao_manual ? 'bg-emerald-500' : 'bg-gray-300'
-              }`}
-            >
-              <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                config.aprovacao_manual ? 'translate-x-6' : 'translate-x-1'
-              }`} />
-            </button>
-          </div>
+          <Button icon={<Plus size={14} />} onClick={openCreate}>Novo Usuário</Button>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Tamanho Mínimo da Senha"
-            type="number"
-            value={config.senha_min_length}
-            onChange={(e) => setConfig({ ...config, senha_min_length: e.target.value })}
-          />
-          <Input
-            label="Timeout de Sessão (min)"
-            type="number"
-            value={config.sessao_timeout}
-            onChange={(e) => setConfig({ ...config, sessao_timeout: e.target.value })}
-          />
-        </div>
-
-        <div className="flex justify-end pt-4 border-t">
-          <Button>Salvar Configurações</Button>
-        </div>
+        {/* Table */}
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-gray-100">
+              {['Usuário', 'Email', 'Role', 'Status', 'Ações'].map((h) => (
+                <th key={h} className={`px-4 py-3 text-xs font-semibold text-gray-400 uppercase tracking-wide ${h === 'Ações' ? 'text-right' : 'text-left'}`}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {isLoading ? (
+              [...Array(4)].map((_, i) => <SkeletonRow key={i} />)
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={5}>
+                <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+                  <Users size={32} className="mb-2 opacity-20" />
+                  <p className="text-sm">Nenhum usuário encontrado</p>
+                </div>
+              </td></tr>
+            ) : (
+              <AnimatePresence>
+                {filtered.map((u, i) => (
+                  <motion.tr
+                    key={u.id}
+                    className="border-b border-gray-50 hover:bg-indigo-50/30 transition-colors group"
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.03 }}
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold text-white shrink-0"
+                          style={{ background: roleColors[u.role] }}>
+                          {u.nome.split(' ').map(n => n[0]).slice(0, 2).join('')}
+                        </div>
+                        <span className="font-semibold text-gray-800">{u.nome}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">{u.email}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-semibold text-white" style={{ background: roleColors[u.role] }}>
+                        {roleLabel[u.role]}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        u.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'
+                      }`}>
+                        {u.ativo ? 'Ativo' : 'Inativo'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1.5 justify-end">
+                        <button title="Ver detalhes" onClick={() => setState(s => ({ ...s, viewing: u }))} style={{ padding: 7, borderRadius: 8, background: '#ecfeff', color: '#0891b2', border: 'none', cursor: 'pointer', display: 'flex' }}><Eye size={14} /></button>
+                        <button title={u.ativo ? 'Desativar' : 'Ativar'} onClick={() => toggleAtivo(u)} style={{ padding: 7, borderRadius: 8, background: u.ativo ? '#d1fae5' : '#f3f4f6', color: u.ativo ? '#059669' : '#9ca3af', border: 'none', cursor: 'pointer', display: 'flex' }}>
+                          {u.ativo ? <ToggleRight size={14} /> : <ToggleLeft size={14} />}
+                        </button>
+                        <button title="Editar" onClick={() => openEdit(u)} style={{ padding: 7, borderRadius: 8, background: '#eef2ff', color: '#4f46e5', border: 'none', cursor: 'pointer', display: 'flex' }}><Pencil size={14} /></button>
+                        <button title="Excluir" onClick={() => setState(s => ({ ...s, confirmDelete: u }))} style={{ padding: 7, borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', display: 'flex' }}><Trash2 size={14} /></button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                ))}
+              </AnimatePresence>
+            )}
+          </tbody>
+        </table>
       </DataCard>
+
+      {state.viewing && (
+        <Modal title="Detalhes do Usuário" subtitle={state.viewing.email} onClose={() => setState(s => ({ ...s, viewing: null }))} size="sm">
+          <div className="space-y-3">
+            <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold text-white" style={{ background: roleColors[state.viewing.role] }}>
+                {state.viewing.nome.split(' ').map(n => n[0]).slice(0, 2).join('')}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">{state.viewing.nome}</p>
+                <p className="text-sm text-gray-500">{state.viewing.email}</p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Role</p>
+                <span className="px-2.5 py-1 rounded-full text-xs font-semibold text-white" style={{ background: roleColors[state.viewing.role] }}>{roleLabel[state.viewing.role]}</span>
+              </div>
+              <div className="p-3 bg-gray-50 rounded-xl">
+                <p className="text-xs text-gray-400 uppercase tracking-wide mb-1">Status</p>
+                <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${state.viewing.ativo ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600'}`}>{state.viewing.ativo ? 'Ativo' : 'Inativo'}</span>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <Button variant="secondary" onClick={() => setState(s => ({ ...s, viewing: null }))}>Fechar</Button>
+              <Button icon={<Pencil size={14} />} onClick={() => { const v = state.viewing!; setState(s => ({ ...s, viewing: null })); openEdit(v) }}>Editar</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {state.confirmDelete && (
+        <Modal title="Confirmar Exclusão" onClose={() => setState(s => ({ ...s, confirmDelete: null }))} size="sm">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-red-50 rounded-xl">
+              <AlertTriangle size={20} className="text-red-500 shrink-0" />
+              <p className="text-sm text-red-700">Tem certeza que deseja excluir <strong>{state.confirmDelete.nome}</strong>? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setState(s => ({ ...s, confirmDelete: null }))}>Cancelar</Button>
+              <Button variant="danger" icon={<Trash2 size={14} />} loading={remove.isPending} onClick={() => remove.mutate(state.confirmDelete!.id, { onSuccess: () => setState(s => ({ ...s, confirmDelete: null })) })}>Excluir</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal */}
+      {state.open && (
+        <Modal title={state.editing ? 'Editar Usuário' : 'Novo Usuário'} subtitle={state.editing ? `Editando: ${state.editing.email}` : 'Preencha os dados do novo usuário'} onClose={close}>
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Nome" {...register('nome', { required: true })} placeholder="Nome completo" />
+              <Input label="Email" {...register('email', { required: true })} type="email" placeholder="email@exemplo.com" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label={state.editing ? 'Nova Senha (opcional)' : 'Senha'}
+                {...register('senha', { required: !state.editing })}
+                type="password"
+                placeholder="••••••••"
+              />
+              <Select label="Role" {...register('role', { required: true })}>
+                <option value="admin">Admin</option>
+                <option value="advogado">Advogado</option>
+                <option value="cliente">Cliente</option>
+              </Select>
+            </div>
+            <label className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
+              <input {...register('ativo')} type="checkbox" defaultChecked className="w-4 h-4 rounded accent-indigo-600" />
+              <span className="text-sm font-medium text-gray-700">Usuário ativo</span>
+            </label>
+            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
+              <Button variant="secondary" type="button" onClick={close}>Cancelar</Button>
+              <Button type="submit" loading={create.isPending || update.isPending}>Salvar</Button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }

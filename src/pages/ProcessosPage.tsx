@@ -11,6 +11,7 @@ import { statusProcessoBadge } from '../components/Badge'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { TopBar } from '../components/TopBar'
 import { useAuth } from '../context/AuthContext'
+import { useToast } from '../components/Toast'
 import { gerarGuiaTJMG } from '../utils/guiaGenerator'
 import type { Processo, StatusProcesso } from '../types'
 
@@ -22,9 +23,10 @@ type FormData = {
 
 export function ProcessosPage() {
   const { user } = useAuth()
+  const { success, error: toastError } = useToast()
   const { data: processos, isLoading } = useProcessos()
   const isCliente = user?.role === 'cliente'
-  const { data: clientes } = !isCliente ? useClientes() : { data: undefined }
+  const { data: clientes } = useClientes()
   const create = useCreateProcesso()
   const update = useUpdateProcesso()
   const remove = useDeleteProcesso()
@@ -34,6 +36,7 @@ export function ProcessosPage() {
   const [guiaOpen, setGuiaOpen] = useState(false)
   const [selectedProcesso, setSelectedProcesso] = useState<Processo | null>(null)
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Processo | null>(null)
   const [search, setSearch] = useState('')
   const [customFases, setCustomFases] = useState<string[]>([])
   const [novaFase, setNovaFase] = useState('')
@@ -73,11 +76,10 @@ export function ProcessosPage() {
         vencimento: data.vencimento,
         descricao: data.descricao
       })
-      alert('Guia gerada e baixada com sucesso!')
+      success('Guia gerada e baixada com sucesso!')
       closeGuia()
     } catch (error) {
-      console.error('Erro ao gerar guia:', error)
-      alert('Erro ao gerar guia. Tente novamente.')
+      toastError('Erro ao gerar guia. Tente novamente.')
     }
   }
 
@@ -183,6 +185,7 @@ export function ProcessosPage() {
                           <motion.button
                             onClick={() => setExpandedTimeline(isExpanded ? null : p.id)}
                             className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all"
+                            aria-label="Expandir fases"
                             title="Expandir/Recolher Fases"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
@@ -192,6 +195,7 @@ export function ProcessosPage() {
                           <motion.button
                             onClick={() => openGuia(p)}
                             className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all"
+                            aria-label="Emitir guia"
                             title="Emitir Guia"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.95 }}
@@ -203,6 +207,7 @@ export function ProcessosPage() {
                               <motion.button
                                 onClick={() => openEdit(p)}
                                 className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all"
+                                aria-label="Editar processo"
                                 title="Editar Processo"
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
@@ -210,8 +215,9 @@ export function ProcessosPage() {
                                 <Pencil size={20} />
                               </motion.button>
                               <motion.button
-                                onClick={() => remove.mutate(p.id)}
+                                onClick={() => setConfirmDelete(p)}
                                 className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-all"
+                                aria-label="Excluir processo"
                                 title="Excluir Processo"
                                 whileHover={{ scale: 1.1 }}
                                 whileTap={{ scale: 0.95 }}
@@ -310,6 +316,21 @@ export function ProcessosPage() {
               <Button type="submit" loading={create.isPending || update.isPending}>Salvar</Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {confirmDelete && (
+        <Modal title="Confirmar Exclusão" onClose={() => setConfirmDelete(null)} size="sm">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 p-4 bg-red-50 dark:bg-red-950/30 rounded-xl">
+              <Trash2 size={20} className="text-red-500 shrink-0" />
+              <p className="text-sm text-red-700 dark:text-red-400">Excluir o processo <strong>{confirmDelete.numero}</strong>? Esta ação não pode ser desfeita.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancelar</Button>
+              <Button variant="danger" icon={<Trash2 size={14} />} loading={remove.isPending} onClick={() => remove.mutate(confirmDelete.id, { onSuccess: () => setConfirmDelete(null) })}>Excluir</Button>
+            </div>
+          </div>
         </Modal>
       )}
 

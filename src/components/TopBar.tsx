@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, LogOut, ExternalLink, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTrial } from '../hooks/useTrial'
 
 interface TopbarProps {
   title: string
@@ -15,6 +16,7 @@ interface TopbarProps {
 export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const { user, logout } = useAuth()
+  const { isTrial, daysLeft } = useTrial()
 
   const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
@@ -25,7 +27,24 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
     : null
 
   return (
-    <div className="shrink-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3">
+    <div className="shrink-0">
+      {/* Banner de trial */}
+      {isTrial && daysLeft !== null && daysLeft <= 3 && (
+        <div className={`px-4 py-2 text-xs flex items-center justify-between ${
+          daysLeft === 0
+            ? 'bg-red-50 border-b border-red-200 text-red-800'
+            : 'bg-amber-50 border-b border-amber-200 text-amber-800'
+        }`}>
+          <span>
+            {daysLeft === 0
+              ? '⛔ Seu trial expirou hoje.'
+              : `⏳ Seu trial expira em `}
+            {daysLeft > 0 && <strong>{daysLeft} dia{daysLeft !== 1 ? 's' : ''}</strong>}
+          </span>
+          <a href="/#precos" className="font-bold underline ml-2 shrink-0">Assinar agora</a>
+        </div>
+      )}
+      <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {iconEl}
@@ -94,6 +113,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
             </div>
           )}
         </div>
+      </div>
       </div>
     </div>
   )
