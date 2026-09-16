@@ -24,6 +24,7 @@ import { AudienciasPage } from './pages/AudienciasPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ErrorPage } from './pages/ErrorPage'
 import { TrialExpiradoPage } from './pages/TrialExpiradoPage'
+import { AssinaturaPage } from './pages/site/AssinaturaPage'
 import { CookieConsent } from './components/CookieConsent'
 
 const queryClient = new QueryClient({
@@ -47,6 +48,7 @@ export default function App() {
                 <Route path="/entrar" element={<LoginPage />} />
                 <Route path="/login" element={<Navigate to="/entrar" replace />} />
                 <Route path="/trial-expirado" element={<TrialExpiradoPage />} />
+                <Route path="/assinar" element={<AssinaturaPage />} />
                 <Route path="/error" element={<ErrorPage />} />
                 <Route element={<ProtectedLayout />}>
                   <Route path="/app" element={<Navigate to="/processos" replace />} />

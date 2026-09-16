@@ -142,8 +142,11 @@ export interface AuthUser {
   email: string
   role: Role
   accessToken: string
-  trialStartedAt?: string  // ISO date — retornado pelo backend no login
+  trialStartedAt?: string
+  trialExpiresAt?: string
   plano?: Plano
+  modalidade?: 'autonomo' | 'escritorio'
+  escritorioId?: string
 }
 
 export type AIProvider = 'cerebras' | 'groq'

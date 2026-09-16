@@ -6,6 +6,7 @@ interface AuthContextType {
   role: Role | null
   login: (user: AuthUser) => void
   logout: () => void
+  updateUser: (partial: Partial<AuthUser>) => void
 }
 
 const AuthContext = createContext<AuthContextType>(null!)
@@ -50,6 +51,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
+  const updateUser = (partial: Partial<AuthUser>) => {
+    setUser((prev) => {
+      if (!prev) return prev
+      const updated = { ...prev, ...partial }
+      localStorage.setItem('kealex_user', JSON.stringify(updated))
+      return updated
+    })
+  }
+
   // verifica expiração a cada minuto e ao focar a janela
   useEffect(() => {
     const check = () => {
@@ -66,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, role: user?.role ?? null, login, logout }}>
+    <AuthContext.Provider value={{ user, role: user?.role ?? null, login, logout, updateUser }}>
       {children}
     </AuthContext.Provider>
   )
