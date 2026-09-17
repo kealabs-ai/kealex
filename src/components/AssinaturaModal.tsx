@@ -43,6 +43,14 @@ function formatCep(v: string) {
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d
 }
 
+function formatPhone(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 2) return d ? `(${d}` : ''
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
+
 export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
   const { user, updateUser, logout } = useAuth()
   const { error: toastError } = useToast()
@@ -100,10 +108,13 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
 
   function handleClose() {
     if (mutation.isPending) return
-    logout()
     setStep(planoInicial ? 'titular' : 'plano')
     setResultado(null)
     onClose()
+
+    if (isTrial && daysLeft !== null && daysLeft > 0) return
+
+    logout()
     navigate('/entrar', { replace: true })
   }
 
@@ -245,11 +256,11 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
                         placeholder="Apto, sala..." className={inputCls} />
                     </Field>
                     <Field label="Telefone">
-                      <input value={titular.phone ?? ''} onChange={(e) => setTitular({ ...titular, phone: e.target.value })}
+                      <input value={titular.phone ?? ''} onChange={(e) => setTitular({ ...titular, phone: formatPhone(e.target.value) })}
                         placeholder="(11) 3333-4444" className={inputCls} />
                     </Field>
                     <Field label="Celular">
-                      <input value={titular.mobilePhone ?? ''} onChange={(e) => setTitular({ ...titular, mobilePhone: e.target.value })}
+                      <input value={titular.mobilePhone ?? ''} onChange={(e) => setTitular({ ...titular, mobilePhone: formatPhone(e.target.value) })}
                         placeholder="(11) 99999-9999" className={inputCls} />
                     </Field>
                   </div>

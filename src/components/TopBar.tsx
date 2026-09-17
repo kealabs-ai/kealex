@@ -1,9 +1,10 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, LogOut, ExternalLink, Building2, User, type LucideIcon } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTrial } from '../hooks/useTrial'
+import { AssinaturaModal } from './AssinaturaModal'
 import { ModalidadeModal } from './ModalidadeModal'
 
 interface TopbarProps {
@@ -29,9 +30,9 @@ function trialBannerText(daysLeft: number): string {
 export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showModalidade, setShowModalidade] = useState(false)
+  const [showAssinatura, setShowAssinatura] = useState(false)
   const { user, logout } = useAuth()
   const { isTrial, daysLeft } = useTrial()
-  const navigate = useNavigate()
 
   const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
@@ -52,7 +53,13 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                 <strong>{daysLeft} dia{daysLeft !== 1 ? 's' : ''} restante{daysLeft !== 1 ? 's' : ''}</strong>
               )}
             </span>
-            <a href="/assinar" className="font-bold underline ml-2 shrink-0" onClick={(e) => { e.preventDefault(); navigate('/assinar') }}>Assinar agora</a>
+            <button
+              type="button"
+              className="font-bold underline ml-2 shrink-0"
+              onClick={() => setShowAssinatura(true)}
+            >
+              Assinar agora
+            </button>
           </div>
         )}
 
@@ -139,6 +146,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
       </div>
 
       <ModalidadeModal open={showModalidade} onClose={() => setShowModalidade(false)} />
+      <AssinaturaModal open={showAssinatura} onClose={() => setShowAssinatura(false)} />
     </>
   )
 }
