@@ -29,13 +29,21 @@ api.interceptors.response.use(
         }
       }
     }
-    // Trial expirado — redireciona para página de assinatura
+
     if (err.response?.status === 403) {
       const detail = err.response?.data?.detail ?? ''
       if (detail.toLowerCase().includes('trial')) {
-        window.location.href = '/trial-expirado'
+        const token = localStorage.getItem('kealex_token')
+        const storedUser = localStorage.getItem('kealex_user')
+
+        if (token && storedUser) {
+          window.dispatchEvent(new CustomEvent('kealex:trial-expired'))
+        } else if (window.location.pathname !== '/entrar' && window.location.pathname !== '/trial-expirado') {
+          window.location.href = '/trial-expirado'
+        }
       }
     }
+
     return Promise.reject(err)
   }
 )

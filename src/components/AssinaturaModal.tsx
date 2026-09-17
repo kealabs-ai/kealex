@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { assinaturaApi, PLANOS_CONFIG, type AssinarPayload, type HolderInfo, type CreditCardData } from '../api/assinatura'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from './Toast'
@@ -43,9 +44,10 @@ function formatCep(v: string) {
 }
 
 export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
-  const { user, updateUser } = useAuth()
+  const { user, updateUser, logout } = useAuth()
   const { error: toastError } = useToast()
   const { isTrial, daysLeft } = useTrial()
+  const navigate = useNavigate()
 
   const [step, setStep] = useState<Step>(planoInicial ? 'titular' : 'plano')
   const [planoId, setPlanoId] = useState<'starter' | 'professional'>(planoInicial ?? 'professional')
@@ -98,9 +100,11 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
 
   function handleClose() {
     if (mutation.isPending) return
+    logout()
     setStep(planoInicial ? 'titular' : 'plano')
     setResultado(null)
     onClose()
+    navigate('/entrar', { replace: true })
   }
 
   function titularValido() {

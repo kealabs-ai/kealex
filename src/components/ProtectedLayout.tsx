@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import { Sidebar } from './Sidebar'
 import { useTrial } from '../hooks/useTrial'
 import type { Role } from '../types'
+import { AssinaturaModal } from './AssinaturaModal'
 
 const roleRequired: Record<string, Role[]> = {
   '/usuarios':   ['admin'],
@@ -28,7 +29,15 @@ export function ProtectedLayout() {
   }
 
   if (isExpired) {
-    return <Navigate to="/trial-expirado" replace />
+    return (
+      <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
+        <Sidebar />
+        <main className="flex-1 overflow-auto bg-slate-50 dark:bg-slate-950">
+          <Outlet />
+        </main>
+        <AssinaturaModal open={true} onClose={() => undefined} />
+      </div>
+    )
   }
 
   const required = roleRequired[location.pathname]

@@ -24,6 +24,14 @@ function fmtCep(v: string) {
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d
 }
 
+function fmtPhone(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11)
+  if (d.length <= 2) return d ? `(${d}` : ''
+  if (d.length <= 6) return `(${d.slice(0, 2)}) ${d.slice(2)}`
+  if (d.length <= 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`
+  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
+}
+
 const inp = 'w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all bg-white text-[#081B33] placeholder-slate-400'
 
 function F({ label, children }: { label: string; children: ReactNode }) {
@@ -215,8 +223,8 @@ export function AssinaturaPage() {
                   <F label="CEP"><input value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: fmtCep(e.target.value) })} placeholder="00000-000" className={inp} /></F>
                   <F label="Numero"><input value={titular.addressNumber} onChange={(e) => setTitular({ ...titular, addressNumber: e.target.value })} placeholder="123" className={inp} /></F>
                   <div className="sm:col-span-2"><F label="Complemento (opcional)"><input value={titular.addressComplement ?? ''} onChange={(e) => setTitular({ ...titular, addressComplement: e.target.value })} placeholder="Apto, sala..." className={inp} /></F></div>
-                  <F label="Telefone"><input value={titular.phone ?? ''} onChange={(e) => setTitular({ ...titular, phone: e.target.value })} placeholder="(11) 3333-4444" className={inp} /></F>
-                  <F label="Celular"><input value={titular.mobilePhone ?? ''} onChange={(e) => setTitular({ ...titular, mobilePhone: e.target.value })} placeholder="(11) 99999-9999" className={inp} /></F>
+                  <F label="Telefone"><input value={titular.phone ?? ''} onChange={(e) => setTitular({ ...titular, phone: fmtPhone(e.target.value) })} placeholder="(11) 3333-4444" className={inp} /></F>
+                  <F label="Celular"><input value={titular.mobilePhone ?? ''} onChange={(e) => setTitular({ ...titular, mobilePhone: fmtPhone(e.target.value) })} placeholder="(11) 99999-9999" className={inp} /></F>
                 </div>
               </Card>
               <div className="flex gap-3 mt-4">
