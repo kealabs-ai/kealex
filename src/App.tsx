@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { useEffect, useState } from 'react'
 import { AuthProvider } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { ToastProvider } from './components/Toast'
@@ -24,13 +25,30 @@ import { AudienciasPage } from './pages/AudienciasPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ErrorPage } from './pages/ErrorPage'
 import { TrialExpiradoPage } from './pages/TrialExpiradoPage'
+import { AssinaturaPage } from './pages/site/AssinaturaPage'
 import { CookieConsent } from './components/CookieConsent'
+import { AssinaturaModal } from './components/AssinaturaModal'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 30, retry: 1 } },
 })
 
 export default function App() {
+  const [assinaturaModalOpen, setAssinaturaModalOpen] = useState(false)
+
+  useEffect(() => {
+    const handleTrialExpired = () => {
+      const token = localStorage.getItem('kealex_token')
+      const storedUser = localStorage.getItem('kealex_user')
+      if (token && storedUser) {
+        setAssinaturaModalOpen(true)
+      }
+    }
+
+    window.addEventListener('kealex:trial-expired', handleTrialExpired)
+    return () => window.removeEventListener('kealex:trial-expired', handleTrialExpired)
+  }, [])
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -47,6 +65,7 @@ export default function App() {
                 <Route path="/entrar" element={<LoginPage />} />
                 <Route path="/login" element={<Navigate to="/entrar" replace />} />
                 <Route path="/trial-expirado" element={<TrialExpiradoPage />} />
+                <Route path="/assinar" element={<AssinaturaPage />} />
                 <Route path="/error" element={<ErrorPage />} />
                 <Route element={<ProtectedLayout />}>
                   <Route path="/app" element={<Navigate to="/processos" replace />} />
@@ -64,6 +83,7 @@ export default function App() {
                 </Route>
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
+              <AssinaturaModal open={assinaturaModalOpen} onClose={() => setAssinaturaModalOpen(false)} />
               <CookieConsent />
             </BrowserRouter>
             </ToastProvider>

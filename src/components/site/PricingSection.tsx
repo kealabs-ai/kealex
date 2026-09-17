@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Check, Star, ArrowRight, Phone, Zap } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { TrialModal } from './TrialModal'
 
 const PLANS = [
   {
@@ -84,8 +86,11 @@ const PLANS = [
 
 export function PricingSection() {
   const [annual, setAnnual] = useState(false)
+  const [trialOpen, setTrialOpen] = useState(false)
+  const navigate = useNavigate()
 
   return (
+    <>
     <section id="precos" className="py-20 bg-[#F8FAFC]" aria-label="Planos e preços do Kealex">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
@@ -214,19 +219,32 @@ export function PricingSection() {
 
               {/* CTA */}
               <div>
-                <a
-                  href={plan.id === 'enterprise' ? 'mailto:contato@kealabs.com.br' : '#trial'}
-                  className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all ${plan.ctaStyle}`}
-                >
-                  {plan.id === 'enterprise' ? (
-                    <><Phone size={14} /> {plan.cta}</>
-                  ) : (
-                    <>{plan.cta} <ArrowRight size={14} /></>
-                  )}
-                </a>
+                {plan.id === 'enterprise' ? (
+                  <a
+                    href="mailto:contato@kealabs.com.br"
+                    className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all ${plan.ctaStyle}`}
+                  >
+                    <Phone size={14} /> {plan.cta}
+                  </a>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => navigate(`/assinar?plano=${plan.id}`)}
+                      className={`flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm font-bold transition-all ${plan.ctaStyle}`}
+                    >
+                      Assinar agora <ArrowRight size={14} />
+                    </button>
+                    <button
+                      onClick={() => setTrialOpen(true)}
+                      className="w-full mt-2 py-2 text-xs font-semibold text-[#00C2A8] hover:underline"
+                    >
+                      Ou comecar trial gratuito de 7 dias
+                    </button>
+                  </>
+                )}
                 {plan.id !== 'enterprise' && (
-                  <p className={`text-center text-[11px] mt-2 ${plan.highlight ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Sem cartão de crédito · Cancele quando quiser
+                  <p className={`text-center text-[11px] mt-1 ${plan.highlight ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Sem cartao de credito para o trial
                   </p>
                 )}
               </div>
@@ -249,5 +267,7 @@ export function PricingSection() {
         </motion.div>
       </div>
     </section>
+    <TrialModal open={trialOpen} onClose={() => setTrialOpen(false)} />
+    </>
   )
 }

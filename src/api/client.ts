@@ -18,20 +18,32 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (r) => r,
   (err) => {
-    // Apenas redirecionar para login em caso de 401 (não autorizado)
-    // Não redirecionar em 404 ou outros erros
     if (err.response?.status === 401) {
       const msg = err.response?.data?.message ?? ''
       const isExpired = msg === 'Unauthorized' || msg === '' || msg.toLowerCase().includes('token')
       if (isExpired) {
         localStorage.removeItem('kealex_token')
         localStorage.removeItem('kealex_user')
-        // Apenas redirecionar se não estiver na página de login
         if (window.location.pathname !== '/entrar') {
           window.location.href = '/entrar'
         }
       }
     }
+
+    if (err.response?.status === 403) {
+      const detail = err.response?.data?.detail ?? ''
+      if (detail.toLowerCase().includes('trial')) {
+        const token = localStorage.getItem('kealex_token')
+        const storedUser = localStorage.getItem('kealex_user')
+
+        if (token && storedUser) {
+          window.dispatchEvent(new CustomEvent('kealex:trial-expired'))
+        } else if (window.location.pathname !== '/entrar' && window.location.pathname !== '/trial-expirado') {
+          window.location.href = '/trial-expirado'
+        }
+      }
+    }
+
     return Promise.reject(err)
   }
 )
