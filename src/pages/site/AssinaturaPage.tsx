@@ -1,10 +1,11 @@
 import { useState, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Lock, Eye, EyeOff } from 'lucide-react'
 import { assinaturaApi, PLANOS_CONFIG, type HolderInfo, type CreditCardData } from '../../api/assinatura'
+import { Modal } from '../../components/Modal'
 import logo from '../../assets/logotipo_kealex.png'
 
 function fmtCard(v: string) {
@@ -66,11 +67,13 @@ type PlanoId = 'starter' | 'professional'
 
 export function AssinaturaPage() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const planoParam = (params.get('plano') ?? 'professional') as PlanoId
   const [step, setStep] = useState(0)
   const [planoId, setPlanoId] = useState<PlanoId>(planoParam)
   const [conta, setConta] = useState({ nome: '', email: '', senha: '', confirmar: '' })
   const [showSenha, setShowSenha] = useState(false)
+  const [emailJaCadastrado, setEmailJaCadastrado] = useState(false)
   const tokenRef = useRef('')
   const [titular, setTitular] = useState<HolderInfo>({
     name: '',
@@ -100,7 +103,19 @@ export function AssinaturaPage() {
       setApiError('')
       setStep(1)
     },
-    onError: (err: any) => setApiError(err.response?.data?.detail ?? 'Erro ao criar conta.'),
+    onError: (err: any) => {
+      const detail = String(err.response?.data?.detail ?? '')
+      const cadastroExistente = err.response?.status === 409
+        || /(e-?mail|usuario).*(cadastrad|existente|ja existe)|(cadastrad|existente|ja existe).*(e-?mail|usuario)/i.test(detail)
+
+      if (cadastroExistente) {
+        setApiError('')
+        setEmailJaCadastrado(true)
+        return
+      }
+
+      setApiError(detail || 'Erro ao criar conta.')
+    },
   })
 
   const pagar = useMutation({
@@ -310,6 +325,28 @@ export function AssinaturaPage() {
           )}
         </AnimatePresence>
       </div>
+
+      {emailJaCadastrado && (
+        <Modal
+          title="E-mail ja cadastrado"
+          subtitle="Continue pelo acesso da sua conta"
+          onClose={() => setEmailJaCadastrado(false)}
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Ja existe um cadastro com este e-mail. Faca login para continuar com o pagamento dentro da sua conta.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/entrar')}
+              className="w-full bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm"
+            >
+              Fazer login <ArrowRight size={15} />
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
