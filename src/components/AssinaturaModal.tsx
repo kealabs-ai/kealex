@@ -52,7 +52,7 @@ function formatPhone(v: string) {
 }
 
 export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
-  const { user, updateUser, logout } = useAuth()
+  const { user, logout } = useAuth()
   const { error: toastError } = useToast()
   const { isTrial, daysLeft } = useTrial()
   const navigate = useNavigate()
@@ -94,7 +94,6 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
     },
     onSuccess: (data) => {
       setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
-      updateUser({ plano: planoId as any })
       setStep('sucesso')
     },
     onError: (err: any) => {
@@ -347,12 +346,12 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
                 <div className="w-16 h-16 rounded-2xl bg-[#00C2A8]/10 border border-[#00C2A8]/30 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 size={32} className="text-[#00C2A8]" />
                 </div>
-                <h3 className="text-xl font-extrabold text-[#081B33] mb-2">Assinatura ativada!</h3>
+                <h3 className="text-xl font-extrabold text-[#081B33] mb-2">Assinatura solicitada</h3>
                 <p className="text-sm text-slate-500 mb-4">
-                  Seu plano <strong>{planoSelecionado.nome}</strong> esta ativo.
+                  Recebemos a contratação do plano <strong>{planoSelecionado.nome}</strong>. O acesso será atualizado após a confirmação do pagamento pelo Asaas.
                   {isTrial && daysLeft !== null && daysLeft > 0
-                    ? ` A primeira cobranca sera em ${new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.`
-                    : ' Obrigado pela confianca!'}
+                    ? ` A primeira cobrança está prevista para ${new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.`
+                    : ''}
                 </p>
                 <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left space-y-2">
                   <Row label="Plano" value={planoSelecionado.nome} />

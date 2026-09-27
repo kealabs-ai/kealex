@@ -305,8 +305,8 @@ export function AssinaturaPage() {
               <div className="w-16 h-16 rounded-2xl bg-[#00C2A8]/10 border border-[#00C2A8]/30 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 size={32} className="text-[#00C2A8]" />
               </div>
-              <h1 className="text-2xl font-extrabold text-white mb-2">Assinatura ativada!</h1>
-              <p className="text-sm text-white/60 mb-6">Seu plano {plano.nome} ja esta ativo. A primeira cobranca sera em {new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.</p>
+              <h1 className="text-2xl font-extrabold text-white mb-2">Assinatura solicitada</h1>
+              <p className="text-sm text-white/60 mb-6">Recebemos sua contratação do plano {plano.nome}. O acesso será liberado após a confirmação do pagamento pelo Asaas. A primeira cobrança está prevista para {new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.</p>
 
               <Card>
                 <div className="space-y-3 text-left">
@@ -350,4 +350,3 @@ export function AssinaturaPage() {
     </div>
   )
 }
-
