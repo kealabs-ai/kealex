@@ -35,6 +35,20 @@ export interface AssinarResult {
   value: number
 }
 
+export interface BillingStatus {
+  plano: string
+  status: 'trial' | 'trial_expired' | 'pending' | 'active' | 'past_due' | 'canceled' | 'inactive'
+  subscriptionStatus: string | null
+  nextDueDate: string | null
+  trialExpiresAt: string | null
+}
+
+export interface BillingProfile {
+  cpfCnpj: string
+  phone: string
+  mobilePhone: string
+}
+
 export interface PreRegisterResult {
   userId: string
   tenantId: string
@@ -50,6 +64,12 @@ export const assinaturaApi = {
 
   assinar: (payload: AssinarPayload) =>
     api.post<AssinarResult>('/k1/lex/auth/assinar', payload).then((r) => r.data),
+
+  billingStatus: () =>
+    api.get<BillingStatus>('/k1/lex/auth/billing-status').then((r) => r.data),
+
+  billingProfile: () =>
+    api.get<BillingProfile>('/k1/lex/auth/billing-profile').then((r) => r.data),
 }
 
 export const PLANOS_CONFIG = [

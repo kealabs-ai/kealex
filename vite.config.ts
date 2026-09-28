@@ -17,6 +17,11 @@ export default defineConfig({
           })
         },
       },
+      '/v1': {
+        target: 'https://srv1023256.hstgr.cloud',
+        changeOrigin: true,
+        secure: false,
+      },
       '/api': {
         target: 'https://srv1023256.hstgr.cloud',
         changeOrigin: true,

@@ -32,15 +32,9 @@ api.interceptors.response.use(
 
     if (err.response?.status === 403) {
       const detail = err.response?.data?.detail ?? ''
-      if (detail.toLowerCase().includes('trial')) {
-        const token = localStorage.getItem('kealex_token')
-        const storedUser = localStorage.getItem('kealex_user')
-
-        if (token && storedUser) {
-          window.dispatchEvent(new CustomEvent('kealex:trial-expired'))
-        } else if (window.location.pathname !== '/entrar' && window.location.pathname !== '/trial-expirado') {
-          window.location.href = '/trial-expirado'
-        }
+      const reason = String(detail).toLowerCase()
+      if (/(trial|assinatura|conta inativa)/.test(reason) && window.location.pathname !== '/trial-expirado') {
+        window.location.href = '/trial-expirado'
       }
     }
 

@@ -33,7 +33,9 @@ export function LoginPage() {
     mutationFn: ({ email, senha }: FormData) => authApi.login(email, senha),
     onSuccess: (data) => {
       login(data)
-      navigate(from === '/entrar' ? '/processos' : from, { replace: true })
+      const trialExpired = data.plano === 'trial' && !!data.trialExpiresAt
+        && Date.parse(data.trialExpiresAt) <= Date.now()
+      navigate(trialExpired ? '/trial-expirado' : (from === '/entrar' ? '/processos' : from), { replace: true })
     },
     onError: (error: any) => {
       const isTimeout = error.code === 'ECONNABORTED' || error.response?.status === 504

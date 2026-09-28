@@ -144,7 +144,7 @@ export interface AuthUser {
   accessToken: string
   trialStartedAt?: string
   trialExpiresAt?: string
-  plano?: Plano
+  plano?: Plano | string
   modalidade?: 'autonomo' | 'escritorio'
   escritorioId?: string
 }
