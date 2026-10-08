@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star } from 'lucide-react'
+import { CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, XCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { assinaturaApi, PLANOS_CONFIG, type AssinarPayload, type HolderInfo, type CreditCardData } from '../api/assinatura'
 import { useAuth } from '../context/AuthContext'
@@ -107,6 +107,8 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
 
   const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number } | null>(null)
 
+  const [erroCartao, setErroCartao] = useState<string | null>(null)
+
   const mutation = useMutation({
     mutationFn: async () => {
       const { customerId } = await assinaturaApi.criarClienteAsaas(titular)
@@ -124,11 +126,13 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
       return assinaturaApi.assinar(payload)
     },
     onSuccess: (data) => {
+      setErroCartao(null)
       setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
       setStep('sucesso')
     },
     onError: (err: any) => {
       const msg = err.response?.data?.detail ?? 'Erro ao processar assinatura. Verifique os dados e tente novamente.'
+      setErroCartao(msg)
       toastError(msg)
     },
   })
@@ -140,8 +144,8 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
     if (mutation.isPending) return
     setStep(planoInicial ? 'titular' : 'plano')
     setResultado(null)
+    setErroCartao(null)
     onClose()
-
   }
 
   function titularValido() {
@@ -356,12 +360,19 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
                   Pagamento processado com seguranca via Asaas. Seus dados nao sao armazenados.
                 </div>
 
+                {erroCartao && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl px-3 py-2.5 mb-4">
+                    <XCircle size={14} className="shrink-0 mt-0.5" />
+                    <span>{erroCartao}</span>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <button onClick={() => setStep('titular')}
                     className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-sm">
                     <ArrowLeft size={15} /> Voltar
                   </button>
-                  <button onClick={() => mutation.mutate()} disabled={!cartaoValido() || mutation.isPending}
+                  <button onClick={() => { setErroCartao(null); mutation.mutate() }} disabled={!cartaoValido() || mutation.isPending}
                     className="flex-1 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
                     {mutation.isPending ? <><Loader2 size={15} className="animate-spin" /> Processando...</> : <>Confirmar assinatura <ArrowRight size={15} /></>}
                   </button>
