@@ -29,7 +29,7 @@ cp .env.example .env
 
 2. Configure sua chave da OpenAI no `.env`:
 ```env
-VITE_OPENAI_API_KEY=sk-proj-sua-chave-aqui
+KEALEX_OPENAI_API_KEY=sk-proj-sua-chave-aqui
 ```
 
 3. Certifique-se que o backend FastAPI está rodando na porta **8000**

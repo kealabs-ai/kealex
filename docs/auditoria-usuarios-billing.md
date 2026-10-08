@@ -72,7 +72,7 @@ Para o autônomo, criar um tenant próprio e membership `owner`; os mesmos predi
 
 Não há tabela de assinatura/invoice/evento no modelo `Tenant`, nem handler de webhook, cancelamento, retries, alertas ou reconciliação visíveis no backend. `require_active_trial` só bloqueia quando `plano == 'trial'` expirado; planos `pendente`/qualquer outro valor passam pelo guard sem validação de `Tenant.ativo` ou status de pagamento. O endpoint `/auth/ativar` aceita qualquer JWT válido, sem exigir `pre=True`, verificar pagamento ou checar usuário/tenant pelo vínculo; ele ativa a conta e emite token normal. `assinar` também não exige token pré-registro nem valida que o `asaasCustomerId` pertença ao tenant. Chamadas repetidas podem criar mais de uma assinatura.
 
-Cartão completo e CVV transitam pelo backend na requisição; o código não os persiste explicitamente, mas requer revisão do fluxo de tokenização/escopo PCI e cuidado para nunca registrá-los em logs. A configuração também usa sandbox por default quando `ASAAS_BASE_URL` não é definida, o que pode produzir falsa impressão de billing de produção.
+Cartão completo e CVV transitam pelo backend na requisição; o código não os persiste explicitamente, mas requer revisão do fluxo de tokenização/escopo PCI e cuidado para nunca registrá-los em logs. A configuração também usa sandbox por default quando `KEALEX_ASAAS_BASE_URL` não é definida, o que pode produzir falsa impressão de billing de produção.
 
 ### Modelo e máquina de estados recomendados
 
@@ -104,7 +104,7 @@ Cartão completo e CVV transitam pelo backend na requisição; o código não os
 
 ## Prioridade de execução
 
-1. **P0 — Incidentes de segurança/configuração:** remover credenciais e segredos embutidos em arquivos versionados/deploy, rotacionar qualquer valor real exposto, falhar startup se `SECRET_KEY` for fraco/padrão; fechar bypass `/ativar`, validar membership/escritório e relações pai-filho.
+1. **P0 — Incidentes de segurança/configuração:** remover credenciais e segredos embutidos em arquivos versionados/deploy, rotacionar qualquer valor real exposto, falhar startup se `KEALEX_SECRET_KEY` for fraco/padrão; fechar bypass `/ativar`, validar membership/escritório e relações pai-filho.
 2. **P1 — Billing consistente:** não ativar pelo mero sucesso de criação; persistir assinatura, webhooks idempotentes, reconciliação e entitlement servidor-side.
 3. **P2 — Produto multiusuário:** memberships, RBAC do escritório, convites e UI de gestão; migrar dados existentes.
 4. **P3 — Operação de billing:** notificações, autosserviço, conciliação e métricas de inadimplência.
@@ -114,10 +114,10 @@ Cartão completo e CVV transitam pelo backend na requisição; o código não os
 - Serviços de documentos e prazos agora verificam que o processo pai pertence ao tenant autenticado e copiam o escritório/responsável do processo, em vez de confiar nesses IDs do body.
 - Cadastro/edição de usuário validam que o escritório informado pertence ao tenant. Alterar modalidade deixou de ser permitido ao próprio usuário; requer admin do tenant e recebe o usuário alvo explicitamente.
 - `svc-auth` persiste customer/assinatura/plano/status/renovação; recusa customer Asaas que não esteja vinculado ao tenant, bloqueia assinatura duplicada e não ativa conta apenas pela criação da recorrência. O endpoint legado `/auth/ativar` foi desativado.
-- Adicionado webhook protegido pelo `asaas-access-token` configurado em `ASAAS_WEBHOOK_TOKEN`, com deduplicação de eventos e transições para ativo, inadimplente e cancelado. A liberação ocorre em `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED`.
+- Adicionado webhook protegido pelo `asaas-access-token` configurado em `KEALEX_ASAAS_WEBHOOK_TOKEN`, com deduplicação de eventos e transições para ativo, inadimplente e cancelado. A liberação ocorre em `PAYMENT_CONFIRMED`/`PAYMENT_RECEIVED`.
 - O guard compartilhado bloqueia tenant inexistente/inativo e planos pendentes/vencidos. Trial continua disponível até sua data de expiração; planos pagos exigem estado de assinatura ativo.
 - O checkout não altera mais o plano no `localStorage` nem informa que a assinatura está ativa antes da confirmação do gateway.
-- Criada a migration `migrations/add_subscription_lifecycle.sql`. Ela deve ser aplicada antes do deploy dos serviços alterados; configurar `ASAAS_WEBHOOK_TOKEN` e apontar o webhook do Asaas para `/k1/lex/auth/asaas-webhook`.
+- Criada a migration `migrations/add_subscription_lifecycle.sql`. Ela deve ser aplicada antes do deploy dos serviços alterados; configurar `KEALEX_ASAAS_WEBHOOK_TOKEN` e apontar o webhook do Asaas para `/k1/lex/auth/asaas-webhook`.
 
 ### Pendências desta etapa
 

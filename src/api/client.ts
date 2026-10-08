@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const baseURL = import.meta.env.DEV
   ? ''
-  : 'https://srv1023256.hstgr.cloud'
+  : import.meta.env.KEALEX_API_BASE_URL
 
 export const api = axios.create({ 
   baseURL,

@@ -29,8 +29,7 @@ export function IATab() {
   // Carregar configuração do backend
   useEffect(() => {
     if (cfg) {
-      const defaultGroqKey = import.meta.env.GROQ_API_KEY || ''
-      const apiKey = cfg.api_key || (cfg.provider === 'groq' ? defaultGroqKey : '')
+      const apiKey = cfg.api_key || ''
       const modelosPorProvider = modelosDisponiveis || {
         cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
         groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
@@ -51,7 +50,7 @@ export function IATab() {
         ativo:         cfg.ativo ?? true,
       })
       if (cfg.provider === 'groq') {
-        const keyToUse = cfg.groq_api_key || cfg.api_key || defaultGroqKey
+        const keyToUse = cfg.groq_api_key || cfg.api_key
         if (keyToUse) loadGroqModels(keyToUse)
       }
     }
@@ -83,9 +82,8 @@ export function IATab() {
 
   // Handler para trocar provider
   const handleProviderChange = (newProvider: AIProvider) => {
-    const defaultGroqKey = import.meta.env.VITE_GROQ_API_KEY || ''
     const apiKey = newProvider === 'groq'
-      ? (cfg?.groq_api_key || defaultGroqKey)
+      ? (cfg?.groq_api_key || '')
       : (cfg?.cerebras_api_key || '')
     const modelosPorProvider = modelosDisponiveis || {
       cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
