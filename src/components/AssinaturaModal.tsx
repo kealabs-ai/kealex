@@ -62,7 +62,7 @@ function formatPhone(v: string) {
 }
 
 export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const { error: toastError } = useToast()
   const { isTrial, daysLeft } = useTrial()
   const { data: billingProfile, isLoading: loadingBillingProfile } = useQuery({
@@ -126,6 +126,14 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
       return assinaturaApi.assinar(payload)
     },
     onSuccess: (data) => {
+      const isActive = data.status?.toUpperCase() === 'ACTIVE'
+      if (!isActive) {
+        const msg = 'Pagamento não aprovado. Verifique os dados do cartão e tente novamente.'
+        setErroCartao(msg)
+        toastError(msg)
+        return
+      }
+      updateUser({ plano: data.plano as any })
       setErroCartao(null)
       setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
       setStep('sucesso')

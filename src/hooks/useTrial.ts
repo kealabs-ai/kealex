@@ -5,8 +5,18 @@ const TRIAL_DAYS = 7
 export function useTrial() {
   const { user } = useAuth()
 
-  if (!user || user.role === 'admin' || (user.plano && user.plano !== 'trial')) {
+  if (!user || user.role === 'admin') {
     return { isTrial: false, isExpired: false, daysLeft: null, trialExpiresAt: null }
+  }
+
+  // Plano ativo libera acesso imediatamente
+  if (user.plano && !['trial', 'pending'].includes(user.plano)) {
+    return { isTrial: false, isExpired: false, daysLeft: null, trialExpiresAt: null }
+  }
+
+  // Plano pending = assinatura criada mas pagamento não confirmado
+  if (user.plano === 'pending') {
+    return { isTrial: false, isExpired: true, daysLeft: 0, trialExpiresAt: null }
   }
 
   // Usa trialExpiresAt do backend se disponível, senão calcula por trialStartedAt
