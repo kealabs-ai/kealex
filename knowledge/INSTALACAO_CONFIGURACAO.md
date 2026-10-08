@@ -33,10 +33,10 @@ Edite `.env` com suas configurações:
 VITE_API_URL=http://localhost:8000
 
 # OpenAI (para IA jurídica)
-VITE_OPENAI_API_KEY=sk-proj-sua-chave-aqui
+KEALEX_OPENAI_API_KEY=sk-proj-sua-chave-aqui
 
 # Groq (alternativa)
-VITE_GROQ_API_KEY=gsk_sua-chave-aqui
+KEALEX_GROQ_API_KEY=gsk_sua-chave-aqui
 
 # Cerebras (alternativa)
 VITE_CEREBRAS_API_KEY=sua-chave-aqui

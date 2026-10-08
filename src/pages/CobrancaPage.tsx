@@ -184,7 +184,7 @@ export function CobrancaPage() {
         {/* Lista */}
         {isLoading ? (
           <DataCard delay={0.3}>
-            <div className="space-y-4">{[...Array(3)].map((_, i) => <SkeletonRow key={i} />)}</div>
+            <div className="space-y-4">{[...Array(3)].map((_, i) => <SkeletonRow key={i} variant="list" />)}</div>
           </DataCard>
         ) : filtered.length === 0 ? (
           <DataCard delay={0.3}>

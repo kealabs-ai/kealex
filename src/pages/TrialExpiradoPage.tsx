@@ -1,14 +1,36 @@
+import { useEffect, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Lock, CheckCircle2 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logotipo_kealex.png'
 import { PLANOS_CONFIG } from '../api/assinatura'
+import { assinaturaApi } from '../api/assinatura'
 import { AssinaturaModal } from '../components/AssinaturaModal'
 
 export function TrialExpiradoPage() {
-  const { logout, user } = useAuth()
+  const { logout, user, updateUser } = useAuth()
   const navigate = useNavigate()
+  const [assinaturaOpen, setAssinaturaOpen] = useState(false)
+  const [planoSelecionado, setPlanoSelecionado] = useState<'starter' | 'professional'>('professional')
+  const { data: billingStatus } = useQuery({
+    queryKey: ['billing-status'],
+    queryFn: assinaturaApi.billingStatus,
+    enabled: Boolean(user),
+    refetchInterval: user ? 10000 : false,
+  })
+  const billingBlocked = billingStatus?.status === 'pending' || billingStatus?.status === 'past_due'
+  const isPendingPayment = user?.plano === 'pending' || billingStatus?.status === 'pending'
+
+  useEffect(() => {
+    if (user && billingStatus?.status === 'active') {
+      if (user.plano !== billingStatus.plano) updateUser({ plano: billingStatus.plano as typeof user.plano })
+      navigate('/processos', { replace: true })
+    } else if (user && billingStatus?.status === 'trial') {
+      navigate('/processos', { replace: true })
+    }
+  }, [billingStatus, user, updateUser, navigate])
 
   function handleLogout() {
     logout()
@@ -34,19 +56,40 @@ export function TrialExpiradoPage() {
             </div>
 
             <h1 className="text-2xl font-extrabold text-[#081B33] mb-2">
-              Seu trial de 7 dias encerrou
+              {isPendingPayment ? 'Pagamento não confirmado' : 'Seu trial de 7 dias encerrou'}
             </h1>
             <p className="text-sm text-[#596B82] mb-6">
-              Para continuar usando o Kealex, escolha um plano abaixo. Seus dados estao salvos e prontos para uso.
+              {isPendingPayment
+                ? 'Não foi possível confirmar o pagamento. Retorne e tente novamente com outro cartão ou verifique os dados informados.'
+                : 'Para continuar usando o Kealex, escolha um plano abaixo. Seus dados estao salvos e prontos para uso.'}
             </p>
+
+            {billingStatus?.status === 'pending' && (
+              <div role="status" className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-xl p-3 mb-5">
+                Estamos aguardando a confirmação do pagamento. Esta página verifica o status automaticamente.
+              </div>
+            )}
+            {billingStatus?.status === 'past_due' && (
+              <div role="alert" className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl p-3 mb-5">
+                Não identificamos o pagamento da última cobrança. Atualize a forma de pagamento ou fale com o suporte.
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 mb-6">
               {PLANOS_CONFIG.map((p) => (
                 <button
                   key={p.id}
                   type="button"
-                  onClick={() => navigate(`/assinar?plano=${p.id}`)}
-                  className={`rounded-xl border-2 p-4 text-left transition-all hover:shadow-md ${
+                  disabled={billingBlocked}
+                  onClick={() => {
+                    if (user) {
+                      setPlanoSelecionado(p.id)
+                      setAssinaturaOpen(true)
+                    } else {
+                      navigate(`/assinar?plano=${p.id}`)
+                    }
+                  }}
+                  className={`rounded-xl border-2 p-4 text-left transition-all hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
                     p.destaque
                       ? 'border-[#00C2A8] bg-[#00C2A8]/5'
                       : 'border-slate-200 hover:border-slate-300'
@@ -74,10 +117,18 @@ export function TrialExpiradoPage() {
             </div>
 
             <button
-              onClick={() => navigate('/assinar')}
-              className="w-full inline-flex items-center justify-center gap-2 bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-orange-100 text-sm"
+              disabled={billingBlocked}
+              onClick={() => {
+                if (user) {
+                  setPlanoSelecionado('professional')
+                  setAssinaturaOpen(true)
+                } else {
+                  navigate('/assinar')
+                }
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-orange-100 text-sm"
             >
-              Assinar agora e continuar
+              {billingStatus?.status === 'pending' ? 'Aguardando confirmação' : billingStatus?.status === 'past_due' ? 'Fale com o suporte para regularizar' : 'Assinar agora e continuar'}
             </button>
 
             <div className="flex items-center gap-2 justify-center mt-4 text-xs text-[#596B82]">
@@ -94,7 +145,7 @@ export function TrialExpiradoPage() {
           </button>
         </motion.div>
       </div>
-      {user && <AssinaturaModal open={true} onClose={() => undefined} />}
+      {user && assinaturaOpen && <AssinaturaModal open={true} planoInicial={planoSelecionado} onClose={() => setAssinaturaOpen(false)} />}
     </>
   )
 }

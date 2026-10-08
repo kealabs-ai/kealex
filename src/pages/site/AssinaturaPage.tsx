@@ -1,22 +1,34 @@
 import { useState, useRef } from 'react'
 import type { ReactNode } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Lock, Eye, EyeOff } from 'lucide-react'
 import { assinaturaApi, PLANOS_CONFIG, type HolderInfo, type CreditCardData } from '../../api/assinatura'
+import { Modal } from '../../components/Modal'
 import logo from '../../assets/logotipo_kealex.png'
 
 function fmtCard(v: string) {
-  return v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
+  return v.replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim()
 }
 
-function fmtCpf(v: string) {
-  const d = v.replace(/\D/g, '').slice(0, 11)
-  if (d.length <= 3) return d
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
+function fmtCpfCnpj(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 14)
+  if (d.length <= 11) {
+    if (d.length <= 3) return d
+    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
+    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
+    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
+  }
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
+}
+
+function validadeCartaoOk(month: string, year: string) {
+  if (!/^\d{1,2}$/.test(month) || !/^\d{4}$/.test(year)) return false
+  const m = Number(month)
+  const y = Number(year)
+  const now = new Date()
+  return m >= 1 && m <= 12 && (y > now.getFullYear() || (y === now.getFullYear() && m >= now.getMonth() + 1))
 }
 
 function fmtCep(v: string) {
@@ -35,7 +47,7 @@ function fmtPhone(v: string) {
 const inp = 'w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all bg-white text-[#081B33] placeholder-slate-400'
 
 function F({ label, children }: { label: string; children: ReactNode }) {
-  return <div><label className="block text-xs font-semibold text-slate-600 mb-1.5">{label}</label>{children}</div>
+  return <label className="block text-xs font-semibold text-slate-600 mb-1.5"><span className="block mb-1.5">{label}</span>{children}</label>
 }
 
 function Card({ children }: { children: ReactNode }) {
@@ -48,7 +60,7 @@ function Steps({ cur }: { cur: number }) {
   return (
     <div className="flex items-center justify-center gap-1 mb-8">
       {STEPS.map((s, i) => (
-        <div key={s} className="flex items-center gap-1">
+        <div key={s} className="flex items-center gap-1" aria-current={i === cur ? 'step' : undefined}>
           <div className="flex flex-col items-center gap-1">
             <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${i < cur ? 'bg-[#00C2A8] text-white' : i === cur ? 'bg-white text-[#081B33] ring-4 ring-white/20' : 'bg-white/15 text-white/40'}`}>
               {i < cur ? <Check size={13} /> : i + 1}
@@ -66,11 +78,13 @@ type PlanoId = 'starter' | 'professional'
 
 export function AssinaturaPage() {
   const [params] = useSearchParams()
+  const navigate = useNavigate()
   const planoParam = (params.get('plano') ?? 'professional') as PlanoId
   const [step, setStep] = useState(0)
   const [planoId, setPlanoId] = useState<PlanoId>(planoParam)
   const [conta, setConta] = useState({ nome: '', email: '', senha: '', confirmar: '' })
   const [showSenha, setShowSenha] = useState(false)
+  const [emailJaCadastrado, setEmailJaCadastrado] = useState(false)
   const tokenRef = useRef('')
   const [titular, setTitular] = useState<HolderInfo>({
     name: '',
@@ -87,25 +101,28 @@ export function AssinaturaPage() {
   const [apiError, setApiError] = useState('')
   const plano = PLANOS_CONFIG.find((p) => p.id === planoId) ?? PLANOS_CONFIG[1]
 
-  const contaOk = conta.nome.trim().length >= 3 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(conta.email) && conta.senha.length >= 6 && conta.senha === conta.confirmar
-  const titularOk = titular.name && titular.email && titular.cpfCnpj.replace(/\D/g, '').length === 11 && titular.postalCode.replace(/\D/g, '').length === 8 && titular.addressNumber
-  const cartaoOk = cartao.holderName && cartao.number.replace(/\s/g, '').length === 16 && cartao.expiryMonth && cartao.expiryYear && cartao.ccv.length >= 3
-
-  const preReg = useMutation({
-    mutationFn: () => assinaturaApi.preRegister({ nome: conta.nome, email: conta.email, senha: conta.senha }),
-    onSuccess: (data) => {
-      tokenRef.current = data.token
-      setTitular((p) => ({ ...p, name: conta.nome, email: conta.email }))
-      setCartao((p) => ({ ...p, holderName: conta.nome.toUpperCase() }))
-      setApiError('')
-      setStep(1)
-    },
-    onError: (err: any) => setApiError(err.response?.data?.detail ?? 'Erro ao criar conta.'),
-  })
+  const contaOk = conta.nome.trim().length >= 3 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(conta.email) && conta.senha.length >= 8 && conta.senha === conta.confirmar
+  const titularOk = titular.name && titular.email && [11, 14].includes(titular.cpfCnpj.replace(/\D/g, '').length) && titular.postalCode.replace(/\D/g, '').length === 8 && titular.addressNumber
+  const numeroCartao = cartao.number.replace(/\D/g, '')
+  const cartaoOk = cartao.holderName.trim().length >= 3 && numeroCartao.length >= 13 && numeroCartao.length <= 19
+    && validadeCartaoOk(cartao.expiryMonth, cartao.expiryYear) && /^\d{3,4}$/.test(cartao.ccv)
 
   const pagar = useMutation({
     mutationFn: async () => {
       setApiError('')
+      if (!tokenRef.current) {
+        try {
+          const cadastro = await assinaturaApi.preRegister({ nome: conta.nome, email: conta.email, senha: conta.senha })
+          tokenRef.current = cadastro.token
+        } catch (err: any) {
+          const detail = String(err.response?.data?.detail ?? '')
+          if (err.response?.status === 409 || /(e-?mail|usuario).*(cadastrad|existente|ja existe)|(cadastrad|existente|ja existe).*(e-?mail|usuario)/i.test(detail)) {
+            setEmailJaCadastrado(true)
+            throw err
+          }
+          throw new Error(detail || 'Não foi possível criar sua conta. Tente novamente.')
+        }
+      }
       const prev = localStorage.getItem('kealex_token')
       localStorage.setItem('kealex_token', tokenRef.current)
       try {
@@ -132,7 +149,9 @@ export function AssinaturaPage() {
       })
       setStep(4)
     },
-    onError: (err: any) => setApiError(err.response?.data?.detail ?? 'Erro ao processar pagamento.'),
+    onError: (err: any) => {
+      if (err.response?.status !== 409) setApiError(err.response?.data?.detail ?? err.message ?? 'Não foi possível concluir a contratação. Confira os dados ou tente novamente.')
+    },
   })
 
   return (
@@ -165,21 +184,21 @@ export function AssinaturaPage() {
               <p className="text-sm text-white/50 text-center mb-6">Seus dados ficam salvos para acessar a plataforma apos o pagamento</p>
               <Card>
                 <div className="space-y-4">
-                  <F label="Nome completo"><input value={conta.nome} onChange={(e) => setConta({ ...conta, nome: e.target.value })} placeholder="Dr. Rafael Mendes" className={inp} /></F>
-                  <F label="E-mail profissional"><input type="email" value={conta.email} onChange={(e) => setConta({ ...conta, email: e.target.value })} placeholder="rafael@escritorio.com.br" className={inp} /></F>
+                  <F label="Nome completo"><input autoComplete="name" value={conta.nome} onChange={(e) => setConta({ ...conta, nome: e.target.value })} placeholder="Dr. Rafael Mendes" className={inp} /></F>
+                  <F label="E-mail profissional"><input type="email" autoComplete="email" value={conta.email} onChange={(e) => setConta({ ...conta, email: e.target.value })} placeholder="rafael@escritorio.com.br" className={inp} /></F>
                   <F label="Senha">
                     <div className="relative">
-                      <input type={showSenha ? 'text' : 'password'} value={conta.senha} onChange={(e) => setConta({ ...conta, senha: e.target.value })} placeholder="Minimo 6 caracteres" className={`${inp} pr-10`} />
+                      <input type={showSenha ? 'text' : 'password'} autoComplete="new-password" value={conta.senha} onChange={(e) => setConta({ ...conta, senha: e.target.value })} placeholder="Mínimo 8 caracteres" className={`${inp} pr-10`} />
                       <button type="button" onClick={() => setShowSenha((v) => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">{showSenha ? <EyeOff size={15} /> : <Eye size={15} />}</button>
                     </div>
                   </F>
-                  <F label="Confirmar senha"><input type="password" value={conta.confirmar} onChange={(e) => setConta({ ...conta, confirmar: e.target.value })} placeholder="Repita a senha" className={inp} /></F>
+                  <F label="Confirmar senha"><input type="password" autoComplete="new-password" value={conta.confirmar} onChange={(e) => setConta({ ...conta, confirmar: e.target.value })} placeholder="Repita a senha" className={inp} /></F>
                   {conta.confirmar && conta.senha !== conta.confirmar && <p className="text-xs text-red-500">As senhas nao coincidem</p>}
                   {apiError && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{apiError}</p>}
                 </div>
               </Card>
-              <button onClick={() => preReg.mutate()} disabled={!contaOk || preReg.isPending} className="w-full mt-4 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-lg shadow-orange-900/30">
-                {preReg.isPending ? <><Loader2 size={15} className="animate-spin" />Criando conta...</> : <>Continuar <ArrowRight size={15} /></>}
+              <button onClick={() => { setTitular((p) => ({ ...p, name: conta.nome, email: conta.email })); setCartao((p) => ({ ...p, holderName: conta.nome.toUpperCase() })); setStep(1) }} disabled={!contaOk} className="w-full mt-4 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-lg shadow-orange-900/30">
+                Continuar para escolha do plano <ArrowRight size={15} />
               </button>
               <p className="text-center text-xs text-white/30 mt-3">Ja tem conta? <Link to="/entrar" className="text-[#00C2A8] hover:underline">Entrar</Link></p>
             </motion.div>
@@ -189,7 +208,7 @@ export function AssinaturaPage() {
             <motion.div key="s1" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
               <Steps cur={1} />
               <h1 className="text-2xl font-extrabold text-white text-center mb-1">Escolha seu plano</h1>
-              <p className="text-sm text-white/50 text-center mb-6">7 dias gratis. Cancele quando quiser.</p>
+              <p className="text-sm text-white/50 text-center mb-6">7 dias grátis. A cobrança mensal começa após o período de teste; cancele quando quiser.</p>
               <div className="grid sm:grid-cols-2 gap-4 mb-6">
                 {PLANOS_CONFIG.map((p) => (
                   <button key={p.id} type="button" onClick={() => setPlanoId(p.id)} className={`relative text-left p-5 rounded-2xl border-2 transition-all ${planoId === p.id ? 'border-[#00C2A8] bg-[#00C2A8]/10 shadow-lg shadow-[#00C2A8]/10' : 'border-white/20 bg-white/5 hover:border-white/40'}`}>
@@ -218,13 +237,13 @@ export function AssinaturaPage() {
               <Card>
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="sm:col-span-2"><F label="Nome completo"><input value={titular.name} onChange={(e) => setTitular({ ...titular, name: e.target.value })} placeholder="Como aparece no cartao" className={inp} /></F></div>
-                  <F label="E-mail"><input type="email" value={titular.email} onChange={(e) => setTitular({ ...titular, email: e.target.value })} placeholder="email@exemplo.com" className={inp} /></F>
-                  <F label="CPF"><input value={titular.cpfCnpj} onChange={(e) => setTitular({ ...titular, cpfCnpj: fmtCpf(e.target.value) })} placeholder="000.000.000-00" className={inp} /></F>
-                  <F label="CEP"><input value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: fmtCep(e.target.value) })} placeholder="00000-000" className={inp} /></F>
-                  <F label="Numero"><input value={titular.addressNumber} onChange={(e) => setTitular({ ...titular, addressNumber: e.target.value })} placeholder="123" className={inp} /></F>
-                  <div className="sm:col-span-2"><F label="Complemento (opcional)"><input value={titular.addressComplement ?? ''} onChange={(e) => setTitular({ ...titular, addressComplement: e.target.value })} placeholder="Apto, sala..." className={inp} /></F></div>
-                  <F label="Telefone"><input value={titular.phone ?? ''} onChange={(e) => setTitular({ ...titular, phone: fmtPhone(e.target.value) })} placeholder="(11) 3333-4444" className={inp} /></F>
-                  <F label="Celular"><input value={titular.mobilePhone ?? ''} onChange={(e) => setTitular({ ...titular, mobilePhone: fmtPhone(e.target.value) })} placeholder="(11) 99999-9999" className={inp} /></F>
+                  <F label="E-mail"><input type="email" autoComplete="email" value={titular.email} onChange={(e) => setTitular({ ...titular, email: e.target.value })} placeholder="email@exemplo.com" className={inp} /></F>
+                  <F label="CPF ou CNPJ"><input inputMode="numeric" autoComplete="off" value={titular.cpfCnpj} onChange={(e) => setTitular({ ...titular, cpfCnpj: fmtCpfCnpj(e.target.value) })} placeholder="CPF ou CNPJ" className={inp} /></F>
+                  <F label="CEP"><input inputMode="numeric" autoComplete="postal-code" value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: fmtCep(e.target.value) })} placeholder="00000-000" className={inp} /></F>
+                  <F label="Número"><input value={titular.addressNumber} onChange={(e) => setTitular({ ...titular, addressNumber: e.target.value })} placeholder="123" className={inp} /></F>
+                  <div className="sm:col-span-2"><F label="Complemento (opcional)"><input autoComplete="address-line2" value={titular.addressComplement ?? ''} onChange={(e) => setTitular({ ...titular, addressComplement: e.target.value })} placeholder="Apto, sala..." className={inp} /></F></div>
+                  <F label="Telefone"><input type="tel" autoComplete="tel" value={titular.phone ?? ''} onChange={(e) => setTitular({ ...titular, phone: fmtPhone(e.target.value) })} placeholder="(11) 3333-4444" className={inp} /></F>
+                  <F label="Celular"><input type="tel" autoComplete="tel-national" value={titular.mobilePhone ?? ''} onChange={(e) => setTitular({ ...titular, mobilePhone: fmtPhone(e.target.value) })} placeholder="(11) 99999-9999" className={inp} /></F>
                 </div>
               </Card>
               <div className="flex gap-3 mt-4">
@@ -253,17 +272,17 @@ export function AssinaturaPage() {
                 </div>
 
                 <div className="space-y-4">
-                  <F label="Nome no cartao"><input value={cartao.holderName} onChange={(e) => setCartao({ ...cartao, holderName: e.target.value.toUpperCase() })} placeholder="NOME COMO NO CARTAO" className={inp} /></F>
+                  <F label="Nome no cartão"><input autoComplete="cc-name" value={cartao.holderName} onChange={(e) => setCartao({ ...cartao, holderName: e.target.value.toUpperCase() })} placeholder="NOME COMO NO CARTÃO" className={inp} /></F>
                   <F label="Numero do cartao">
                     <div className="relative">
                       <CreditCard size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: fmtCard(e.target.value) })} placeholder="0000 0000 0000 0000" className={`${inp} pl-9`} />
+                      <input inputMode="numeric" autoComplete="cc-number" value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: fmtCard(e.target.value) })} placeholder="0000 0000 0000 0000" className={`${inp} pl-9`} />
                     </div>
                   </F>
                   <div className="grid grid-cols-3 gap-3">
-                    <F label="Mes"><input value={cartao.expiryMonth} onChange={(e) => setCartao({ ...cartao, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) })} placeholder="MM" maxLength={2} className={inp} /></F>
-                    <F label="Ano"><input value={cartao.expiryYear} onChange={(e) => setCartao({ ...cartao, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="AAAA" maxLength={4} className={inp} /></F>
-                    <F label="CVV"><input value={cartao.ccv} onChange={(e) => setCartao({ ...cartao, ccv: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="000" maxLength={4} className={inp} /></F>
+                    <F label="Mês"><input inputMode="numeric" autoComplete="cc-exp-month" value={cartao.expiryMonth} onChange={(e) => setCartao({ ...cartao, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) })} placeholder="MM" maxLength={2} className={inp} /></F>
+                    <F label="Ano"><input inputMode="numeric" autoComplete="cc-exp-year" value={cartao.expiryYear} onChange={(e) => setCartao({ ...cartao, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="AAAA" maxLength={4} className={inp} /></F>
+                    <F label="CVV"><input inputMode="numeric" autoComplete="cc-csc" value={cartao.ccv} onChange={(e) => setCartao({ ...cartao, ccv: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="000" maxLength={4} className={inp} /></F>
                   </div>
                 </div>
 
@@ -290,8 +309,8 @@ export function AssinaturaPage() {
               <div className="w-16 h-16 rounded-2xl bg-[#00C2A8]/10 border border-[#00C2A8]/30 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 size={32} className="text-[#00C2A8]" />
               </div>
-              <h1 className="text-2xl font-extrabold text-white mb-2">Assinatura ativada!</h1>
-              <p className="text-sm text-white/60 mb-6">Seu plano {plano.nome} ja esta ativo. A primeira cobranca sera em {new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.</p>
+              <h1 className="text-2xl font-extrabold text-white mb-2">Assinatura solicitada</h1>
+              <p className="text-sm text-white/60 mb-6">Sua conta e seu período de teste de 7 dias estão prontos. O plano {plano.nome} foi contratado e a primeira cobrança está prevista para {new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.</p>
 
               <Card>
                 <div className="space-y-3 text-left">
@@ -303,14 +322,35 @@ export function AssinaturaPage() {
               </Card>
 
               <div className="mt-5 flex gap-3">
-                <Link to="/entrar" className="flex-1 bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-orange-900/30">Entrar agora <ArrowRight size={15} /></Link>
+                <Link to="/entrar" className="flex-1 bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-orange-900/30">Acessar meu teste grátis <ArrowRight size={15} /></Link>
                 <Link to="/" className="flex-1 border border-white/20 text-white/80 font-semibold rounded-xl hover:bg-white/5 flex items-center justify-center gap-2 text-sm">Voltar ao inicio</Link>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+
+      {emailJaCadastrado && (
+        <Modal
+          title="E-mail ja cadastrado"
+          subtitle="Continue pelo acesso da sua conta"
+          onClose={() => setEmailJaCadastrado(false)}
+          size="sm"
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-slate-600">
+              Ja existe um cadastro com este e-mail. Faca login para continuar com o pagamento dentro da sua conta.
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate('/entrar')}
+              className="w-full bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm"
+            >
+              Fazer login <ArrowRight size={15} />
+            </button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
-

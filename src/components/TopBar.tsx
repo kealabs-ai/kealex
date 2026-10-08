@@ -145,7 +145,11 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
         </div>
       </div>
 
-      <ModalidadeModal open={showModalidade} onClose={() => setShowModalidade(false)} />
+      <ModalidadeModal
+        open={showModalidade}
+        onClose={() => setShowModalidade(false)}
+        onContinueToPayment={() => setShowAssinatura(true)}
+      />
       <AssinaturaModal open={showAssinatura} onClose={() => setShowAssinatura(false)} />
     </>
   )

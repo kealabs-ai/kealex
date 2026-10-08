@@ -115,7 +115,7 @@ Requisições `/k1/lex/*` agora são redirecionadas para `https://srv1023256.hst
 ### Arquivo `.env` criado
 `.env` criado na raiz (estava faltando, só existia `.env.example`):
 ```
-VITE_GROQ_API_KEY=
+KEALEX_GROQ_API_KEY=
 ```
 
 ---
@@ -136,5 +136,5 @@ src/
 │   └── ProcessosPage.tsx  — usa SkeletonRow variant="list"
 ├── index.css              — todos os estilos semânticos do chat
 vite.config.ts             — proxy /k1 e /api
-.env                       — VITE_GROQ_API_KEY
+.env                       — KEALEX_GROQ_API_KEY
 ```

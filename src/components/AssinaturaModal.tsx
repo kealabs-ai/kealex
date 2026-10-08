@@ -1,9 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star } from 'lucide-react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, XCircle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useNavigate } from 'react-router-dom'
 import { assinaturaApi, PLANOS_CONFIG, type AssinarPayload, type HolderInfo, type CreditCardData } from '../api/assinatura'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from './Toast'
@@ -27,15 +26,26 @@ const STEP_LABELS: Record<Step, string> = {
 const STEPS: Step[] = ['plano', 'titular', 'cartao', 'sucesso']
 
 function formatCardNumber(v: string) {
-  return v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim()
+  return v.replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim()
 }
 
-function formatCpf(v: string) {
-  const d = v.replace(/\D/g, '').slice(0, 11)
-  if (d.length <= 3) return d
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
+function formatCpfCnpj(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 14)
+  if (d.length <= 11) {
+    if (d.length <= 3) return d
+    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
+    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
+    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
+  }
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
+}
+
+function validadeCartaoOk(month: string, year: string) {
+  if (!/^\d{1,2}$/.test(month) || !/^\d{4}$/.test(year)) return false
+  const m = Number(month)
+  const y = Number(year)
+  const now = new Date()
+  return m >= 1 && m <= 12 && (y > now.getFullYear() || (y === now.getFullYear() && m >= now.getMonth() + 1))
 }
 
 function formatCep(v: string) {
@@ -52,10 +62,16 @@ function formatPhone(v: string) {
 }
 
 export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
-  const { user, updateUser, logout } = useAuth()
+  const { user, updateUser } = useAuth()
   const { error: toastError } = useToast()
   const { isTrial, daysLeft } = useTrial()
-  const navigate = useNavigate()
+  const { data: billingProfile, isLoading: loadingBillingProfile } = useQuery({
+    queryKey: ['billing-profile', user?.tenantId],
+    queryFn: assinaturaApi.billingProfile,
+    enabled: open && Boolean(user),
+    staleTime: 5 * 60 * 1000,
+  })
+  const queryClient = useQueryClient()
 
   const [step, setStep] = useState<Step>(planoInicial ? 'titular' : 'plano')
   const [planoId, setPlanoId] = useState<'starter' | 'professional'>(planoInicial ?? 'professional')
@@ -79,11 +95,28 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
     ccv: '',
   })
 
+  useEffect(() => {
+    if (!billingProfile) return
+    setTitular((current) => ({
+      ...current,
+      cpfCnpj: current.cpfCnpj || formatCpfCnpj(billingProfile.cpfCnpj),
+      phone: current.phone || formatPhone(billingProfile.phone),
+      mobilePhone: current.mobilePhone || formatPhone(billingProfile.mobilePhone),
+    }))
+  }, [billingProfile])
+
   const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number } | null>(null)
+
+  const [erroCartao, setErroCartao] = useState<string | null>(null)
 
   const mutation = useMutation({
     mutationFn: async () => {
       const { customerId } = await assinaturaApi.criarClienteAsaas(titular)
+      queryClient.setQueryData(['billing-profile', user?.tenantId], {
+        cpfCnpj: titular.cpfCnpj,
+        phone: titular.phone ?? '',
+        mobilePhone: titular.mobilePhone ?? '',
+      })
       const payload: AssinarPayload = {
         plano: planoId,
         asaasCustomerId: customerId,
@@ -93,12 +126,21 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
       return assinaturaApi.assinar(payload)
     },
     onSuccess: (data) => {
+      const isActive = data.status?.toUpperCase() === 'ACTIVE'
+      if (!isActive) {
+        const msg = 'Pagamento não aprovado. Verifique os dados do cartão e tente novamente.'
+        setErroCartao(msg)
+        toastError(msg)
+        return
+      }
+      updateUser({ plano: data.plano as any })
+      setErroCartao(null)
       setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
-      updateUser({ plano: planoId as any })
       setStep('sucesso')
     },
     onError: (err: any) => {
       const msg = err.response?.data?.detail ?? 'Erro ao processar assinatura. Verifique os dados e tente novamente.'
+      setErroCartao(msg)
       toastError(msg)
     },
   })
@@ -110,22 +152,19 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
     if (mutation.isPending) return
     setStep(planoInicial ? 'titular' : 'plano')
     setResultado(null)
+    setErroCartao(null)
     onClose()
-
-    if (isTrial && daysLeft !== null && daysLeft > 0) return
-
-    logout()
-    navigate('/entrar', { replace: true })
   }
 
   function titularValido() {
-    return titular.name && titular.email && titular.cpfCnpj.replace(/\D/g, '').length === 11
+    return titular.name && titular.email && [11, 14].includes(titular.cpfCnpj.replace(/\D/g, '').length)
       && titular.postalCode.replace(/\D/g, '').length === 8 && titular.addressNumber
   }
 
   function cartaoValido() {
-    return cartao.holderName && cartao.number.replace(/\s/g, '').length === 16
-      && cartao.expiryMonth && cartao.expiryYear && cartao.ccv.length >= 3
+    const number = cartao.number.replace(/\D/g, '')
+    return cartao.holderName.trim().length >= 3 && number.length >= 13 && number.length <= 19
+      && validadeCartaoOk(cartao.expiryMonth, cartao.expiryYear) && /^\d{3,4}$/.test(cartao.ccv)
   }
 
   if (!open) return null
@@ -227,24 +266,25 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
             {step === 'titular' && (
               <motion.div key="titular" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <p className="text-sm text-slate-500 mb-4">Dados do titular do cartao</p>
+                {loadingBillingProfile && <p className="text-xs text-slate-500 mb-3" role="status">Recuperando CPF e telefone cadastrados...</p>}
                 <div className="space-y-3 mb-6">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
-                      <Field label="Nome completo">
-                        <input value={titular.name} onChange={(e) => setTitular({ ...titular, name: e.target.value })}
+                    <Field label="Nome completo">
+                        <input autoComplete="name" value={titular.name} onChange={(e) => setTitular({ ...titular, name: e.target.value })}
                           placeholder="Nome como no cartao" className={inputCls} />
                       </Field>
                     </div>
                     <Field label="E-mail">
-                      <input type="email" value={titular.email} onChange={(e) => setTitular({ ...titular, email: e.target.value })}
+                      <input type="email" autoComplete="email" value={titular.email} onChange={(e) => setTitular({ ...titular, email: e.target.value })}
                         placeholder="email@exemplo.com" className={inputCls} />
                     </Field>
-                    <Field label="CPF">
-                      <input value={titular.cpfCnpj} onChange={(e) => setTitular({ ...titular, cpfCnpj: formatCpf(e.target.value) })}
-                        placeholder="000.000.000-00" className={inputCls} />
+                    <Field label="CPF ou CNPJ">
+                      <input inputMode="numeric" value={titular.cpfCnpj} onChange={(e) => setTitular({ ...titular, cpfCnpj: formatCpfCnpj(e.target.value) })}
+                        placeholder="CPF ou CNPJ" className={inputCls} />
                     </Field>
                     <Field label="CEP">
-                      <input value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: formatCep(e.target.value) })}
+                      <input inputMode="numeric" autoComplete="postal-code" value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: formatCep(e.target.value) })}
                         placeholder="00000-000" className={inputCls} />
                     </Field>
                     <Field label="Numero">
@@ -270,7 +310,7 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
                     className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-sm">
                     <ArrowLeft size={15} /> Voltar
                   </button>
-                  <button onClick={() => setStep('cartao')} disabled={!titularValido()}
+                  <button onClick={() => setStep('cartao')} disabled={loadingBillingProfile || !titularValido()}
                     className="flex-1 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
                     Continuar <ArrowRight size={15} />
                   </button>
@@ -297,27 +337,27 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
 
                 <div className="space-y-3 mb-6">
                   <Field label="Nome no cartao">
-                    <input value={cartao.holderName} onChange={(e) => setCartao({ ...cartao, holderName: e.target.value.toUpperCase() })}
+                      <input autoComplete="cc-name" value={cartao.holderName} onChange={(e) => setCartao({ ...cartao, holderName: e.target.value.toUpperCase() })}
                       placeholder="NOME COMO NO CARTAO" className={inputCls} />
                   </Field>
                   <Field label="Numero do cartao">
                     <div className="relative">
                       <CreditCard size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: formatCardNumber(e.target.value) })}
+                      <input inputMode="numeric" autoComplete="cc-number" value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: formatCardNumber(e.target.value) })}
                         placeholder="0000 0000 0000 0000" className={`${inputCls} pl-9`} />
                     </div>
                   </Field>
                   <div className="grid grid-cols-3 gap-3">
                     <Field label="Mes">
-                      <input value={cartao.expiryMonth} onChange={(e) => setCartao({ ...cartao, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) })}
+                      <input inputMode="numeric" autoComplete="cc-exp-month" value={cartao.expiryMonth} onChange={(e) => setCartao({ ...cartao, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) })}
                         placeholder="MM" maxLength={2} className={inputCls} />
                     </Field>
                     <Field label="Ano">
-                      <input value={cartao.expiryYear} onChange={(e) => setCartao({ ...cartao, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                      <input inputMode="numeric" autoComplete="cc-exp-year" value={cartao.expiryYear} onChange={(e) => setCartao({ ...cartao, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 4) })}
                         placeholder="AAAA" maxLength={4} className={inputCls} />
                     </Field>
                     <Field label="CVV">
-                      <input value={cartao.ccv} onChange={(e) => setCartao({ ...cartao, ccv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
+                      <input inputMode="numeric" autoComplete="cc-csc" value={cartao.ccv} onChange={(e) => setCartao({ ...cartao, ccv: e.target.value.replace(/\D/g, '').slice(0, 4) })}
                         placeholder="000" maxLength={4} className={inputCls} />
                     </Field>
                   </div>
@@ -328,12 +368,19 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
                   Pagamento processado com seguranca via Asaas. Seus dados nao sao armazenados.
                 </div>
 
+                {erroCartao && (
+                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl px-3 py-2.5 mb-4">
+                    <XCircle size={14} className="shrink-0 mt-0.5" />
+                    <span>{erroCartao}</span>
+                  </div>
+                )}
+
                 <div className="flex gap-2">
                   <button onClick={() => setStep('titular')}
                     className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-sm">
                     <ArrowLeft size={15} /> Voltar
                   </button>
-                  <button onClick={() => mutation.mutate()} disabled={!cartaoValido() || mutation.isPending}
+                  <button onClick={() => { setErroCartao(null); mutation.mutate() }} disabled={!cartaoValido() || mutation.isPending}
                     className="flex-1 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
                     {mutation.isPending ? <><Loader2 size={15} className="animate-spin" /> Processando...</> : <>Confirmar assinatura <ArrowRight size={15} /></>}
                   </button>
@@ -347,12 +394,12 @@ export function AssinaturaModal({ open, onClose, planoInicial }: Props) {
                 <div className="w-16 h-16 rounded-2xl bg-[#00C2A8]/10 border border-[#00C2A8]/30 flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 size={32} className="text-[#00C2A8]" />
                 </div>
-                <h3 className="text-xl font-extrabold text-[#081B33] mb-2">Assinatura ativada!</h3>
+                <h3 className="text-xl font-extrabold text-[#081B33] mb-2">Assinatura solicitada</h3>
                 <p className="text-sm text-slate-500 mb-4">
-                  Seu plano <strong>{planoSelecionado.nome}</strong> esta ativo.
+                  Recebemos a contratação do plano <strong>{planoSelecionado.nome}</strong>. O acesso será atualizado após a confirmação do pagamento pelo Asaas.
                   {isTrial && daysLeft !== null && daysLeft > 0
-                    ? ` A primeira cobranca sera em ${new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.`
-                    : ' Obrigado pela confianca!'}
+                    ? ` A primeira cobrança está prevista para ${new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.`
+                    : ''}
                 </p>
                 <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left space-y-2">
                   <Row label="Plano" value={planoSelecionado.nome} />
@@ -378,10 +425,7 @@ const inputCls = 'w-full px-3 py-2.5 text-sm border border-slate-200 rounded-xl 
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div>
-      <label className="block text-xs font-semibold text-slate-600 mb-1">{label}</label>
-      {children}
-    </div>
+    <label className="block text-xs font-semibold text-slate-600 mb-1"><span className="block mb-1">{label}</span>{children}</label>
   )
 }
 

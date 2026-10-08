@@ -22,7 +22,7 @@ export function TrialModal({ open, onClose }: Props) {
   const [erro, setErro]       = useState('')
   const [showSenha, setShowSenha] = useState(false)
   const [showConfirmarSenha, setShowConfirmarSenha] = useState(false)
-  const [form, setForm]       = useState({ nome: '', email: '', whatsapp: '', perfil: 'advogado', senha: '', confirmarSenha: '' })
+  const [form, setForm]       = useState({ nome: '', email: '', cpfCnpj: '', whatsapp: '', perfil: 'advogado', senha: '', confirmarSenha: '' })
 
   const { login } = useAuth()
   const navigate  = useNavigate()
@@ -34,13 +34,24 @@ export function TrialModal({ open, onClose }: Props) {
     return d.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3')
   }
 
+  const maskCpfCnpj = (v: string) => {
+    const d = v.replace(/\D/g, '').slice(0, 14)
+    if (d.length <= 11) {
+      if (d.length <= 3) return d
+      if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`
+      if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`
+      return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
+    }
+    return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
+  }
+
   const handleClose = () => {
     if (loading) return
     setDone(false)
     setErro('')
     setShowSenha(false)
     setShowConfirmarSenha(false)
-    setForm({ nome: '', email: '', whatsapp: '', perfil: 'advogado', senha: '', confirmarSenha: '' })
+    setForm({ nome: '', email: '', cpfCnpj: '', whatsapp: '', perfil: 'advogado', senha: '', confirmarSenha: '' })
     onClose()
   }
 
@@ -50,6 +61,10 @@ export function TrialModal({ open, onClose }: Props) {
 
     if (form.senha !== form.confirmarSenha) {
       setErro('As senhas não coincidem.')
+      return
+    }
+    if (![11, 14].includes(form.cpfCnpj.replace(/\D/g, '').length)) {
+      setErro('Informe um CPF ou CNPJ válido.')
       return
     }
 
@@ -62,7 +77,16 @@ export function TrialModal({ open, onClose }: Props) {
       login(user)
       setDone(true)
     } catch (err: any) {
-      setErro(err.response?.data?.detail ?? 'Erro ao criar conta. Tente novamente.')
+      const detail = err.response?.data?.detail
+      if (detail) {
+        setErro(String(detail))
+      } else if (err.response?.status) {
+        setErro(`Não foi possível criar a conta (HTTP ${err.response.status}). Tente novamente.`)
+      } else if (err.code === 'ECONNABORTED') {
+        setErro('O servidor demorou para responder. Aguarde um instante e tente novamente.')
+      } else {
+        setErro('Não foi possível conectar ao serviço de cadastro. Verifique sua conexão e tente novamente.')
+      }
     } finally {
       setLoading(false)
     }
@@ -119,6 +143,21 @@ export function TrialModal({ open, onClose }: Props) {
                       />
                     </div>
                   ))}
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 mb-1.5">CPF ou CNPJ</label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="000.000.000-00 ou CNPJ"
+                      required
+                      disabled={loading}
+                      value={form.cpfCnpj}
+                      onChange={(e) => setForm({ ...form, cpfCnpj: maskCpfCnpj(e.target.value) })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all disabled:opacity-50"
+                    />
+                  </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1.5">WhatsApp</label>
