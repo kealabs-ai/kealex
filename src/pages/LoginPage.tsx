@@ -33,6 +33,7 @@ export function LoginPage() {
     mutationFn: ({ email, senha }: FormData) => authApi.login(email, senha),
     onSuccess: (data) => {
       login(data)
+      if (data.plano === 'pending') return navigate('/pagamento-pendente', { replace: true })
       const trialExpired = data.plano === 'trial' && !!data.trialExpiresAt
         && Date.parse(data.trialExpiresAt) <= Date.now()
       navigate(trialExpired ? '/trial-expirado' : (from === '/entrar' ? '/processos' : from), { replace: true })

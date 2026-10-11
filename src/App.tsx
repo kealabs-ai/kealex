@@ -24,6 +24,7 @@ import { AudienciasPage } from './pages/AudienciasPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { ErrorPage } from './pages/ErrorPage'
 import { TrialExpiradoPage } from './pages/TrialExpiradoPage'
+import { PagamentoPendentePage } from './pages/PagamentoPendentePage'
 import { AssinaturaPage } from './pages/site/AssinaturaPage'
 import { CookieConsent } from './components/CookieConsent'
 
@@ -48,6 +49,7 @@ export default function App() {
                 <Route path="/entrar" element={<LoginPage />} />
                 <Route path="/login" element={<Navigate to="/entrar" replace />} />
                 <Route path="/trial-expirado" element={<TrialExpiradoPage />} />
+                <Route path="/pagamento-pendente" element={<PagamentoPendentePage />} />
                 <Route path="/assinar" element={<AssinaturaPage />} />
                 <Route path="/error" element={<ErrorPage />} />
                 <Route element={<ProtectedLayout />}>

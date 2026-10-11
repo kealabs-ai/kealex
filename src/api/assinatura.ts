@@ -19,20 +19,58 @@ export interface HolderInfo {
   mobilePhone?: string
 }
 
+export type Periodicidade = 'mensal' | 'trimestral'
+
 export interface AssinarPayload {
   plano: 'starter' | 'professional'
+  periodicidade: Periodicidade
   asaasCustomerId: string
   creditCard: CreditCardData
   holderInfo: HolderInfo
   remoteIp?: string
 }
 
+export interface AssinarPixPayload {
+  plano: 'starter' | 'professional'
+  periodicidade: Periodicidade
+  asaasCustomerId: string
+}
+
 export interface AssinarResult {
   subscriptionId: string
   plano: string
+  periodicidade: Periodicidade
   status: string
   nextDueDate: string
   value: number
+  valorMensal: number
+  desconto: number
+}
+
+export interface AssinarPixResult {
+  subscriptionId: string
+  plano: string
+  periodicidade: Periodicidade
+  status: string
+  nextDueDate: string
+  value: number
+  valorMensal: number
+  desconto: number
+  pixQrCode: string
+  pixKey: string
+  pixExpiresAt: string
+}
+
+/** Status Asaas que representam pagamento aprovado/ativo */
+export const ASAAS_STATUS_APROVADO = new Set(['ACTIVE', 'CONFIRMED', 'RECEIVED'])
+
+export function calcularValores(valorMensal: number, periodicidade: Periodicidade) {
+  const meses = periodicidade === 'trimestral' ? 3 : 1
+  const percentualDesconto = periodicidade === 'trimestral' ? 0.05 : 0
+  const valorBruto = valorMensal * meses
+  const valorDesconto = valorBruto * percentualDesconto
+  const valorFinal = valorBruto - valorDesconto
+  return { meses, percentualDesconto, valorBruto, valorDesconto, valorFinal }
 }
 
 export interface BillingStatus {
@@ -41,6 +79,20 @@ export interface BillingStatus {
   subscriptionStatus: string | null
   nextDueDate: string | null
   trialExpiresAt: string | null
+}
+
+export interface AssinaturaExistente {
+  subscriptionId: string
+  plano: string
+  periodicidade: Periodicidade
+  valor: number
+  status: string
+  subscriptionStatus: string
+  createdAt: string
+  nextDueDate: string | null
+  pixQrCode?: string
+  pixKey?: string
+  pixExpiresAt?: string
 }
 
 export interface BillingProfile {
@@ -65,11 +117,20 @@ export const assinaturaApi = {
   assinar: (payload: AssinarPayload) =>
     api.post<AssinarResult>('/k1/lex/auth/assinar', payload).then((r) => r.data),
 
+  assinarPix: (payload: AssinarPixPayload) =>
+    api.post<AssinarPixResult>('/k1/lex/auth/assinar-pix', payload).then((r) => r.data),
+
   billingStatus: () =>
     api.get<BillingStatus>('/k1/lex/auth/billing-status').then((r) => r.data),
 
   billingProfile: () =>
     api.get<BillingProfile>('/k1/lex/auth/billing-profile').then((r) => r.data),
+
+  getAssinatura: () =>
+    api.get<AssinaturaExistente>('/k1/lex/auth/assinatura').then((r) => r.data),
+
+  reativarAssinatura: (subscriptionId: string) =>
+    api.post<AssinarResult>('/k1/lex/auth/assinatura/reativar', { subscriptionId }).then((r) => r.data),
 }
 
 export const PLANOS_CONFIG = [
@@ -89,4 +150,9 @@ export const PLANOS_CONFIG = [
     recursos: ['Processos ilimitados', 'IA avancada', 'Relatorios', 'Suporte prioritario'],
     destaque: true,
   },
+]
+
+export const PERIODICIDADES_CONFIG = [
+  { id: 'mensal' as Periodicidade, label: 'Mensal', meses: 1, desconto: 0 },
+  { id: 'trimestral' as Periodicidade, label: 'Trimestral', meses: 3, desconto: 0.05 },
 ]
