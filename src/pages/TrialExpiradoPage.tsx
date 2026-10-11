@@ -21,7 +21,6 @@ export function TrialExpiradoPage() {
     refetchInterval: user ? 10000 : false,
   })
   const billingBlocked = billingStatus?.status === 'pending' || billingStatus?.status === 'past_due'
-  const isPendingPayment = user?.plano === 'pending' || billingStatus?.status === 'pending'
 
   useEffect(() => {
     if (user && billingStatus?.status === 'active') {
@@ -56,12 +55,10 @@ export function TrialExpiradoPage() {
             </div>
 
             <h1 className="text-2xl font-extrabold text-[#081B33] mb-2">
-              {isPendingPayment ? 'Pagamento não confirmado' : 'Seu trial de 7 dias encerrou'}
+              Seu trial de 7 dias encerrou
             </h1>
             <p className="text-sm text-[#596B82] mb-6">
-              {isPendingPayment
-                ? 'Não foi possível confirmar o pagamento. Retorne e tente novamente com outro cartão ou verifique os dados informados.'
-                : 'Para continuar usando o Kealex, escolha um plano abaixo. Seus dados estao salvos e prontos para uso.'}
+              Para continuar usando o Kealex, escolha um plano abaixo. Seus dados estao salvos e prontos para uso.
             </p>
 
             {billingStatus?.status === 'pending' && (

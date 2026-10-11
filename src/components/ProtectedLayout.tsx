@@ -20,16 +20,16 @@ const roleRequired: Record<string, Role[]> = {
 export function ProtectedLayout() {
   const { user, role } = useAuth()
   const location = useLocation()
-  const { isExpired } = useTrial()
+  const { isExpired, isPending } = useTrial()
 
   if (!user) {
     const from = location.pathname !== '/entrar' ? location : undefined
     return <Navigate to="/entrar" state={{ from }} replace />
   }
 
-  if (isExpired) {
-    return <Navigate to="/trial-expirado" replace />
-  }
+  if (isPending) return <Navigate to="/pagamento-pendente" replace />
+
+  if (isExpired) return <Navigate to="/trial-expirado" replace />
 
   const required = roleRequired[location.pathname]
   if (required && role && !required.includes(role)) {

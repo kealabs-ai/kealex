@@ -6,17 +6,17 @@ export function useTrial() {
   const { user } = useAuth()
 
   if (!user || user.role === 'admin') {
-    return { isTrial: false, isExpired: false, daysLeft: null, trialExpiresAt: null }
+    return { isTrial: false, isExpired: false, isPending: false, daysLeft: null, trialExpiresAt: null }
   }
 
   // Plano ativo libera acesso imediatamente
   if (user.plano && !['trial', 'pending'].includes(user.plano)) {
-    return { isTrial: false, isExpired: false, daysLeft: null, trialExpiresAt: null }
+    return { isTrial: false, isExpired: false, isPending: false, daysLeft: null, trialExpiresAt: null }
   }
 
   // Plano pending = assinatura criada mas pagamento não confirmado
   if (user.plano === 'pending') {
-    return { isTrial: false, isExpired: true, daysLeft: 0, trialExpiresAt: null }
+    return { isTrial: false, isExpired: false, isPending: true, daysLeft: 0, trialExpiresAt: null }
   }
 
   // Usa trialExpiresAt do backend se disponível, senão calcula por trialStartedAt
@@ -28,7 +28,7 @@ export function useTrial() {
   }
 
   if (!expiresAt) {
-    return { isTrial: true, isExpired: false, daysLeft: TRIAL_DAYS, trialExpiresAt: null }
+    return { isTrial: true, isExpired: false, isPending: false, daysLeft: TRIAL_DAYS, trialExpiresAt: null }
   }
 
   const msLeft = expiresAt.getTime() - Date.now()
@@ -37,6 +37,7 @@ export function useTrial() {
   return {
     isTrial: true,
     isExpired: daysLeft === 0,
+    isPending: false,
     daysLeft,
     trialExpiresAt: expiresAt.toISOString(),
   }

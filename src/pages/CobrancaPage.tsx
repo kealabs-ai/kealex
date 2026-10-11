@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TrendingUp, AlertTriangle, CheckCircle, Clock, Search, Plus, X } from 'lucide-react'
-import { useCobrancas, useProximaFase, useMarcarPago, useCancelarCobranca, useCreateCobranca, useCobrancaTimeline } from '../hooks/useCobrancaFluxo'
+import { useCobrancas, useProximaFase, useMarcarPago, useCancelarCobranca, useCreateCobranca, useCobrancaTimeline, useConfirmarPagamentoAsaas } from '../hooks/useCobrancaFluxo'
 import { useClientes } from '../hooks/useClientes'
 import { useProcessos } from '../hooks/useProcessos'
 import { CobrancaFluxoComponent } from '../components/CobrancaFluxo'
@@ -54,6 +54,7 @@ export function CobrancaPage() {
   const { data: processos = [] } = useProcessos()
   const proximaFase = useProximaFase()
   const marcarPago = useMarcarPago()
+  const confirmarAsaas = useConfirmarPagamentoAsaas()
   const cancelar = useCancelarCobranca()
   const criar = useCreateCobranca()
 
@@ -61,6 +62,8 @@ export function CobrancaPage() {
   const [filtroStatus, setFiltroStatus] = useState<'todos' | 'pendente' | 'pago' | 'cancelado'>('todos')
   const [showModal, setShowModal] = useState(false)
   const [form, setForm] = useState({ processoId: '', clienteId: '', valorCentavos: '', dataVencimento: '' })
+  const [asaasModal, setAsaasModal] = useState<{ id: string; valor: number } | null>(null)
+  const [asaasForm, setAsaasForm] = useState({ paymentDate: new Date().toISOString().split('T')[0], value: '' })
 
   // Mapas para lookup rápido
   const clienteMap = Object.fromEntries((Array.isArray(clientes) ? clientes : []).map((c) => [c.id, c]))
@@ -213,7 +216,11 @@ export function CobrancaPage() {
                       processoTitulo={processo?.titulo}
                       processoNumero={processo?.numero}
                       onProximaFase={(id) => proximaFase.mutate(id)}
-                      onMarcarPago={(id) => marcarPago.mutate({ id })}
+                      onMarcarPago={(id) => {
+                        const cobranca = cobrancas.find((c) => c.id === id)
+                        setAsaasForm({ paymentDate: new Date().toISOString().split('T')[0], value: cobranca ? String(cobranca.valorCentavos / 100) : '' })
+                        setAsaasModal({ id, valor: cobranca?.valorCentavos ?? 0 })
+                      }}
                       onCancelar={(id) => cancelar.mutate({ id })}
                     />
                   </motion.div>
@@ -223,6 +230,78 @@ export function CobrancaPage() {
           </div>
         )}
       </div>
+
+      {/* Modal Confirmar Pagamento Asaas */}
+      <AnimatePresence>
+        {asaasModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setAsaasModal(null)}
+          >
+            <motion.div
+              className="bg-white dark:bg-slate-900 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 w-full max-w-sm shadow-2xl"
+              initial={{ scale: 0.95, opacity: 0, y: 16 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 16 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-5">
+                <div>
+                  <h2 className="text-base font-bold text-gray-900 dark:text-white">Confirmar Pagamento</h2>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">Registrar recebimento no Asaas</p>
+                </div>
+                <button onClick={() => setAsaasModal(null)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors">
+                  <X size={18} />
+                </button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className={labelCls}>Data do Pagamento</label>
+                  <input
+                    type="date"
+                    value={asaasForm.paymentDate}
+                    onChange={(e) => setAsaasForm((f) => ({ ...f, paymentDate: e.target.value }))}
+                    className={inputCls}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Valor Recebido (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={asaasForm.value}
+                    onChange={(e) => setAsaasForm((f) => ({ ...f, value: e.target.value }))}
+                    className={inputCls}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-5">
+                <button
+                  onClick={() => setAsaasModal(null)}
+                  className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-slate-800 rounded-xl hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!asaasForm.paymentDate || !asaasForm.value) return
+                    await confirmarAsaas.mutateAsync({ id: asaasModal.id, paymentDate: asaasForm.paymentDate, value: parseFloat(asaasForm.value) })
+                    setAsaasModal(null)
+                  }}
+                  disabled={confirmarAsaas.isPending || !asaasForm.paymentDate || !asaasForm.value}
+                  className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {confirmarAsaas.isPending ? 'Confirmando...' : '✓ Confirmar'}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Modal Nova Cobrança */}
       <AnimatePresence>

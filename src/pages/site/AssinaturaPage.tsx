@@ -4,8 +4,9 @@ import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Lock, Eye, EyeOff } from 'lucide-react'
-import { assinaturaApi, PLANOS_CONFIG, type HolderInfo, type CreditCardData } from '../../api/assinatura'
+import { assinaturaApi, PLANOS_CONFIG, PERIODICIDADES_CONFIG, calcularValores, ASAAS_STATUS_APROVADO, type HolderInfo, type CreditCardData, type Periodicidade } from '../../api/assinatura'
 import { Modal } from '../../components/Modal'
+import { AssinaturaExistente } from '../../components/AssinaturaExistente'
 import logo from '../../assets/logotipo_kealex.png'
 
 function fmtCard(v: string) {
@@ -80,8 +81,10 @@ export function AssinaturaPage() {
   const [params] = useSearchParams()
   const navigate = useNavigate()
   const planoParam = (params.get('plano') ?? 'professional') as PlanoId
+  const periodicidadeParam = (params.get('periodicidade') ?? 'mensal') as Periodicidade
   const [step, setStep] = useState(0)
   const [planoId, setPlanoId] = useState<PlanoId>(planoParam)
+  const [periodicidade, setPeriodicidade] = useState<Periodicidade>(periodicidadeParam)
   const [conta, setConta] = useState({ nome: '', email: '', senha: '', confirmar: '' })
   const [showSenha, setShowSenha] = useState(false)
   const [emailJaCadastrado, setEmailJaCadastrado] = useState(false)
@@ -97,9 +100,11 @@ export function AssinaturaPage() {
     mobilePhone: '',
   })
   const [cartao, setCartao] = useState<CreditCardData>({ holderName: '', number: '', expiryMonth: '', expiryYear: '', ccv: '' })
-  const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number } | null>(null)
+  const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number; periodicidade: Periodicidade } | null>(null)
   const [apiError, setApiError] = useState('')
+  const [assinaturaExistente, setAssinaturaExistente] = useState(false)
   const plano = PLANOS_CONFIG.find((p) => p.id === planoId) ?? PLANOS_CONFIG[1]
+  const valores = calcularValores(plano.valor, periodicidade)
 
   const contaOk = conta.nome.trim().length >= 3 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(conta.email) && conta.senha.length >= 8 && conta.senha === conta.confirmar
   const titularOk = titular.name && titular.email && [11, 14].includes(titular.cpfCnpj.replace(/\D/g, '').length) && titular.postalCode.replace(/\D/g, '').length === 8 && titular.addressNumber
@@ -129,6 +134,7 @@ export function AssinaturaPage() {
         const { customerId } = await assinaturaApi.criarClienteAsaas(titular)
         return await assinaturaApi.assinar({
           plano: planoId,
+          periodicidade,
           asaasCustomerId: customerId,
           creditCard: cartao,
           holderInfo: titular,
@@ -142,17 +148,36 @@ export function AssinaturaPage() {
       }
     },
     onSuccess: (data) => {
+      if (!ASAAS_STATUS_APROVADO.has(data.status?.toUpperCase())) {
+        const statusMsg = resolverMensagemStatus(data.status)
+        setApiError(statusMsg)
+        return
+      }
       setResultado({
         subscriptionId: data.subscriptionId,
         nextDueDate: data.nextDueDate,
         value: data.value,
+        periodicidade: data.periodicidade ?? periodicidade,
       })
       setStep(4)
     },
     onError: (err: any) => {
+      if (err.response?.status === 409 || /assinatura.*vinculada|ja existe.*assinatura/i.test(err.response?.data?.detail ?? '')) {
+        setAssinaturaExistente(true)
+        return
+      }
       if (err.response?.status !== 409) setApiError(err.response?.data?.detail ?? err.message ?? 'Não foi possível concluir a contratação. Confira os dados ou tente novamente.')
     },
   })
+
+  function resolverMensagemStatus(status: string): string {
+    const s = (status ?? '').toUpperCase()
+    if (['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(s)) return 'Pagamento pendente de confirmação. Aguarde ou tente novamente com outro cartão.'
+    if (['DECLINED', 'REFUSED'].includes(s)) return 'Pagamento recusado pelo banco. Verifique os dados do cartão ou use outro cartão.'
+    if (['CANCELED', 'CANCELLED'].includes(s)) return 'Pagamento cancelado. Tente novamente.'
+    if (['OVERDUE', 'EXPIRED'].includes(s)) return 'Pagamento expirado. Tente novamente.'
+    return `Pagamento não confirmado (status: ${status}). Verifique os dados e tente novamente.`
+  }
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#081B33]">
@@ -177,7 +202,18 @@ export function AssinaturaPage() {
 
       <div className="relative z-10 max-w-xl mx-auto px-4 py-10">
         <AnimatePresence mode="wait">
-          {step === 0 && (
+          {assinaturaExistente && (
+            <motion.div key="existente" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
+              <h1 className="text-2xl font-extrabold text-white text-center mb-6">Assinatura encontrada</h1>
+              <div className="bg-white/95 backdrop-blur-sm rounded-2xl border border-white/10 shadow-2xl shadow-black/30 p-6">
+                <AssinaturaExistente
+                  onNovaCotratacao={() => setAssinaturaExistente(false)}
+                  onClose={() => navigate('/entrar')}
+                />
+              </div>
+            </motion.div>
+          )}
+          {!assinaturaExistente && step === 0 && (
             <motion.div key="s0" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
               <Steps cur={0} />
               <h1 className="text-2xl font-extrabold text-white text-center mb-1">Crie sua conta</h1>
@@ -204,12 +240,12 @@ export function AssinaturaPage() {
             </motion.div>
           )}
 
-          {step === 1 && (
+          {!assinaturaExistente && step === 1 && (
             <motion.div key="s1" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
               <Steps cur={1} />
               <h1 className="text-2xl font-extrabold text-white text-center mb-1">Escolha seu plano</h1>
-              <p className="text-sm text-white/50 text-center mb-6">7 dias grátis. A cobrança mensal começa após o período de teste; cancele quando quiser.</p>
-              <div className="grid sm:grid-cols-2 gap-4 mb-6">
+              <p className="text-sm text-white/50 text-center mb-6">7 dias grátis. A cobrança começa após o período de teste; cancele quando quiser.</p>
+              <div className="grid sm:grid-cols-2 gap-4 mb-5">
                 {PLANOS_CONFIG.map((p) => (
                   <button key={p.id} type="button" onClick={() => setPlanoId(p.id)} className={`relative text-left p-5 rounded-2xl border-2 transition-all ${planoId === p.id ? 'border-[#00C2A8] bg-[#00C2A8]/10 shadow-lg shadow-[#00C2A8]/10' : 'border-white/20 bg-white/5 hover:border-white/40'}`}>
                     {p.destaque && <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#F96313] text-white text-[10px] font-bold px-3 py-1 rounded-full flex items-center gap-1 whitespace-nowrap"><Star size={9} fill="currentColor" />Mais Popular</span>}
@@ -222,6 +258,24 @@ export function AssinaturaPage() {
                   </button>
                 ))}
               </div>
+              {/* Seleção de periodicidade */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                {PERIODICIDADES_CONFIG.map((per) => {
+                  const v = calcularValores(plano.valor, per.id)
+                  return (
+                    <button key={per.id} type="button" onClick={() => setPeriodicidade(per.id)}
+                      className={`p-4 rounded-2xl border-2 text-left transition-all ${periodicidade === per.id ? 'border-[#00C2A8] bg-[#00C2A8]/10' : 'border-white/20 bg-white/5 hover:border-white/40'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="text-sm font-bold text-white">{per.label}</span>
+                        {per.desconto > 0 && <span className="text-[10px] font-bold text-[#00C2A8] bg-[#00C2A8]/20 px-2 py-0.5 rounded-full">{(per.desconto * 100).toFixed(0)}% off</span>}
+                      </div>
+                      <p className="text-lg font-extrabold text-white">R$ {v.valorFinal.toFixed(2).replace('.', ',')}</p>
+                      {per.desconto > 0 && <p className="text-xs text-white/40 line-through">R$ {v.valorBruto.toFixed(2).replace('.', ',')}</p>}
+                      <p className="text-xs text-white/50 mt-1">{per.meses === 1 ? '1 mês' : `${per.meses} meses`}</p>
+                    </button>
+                  )
+                })}
+              </div>
               <div className="flex gap-3">
                 <button onClick={() => setStep(0)} className="flex-1 py-3.5 border border-white/20 text-white/70 font-semibold rounded-xl hover:bg-white/5 flex items-center justify-center gap-2 text-sm"><ArrowLeft size={15} />Voltar</button>
                 <button onClick={() => setStep(2)} className="flex-[2] bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-orange-900/30">Continuar com {plano.nome} <ArrowRight size={15} /></button>
@@ -229,7 +283,7 @@ export function AssinaturaPage() {
             </motion.div>
           )}
 
-          {step === 2 && (
+          {!assinaturaExistente && step === 2 && (
             <motion.div key="s2" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
               <Steps cur={2} />
               <h1 className="text-2xl font-extrabold text-white text-center mb-1">Dados do titular</h1>
@@ -253,21 +307,37 @@ export function AssinaturaPage() {
             </motion.div>
           )}
 
-          {step === 3 && (
+          {!assinaturaExistente && step === 3 && (
             <motion.div key="s3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
               <Steps cur={3} />
               <h1 className="text-2xl font-extrabold text-white text-center mb-1">Pagamento</h1>
               <p className="text-sm text-white/50 text-center mb-6">Finalize a assinatura com cartao de credito</p>
 
               <Card>
-                <div className="bg-slate-50 rounded-xl p-3 mb-4 flex items-center justify-between border border-slate-200">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">Plano selecionado</p>
-                    <p className="font-bold text-[#081B33] text-sm">{plano.nome}</p>
+                <div className="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-200 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">Plano</p>
+                    <p className="font-bold text-[#081B33] text-sm">{plano.nome} · {periodicidade === 'mensal' ? 'Mensal' : 'Trimestral'}</p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-extrabold text-[#081B33]">R$ {plano.valor.toFixed(2).replace('.', ',')}</p>
-                    <p className="text-xs text-slate-400">/mes</p>
+                  <div className="flex items-center justify-between text-xs text-slate-500">
+                    <span>Valor mensal de referência</span>
+                    <span>R$ {plano.valor.toFixed(2).replace('.', ',')}</span>
+                  </div>
+                  {valores.meses > 1 && (
+                    <div className="flex items-center justify-between text-xs text-slate-500">
+                      <span>Valor bruto ({valores.meses} meses)</span>
+                      <span>R$ {valores.valorBruto.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                  )}
+                  {valores.valorDesconto > 0 && (
+                    <div className="flex items-center justify-between text-xs text-[#00C2A8]">
+                      <span>Desconto ({(valores.percentualDesconto * 100).toFixed(0)}%)</span>
+                      <span>- R$ {valores.valorDesconto.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t border-slate-200 pt-1.5">
+                    <p className="text-xs font-bold text-[#081B33]">Total a pagar</p>
+                    <p className="font-extrabold text-[#081B33]">R$ {valores.valorFinal.toFixed(2).replace('.', ',')}</p>
                   </div>
                 </div>
 
@@ -303,19 +373,20 @@ export function AssinaturaPage() {
             </motion.div>
           )}
 
-          {step === 4 && resultado && (
+          {!assinaturaExistente && step === 4 && resultado && (
             <motion.div key="s4" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} className="text-center">
               <Steps cur={4} />
               <div className="w-16 h-16 rounded-2xl bg-[#00C2A8]/10 border border-[#00C2A8]/30 flex items-center justify-center mx-auto mb-4">
                 <CheckCircle2 size={32} className="text-[#00C2A8]" />
               </div>
-              <h1 className="text-2xl font-extrabold text-white mb-2">Assinatura solicitada</h1>
-              <p className="text-sm text-white/60 mb-6">Sua conta e seu período de teste de 7 dias estão prontos. O plano {plano.nome} foi contratado e a primeira cobrança está prevista para {new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}.</p>
+              <h1 className="text-2xl font-extrabold text-white mb-2">Assinatura confirmada!</h1>
+              <p className="text-sm text-white/60 mb-6">Pagamento aprovado. O plano {plano.nome} está ativo. Sua conta e período de teste de 7 dias estão prontos.</p>
 
               <Card>
                 <div className="space-y-3 text-left">
                   <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Plano</span><span className="font-semibold text-[#081B33]">{plano.nome}</span></div>
-                  <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Valor</span><span className="font-semibold text-[#081B33]">R$ {resultado.value.toFixed(2).replace('.', ',')} /mes</span></div>
+                  <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Periodicidade</span><span className="font-semibold text-[#081B33]">{resultado.periodicidade === 'trimestral' ? 'Trimestral (3 meses)' : 'Mensal'}</span></div>
+                  <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Valor pago</span><span className="font-semibold text-[#081B33]">R$ {resultado.value.toFixed(2).replace('.', ',')}</span></div>
                   <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Proxima cobranca</span><span className="font-semibold text-[#081B33]">{new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}</span></div>
                   <div className="flex items-center justify-between text-sm"><span className="text-slate-500">ID da assinatura</span><span className="font-mono text-xs font-semibold text-[#081B33]">{resultado.subscriptionId.slice(0, 16)}...</span></div>
                 </div>

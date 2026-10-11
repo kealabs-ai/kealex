@@ -45,6 +45,12 @@ export function useMarcarPago() {
   )
 }
 
+export function useConfirmarPagamentoAsaas() {
+  return useCobrancaMutation(({ id, paymentDate, value }: { id: string; paymentDate: string; value: number }) =>
+    cobrancasApi.confirmarPagamentoAsaas(id, paymentDate, value),
+  )
+}
+
 export function useCancelarCobranca() {
   return useCobrancaMutation(({ id, motivo }: { id: string; motivo?: string }) =>
     cobrancasApi.cancelar(id, motivo),
