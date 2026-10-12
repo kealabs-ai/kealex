@@ -33,8 +33,9 @@ api.interceptors.response.use(
     if (err.response?.status === 403) {
       const detail = err.response?.data?.detail ?? ''
       const reason = String(detail).toLowerCase()
-      if (/(trial|assinatura|conta inativa)/.test(reason) && window.location.pathname !== '/trial-expirado') {
-        window.location.href = '/trial-expirado'
+      // Redireciona para /processos e deixa o ProtectedLayout exibir o modal de pagamento
+      if (/(trial|assinatura|conta inativa)/.test(reason) && window.location.pathname !== '/processos') {
+        window.location.href = '/processos'
       }
     }
 

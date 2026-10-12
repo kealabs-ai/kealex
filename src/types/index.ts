@@ -134,6 +134,7 @@ export interface DashboardFinanceiro {
 }
 
 export type Plano = 'trial' | 'starter' | 'professional' | 'enterprise'
+export type SubscriptionStatus = 'trialing' | 'active' | 'pending' | 'past_due' | 'canceled' | 'inactive'
 
 export interface AuthUser {
   id: string
@@ -147,6 +148,7 @@ export interface AuthUser {
   trialStartedAt?: string
   trialExpiresAt?: string
   plano?: Plano | string
+  subscriptionStatus?: SubscriptionStatus | string
   modalidade?: 'autonomo' | 'escritorio'
   escritorioId?: string
 }

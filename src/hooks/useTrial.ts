@@ -2,16 +2,17 @@ import { useAuth } from '../context/AuthContext'
 
 const TRIAL_DAYS = 7
 
+/** Retorna o estado de acesso do usuário baseado em plano + subscriptionStatus */
 export function useTrial() {
   const { user } = useAuth()
 
   if (!user || user.role === 'admin') {
-    return { isTrial: false, isExpired: false, isPending: false, daysLeft: null, trialExpiresAt: null }
+    return { isTrial: false, isExpired: false, isPending: false, isBlocked: false, daysLeft: null, trialExpiresAt: null }
   }
 
   const subscriptionStatus = user.subscriptionStatus?.toLowerCase()
   if (user.plano === 'pending') {
-    return { isTrial: false, isExpired: false, isPending: true, daysLeft: 0, trialExpiresAt: null }
+    return { isTrial: false, isExpired: false, isPending: true, isBlocked: true, daysLeft: 0, trialExpiresAt: null }
   }
 
   if (user.plano && user.plano !== 'trial') {
@@ -33,7 +34,7 @@ export function useTrial() {
   }
 
   if (!expiresAt) {
-    return { isTrial: true, isExpired: false, isPending: false, daysLeft: TRIAL_DAYS, trialExpiresAt: null }
+    return { isTrial: true, isExpired: false, isPending: false, isBlocked: false, daysLeft: TRIAL_DAYS, trialExpiresAt: null }
   }
 
   const msLeft = expiresAt.getTime() - Date.now()
