@@ -1,6 +1,28 @@
 import { api } from './client'
 import type { Cobranca } from '../types'
 
+export interface PagamentoCartaoPayload {
+  cobrancaId: string
+  customer: string
+  billingType: 'CREDIT_CARD'
+  description: string
+  creditCard: {
+    holderName: string
+    number: string
+    expiryMonth: string
+    expiryYear: string
+    ccv: string
+  }
+  creditCardHolderInfo: {
+    name: string
+    email: string
+    cpfCnpj: string
+    postalCode: string
+    addressNumber: string
+    phone?: string
+  }
+}
+
 export const cobrancasApi = {
   list: () => api.get<Cobranca[]>('/k1/lex/cobrancas').then((r) => r.data),
   get: (id: string) => api.post<Cobranca>('/k1/lex/cobrancas/get', { id }).then((r) => r.data),
@@ -10,8 +32,8 @@ export const cobrancasApi = {
     api.post<Cobranca>('/k1/lex/cobrancas/proxima-fase', { id }).then((r) => r.data),
   marcarPago: (id: string, observacao?: string) =>
     api.post<Cobranca>('/k1/lex/cobrancas/marcar-pago', { id, observacao }).then((r) => r.data),
-  confirmarPagamentoAsaas: (id: string, paymentDate: string, value: number) =>
-    api.post<Cobranca>('/k1/lex/cobrancas/confirmar-pagamento-asaas', { id, paymentDate, value }).then((r) => r.data),
+  pagarComCartao: (payload: PagamentoCartaoPayload) =>
+    api.post<Cobranca>('/v1/lex/cobrancas/pagamento', payload).then((r) => r.data),
   cancelar: (id: string, motivo?: string) =>
     api.post<Cobranca>('/k1/lex/cobrancas/cancelar', { id, motivo }).then((r) => r.data),
   timeline: (id: string) =>

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { cobrancasApi } from '../api/cobrancas'
+import { cobrancasApi, type PagamentoCartaoPayload } from '../api/cobrancas'
 
 const QK = 'cobrancas'
 
@@ -45,10 +45,8 @@ export function useMarcarPago() {
   )
 }
 
-export function useConfirmarPagamentoAsaas() {
-  return useCobrancaMutation(({ id, paymentDate, value }: { id: string; paymentDate: string; value: number }) =>
-    cobrancasApi.confirmarPagamentoAsaas(id, paymentDate, value),
-  )
+export function usePagarCobranca() {
+  return useCobrancaMutation((payload: PagamentoCartaoPayload) => cobrancasApi.pagarComCartao(payload))
 }
 
 export function useCancelarCobranca() {
