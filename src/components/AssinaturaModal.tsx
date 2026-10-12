@@ -169,6 +169,10 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
         phone: formTitular.phone ?? '',
         mobilePhone: formTitular.mobilePhone ?? '',
       })
+      // Se já existe assinatura pending, usa reativar em vez de criar nova
+      if (billingStatus?.status === 'pending') {
+        return assinaturaApi.reativarAssinatura()
+      }
       const payload: AssinarPayload = {
         plano: planoId,
         periodicidade,
