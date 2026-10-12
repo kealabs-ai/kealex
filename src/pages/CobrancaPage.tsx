@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { TrendingUp, AlertTriangle, CheckCircle, Clock, Search, Plus, X } from 'lucide-react'
-import { useCobrancas, useProximaFase, useMarcarPago, useCancelarCobranca, useCreateCobranca, useCobrancaTimeline, useConfirmarPagamentoAsaas } from '../hooks/useCobrancaFluxo'
+import { useCobrancas, useProximaFase, useCancelarCobranca, useCreateCobranca, useCobrancaTimeline, useConfirmarPagamentoAsaas } from '../hooks/useCobrancaFluxo'
 import { useClientes } from '../hooks/useClientes'
 import { useProcessos } from '../hooks/useProcessos'
 import { CobrancaFluxoComponent } from '../components/CobrancaFluxo'
@@ -53,7 +53,6 @@ export function CobrancaPage() {
   const { data: clientes = [] } = useClientes()
   const { data: processos = [] } = useProcessos()
   const proximaFase = useProximaFase()
-  const marcarPago = useMarcarPago()
   const confirmarAsaas = useConfirmarPagamentoAsaas()
   const cancelar = useCancelarCobranca()
   const criar = useCreateCobranca()
