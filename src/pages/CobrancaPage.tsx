@@ -62,13 +62,7 @@ export function CobrancaPage() {
     enabled: Boolean(user),
     staleTime: 5 * 60 * 1000,
   })
-  const { data: billingStatus } = useQuery({
-    queryKey: ['billing-status'],
-    queryFn: assinaturaApi.billingStatus,
-    enabled: Boolean(user),
-    staleTime: 5 * 60 * 1000,
-  })
-  const asaasCustomerId: string = (billingStatus as any)?.asaasCustomerId ?? ''
+
   const proximaFase = useProximaFase()
   const pagar = usePagarCobranca()
   const cancelar = useCancelarCobranca()
