@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, XCircle, Copy, Check, QrCode } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -14,6 +15,8 @@ interface Props {
   onClose: () => void
   planoInicial?: 'starter' | 'professional'
   periodicidadeInicial?: Periodicidade
+  /** Quando true, o modal não pode ser fechado (conta bloqueada) */
+  obrigatorio?: boolean
 }
 
 type MetodoPagamento = 'cartao' | 'pix'
@@ -64,8 +67,9 @@ function formatPhone(v: string) {
   return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`
 }
 
-export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInicial }: Props) {
+export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInicial, obrigatorio }: Props) {
   const { user, updateUser } = useAuth()
+  const navigate = useNavigate()
   const { error: toastError } = useToast()
   const { isTrial, daysLeft } = useTrial()
   const { data: billingProfile, isLoading: loadingBillingProfile } = useQuery({
@@ -129,9 +133,10 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
         const status = await assinaturaApi.billingStatus()
         if (status.status === 'active') {
           clearInterval(pixPollRef.current!)
-          updateUser({ plano: data.plano as any })
+          updateUser({ plano: data.plano as any, subscriptionStatus: 'active' })
           setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
           setStep('sucesso')
+          if (obrigatorio) setTimeout(() => navigate('/processos', { replace: true }), 2500)
         }
       }, 5000)
     },
@@ -166,10 +171,11 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
         toastError(msg)
         return
       }
-      updateUser({ plano: data.plano as any })
+      updateUser({ plano: data.plano as any, subscriptionStatus: 'active' })
       setErroCartao(null)
       setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
       setStep('sucesso')
+      if (obrigatorio) setTimeout(() => navigate('/processos', { replace: true }), 2500)
     },
     onError: (err: any) => {
       if (err.response?.status === 409 || /assinatura.*vinculada|ja existe.*assinatura/i.test(err.response?.data?.detail ?? '')) {
@@ -188,6 +194,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
   const stepIndex = stepIndexMap[step]
 
   function handleClose() {
+    if (obrigatorio) return
     if (mutation.isPending || mutationPix.isPending) return
     if (pixPollRef.current) clearInterval(pixPollRef.current)
     setStep(planoInicial ? 'titular' : 'plano')
@@ -233,7 +240,9 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
         <div className="bg-[#081B33] px-6 py-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white font-bold text-base">Assinar Kealex</h2>
-            <button onClick={handleClose} className="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+            {!obrigatorio && (
+              <button onClick={handleClose} className="text-slate-400 hover:text-white text-xl leading-none">&times;</button>
+            )}
           </div>
           {/* Steps */}
           <div className="flex items-center gap-1">
@@ -311,7 +320,6 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                     </button>
                   ))}
                 </div>
-                {/* Periodicidade */}
                 <p className="text-xs font-semibold text-slate-600 mb-2">Periodicidade</p>
                 <div className="grid grid-cols-2 gap-2 mb-5">
                   {PERIODICIDADES_CONFIG.map((per) => {
@@ -348,7 +356,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                 <div className="space-y-3 mb-6">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
-                    <Field label="Nome completo">
+                      <Field label="Nome completo">
                         <input autoComplete="name" value={titular.name} onChange={(e) => setTitular({ ...titular, name: e.target.value })}
                           placeholder="Nome como no cartao" className={inputCls} />
                       </Field>
@@ -564,10 +572,15 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                   <Row label="Proxima cobranca" value={new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')} />
                   <Row label="ID da assinatura" value={resultado.subscriptionId.slice(0, 16) + '...'} mono />
                 </div>
-                <button onClick={handleClose}
-                  className="w-full bg-[#081B33] hover:bg-[#0f2d4a] text-white font-bold py-3 rounded-xl text-sm">
-                  Continuar usando o Kealex
-                </button>
+                {!obrigatorio && (
+                  <button onClick={handleClose}
+                    className="w-full bg-[#081B33] hover:bg-[#0f2d4a] text-white font-bold py-3 rounded-xl text-sm">
+                    Continuar usando o Kealex
+                  </button>
+                )}
+                {obrigatorio && (
+                  <p className="text-xs text-slate-400">Redirecionando para a plataforma...</p>
+                )}
               </motion.div>
             )}
 

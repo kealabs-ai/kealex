@@ -116,7 +116,7 @@ export function AssinaturaExistente({ onNovaCotratacao, onClose }: Props) {
   // Redireciona automaticamente quando o billing confirmar pagamento
   useEffect(() => {
     if (billingStatus?.status === 'active') {
-      updateUser({ plano: billingStatus.plano as any })
+      updateUser({ plano: billingStatus.plano as any, subscriptionStatus: 'active' })
       toastSuccess('Pagamento confirmado! Acesso liberado.')
       navigate('/processos', { replace: true })
     }

@@ -1,7 +1,9 @@
+import { useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Sidebar } from './Sidebar'
 import { useTrial } from '../hooks/useTrial'
+import { AssinaturaModal } from './AssinaturaModal'
 import type { Role } from '../types'
 
 const roleRequired: Record<string, Role[]> = {
@@ -20,16 +22,25 @@ const roleRequired: Record<string, Role[]> = {
 export function ProtectedLayout() {
   const { user, role } = useAuth()
   const location = useLocation()
-  const { isExpired, isPending } = useTrial()
+  const { isBlocked } = useTrial()
+  const [modalOpen, setModalOpen] = useState(true)
 
   if (!user) {
     const from = location.pathname !== '/entrar' ? location : undefined
     return <Navigate to="/entrar" state={{ from }} replace />
   }
 
-  if (isPending) return <Navigate to="/pagamento-pendente" replace />
-
-  if (isExpired) return <Navigate to="/trial-expirado" replace />
+  // Conta bloqueada (trial expirado, past_due ou pending) → modal de pagamento sobre a tela
+  if (isBlocked) {
+    return (
+      <AssinaturaModal
+        open={modalOpen}
+        onClose={() => setModalOpen(true)}
+        planoInicial="professional"
+        obrigatorio
+      />
+    )
+  }
 
   const required = roleRequired[location.pathname]
   if (required && role && !required.includes(role)) {
