@@ -135,24 +135,6 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     phone: titular.phone || formatPhone(billingProfile?.phone ?? ''),
     mobilePhone: titular.mobilePhone || formatPhone(billingProfile?.mobilePhone ?? ''),
   }
-  const selectedPlanId = billingStatus?.status === 'past_due'
-    && (existingSubscription?.plano === 'starter' || existingSubscription?.plano === 'professional')
-    ? existingSubscription.plano
-    : planoId
-  const selectedPeriodicity = billingStatus?.status === 'past_due' && existingSubscription
-    ? existingSubscription.periodicidade
-    : periodicidade
-  const selectedMethod = regularizationMethod ?? metodo
-  const displayedStep: Step = billingStatus?.status === 'active' && step === 'pix' && pixData
-    ? 'sucesso'
-    : step
-  const successResult = resultado ?? (
-    billingStatus?.status === 'active' && pixData
-      ? { subscriptionId: pixData.subscriptionId, nextDueDate: pixData.nextDueDate, value: pixData.value }
-      : null
-  )
-  const showExistingSubscription = assinaturaExistente || (billingStatus?.status === 'pending' && step !== 'pix')
-
   useEffect(() => {
     if (billingStatus?.status !== 'active' || step !== 'pix' || !pixData) return
     if (user?.plano !== billingStatus.plano || user.subscriptionStatus !== 'active' || user.tenantAtivo === false) {
@@ -163,7 +145,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
 
   const mutationPix = useMutation({
     mutationFn: async () => {
-      const { customerId } = await assinaturaApi.criarClienteAsaas(titular)
+      const { customerId } = await assinaturaApi.criarClienteAsaas(formTitular)
       return assinaturaApi.assinarPix({ plano: planoId, periodicidade, asaasCustomerId: customerId })
     },
     onSuccess: (data) => {
@@ -181,18 +163,18 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { customerId } = await assinaturaApi.criarClienteAsaas(titular)
+      const { customerId } = await assinaturaApi.criarClienteAsaas(formTitular)
       queryClient.setQueryData(['billing-profile', user?.tenantId], {
-        cpfCnpj: titular.cpfCnpj,
-        phone: titular.phone ?? '',
-        mobilePhone: titular.mobilePhone ?? '',
+        cpfCnpj: formTitular.cpfCnpj,
+        phone: formTitular.phone ?? '',
+        mobilePhone: formTitular.mobilePhone ?? '',
       })
       const payload: AssinarPayload = {
         plano: planoId,
         periodicidade,
         asaasCustomerId: customerId,
         creditCard: cartao,
-        holderInfo: titular,
+        holderInfo: formTitular,
       }
       return assinaturaApi.assinar(payload)
     },

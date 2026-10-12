@@ -143,12 +143,11 @@ export interface AuthUser {
   email: string
   role: Role
   accessToken: string
-  subscriptionStatus?: string | null
+  subscriptionStatus?: SubscriptionStatus | string | null
   tenantAtivo?: boolean
   trialStartedAt?: string
   trialExpiresAt?: string
   plano?: Plano | string
-  subscriptionStatus?: SubscriptionStatus | string
   modalidade?: 'autonomo' | 'escritorio'
   escritorioId?: string
 }
