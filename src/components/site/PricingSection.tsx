@@ -261,8 +261,8 @@ export function PricingSection() {
         >
           <span className="text-2xl" aria-hidden="true">🛡️</span>
           <p className="text-sm text-[#596B82]">
-            <strong className="text-[#081B33]">Garantia de 7 dias.</strong>{' '}
-            Se não gostar, devolvemos 100% do valor pago. Sem burocracia, sem perguntas.
+            <strong className="text-[#081B33]">Experimente 7 dias grátis</strong>{' '}
+            e descubra na prática como a nossa plataforma pode facilitar o seu dia a dia!
           </p>
         </motion.div>
       </div>
