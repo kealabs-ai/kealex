@@ -33,13 +33,17 @@ export function LoginPage() {
     mutationFn: ({ email, senha }: FormData) => authApi.login(email, senha),
     onSuccess: (data) => {
       login(data)
-      // past_due ou pending: redireciona para pagamento
-      if (data.plano === 'pending' || data.subscriptionStatus === 'past_due') {
-        return navigate('/processos', { replace: true }) // ProtectedLayout exibe o modal
-      }
       const trialExpired = data.plano === 'trial' && !!data.trialExpiresAt
         && Date.parse(data.trialExpiresAt) <= Date.now()
-      navigate(trialExpired ? '/processos' : (from === '/entrar' ? '/processos' : from), { replace: true })
+      if (
+        (data.plano === 'pending' || data.subscriptionStatus?.toLowerCase() === 'pending')
+        && (data.plano !== 'trial' || trialExpired)
+      ) {
+        return navigate('/pagamento-pendente', { replace: true })
+      }
+      const blockedPaidPlan = data.plano !== 'trial'
+        && (data.tenantAtivo === false || Boolean(data.subscriptionStatus && data.subscriptionStatus.toLowerCase() !== 'active'))
+      navigate(trialExpired || blockedPaidPlan ? '/trial-expirado' : (from === '/entrar' ? '/processos' : from), { replace: true })
     },
     onError: (error: any) => {
       const isTimeout = error.code === 'ECONNABORTED' || error.response?.status === 504

@@ -12,7 +12,7 @@ import { AssinaturaModal } from '../components/AssinaturaModal'
 export function TrialExpiradoPage() {
   const { logout, user, updateUser } = useAuth()
   const navigate = useNavigate()
-  const [assinaturaOpen, setAssinaturaOpen] = useState(false)
+  const [assinaturaOpen, setAssinaturaOpen] = useState(Boolean(user))
   const [planoSelecionado, setPlanoSelecionado] = useState<'starter' | 'professional'>('professional')
   const { data: billingStatus } = useQuery({
     queryKey: ['billing-status'],
@@ -20,11 +20,11 @@ export function TrialExpiradoPage() {
     enabled: Boolean(user),
     refetchInterval: user ? 10000 : false,
   })
-  const billingBlocked = billingStatus?.status === 'pending' || billingStatus?.status === 'past_due'
+  const billingBlocked = billingStatus?.status === 'pending'
 
   useEffect(() => {
     if (user && billingStatus?.status === 'active') {
-      if (user.plano !== billingStatus.plano) updateUser({ plano: billingStatus.plano as typeof user.plano })
+      updateUser({ plano: billingStatus.plano, subscriptionStatus: 'active', tenantAtivo: true })
       navigate('/processos', { replace: true })
     } else if (user && billingStatus?.status === 'trial') {
       navigate('/processos', { replace: true })
@@ -55,10 +55,14 @@ export function TrialExpiradoPage() {
             </div>
 
             <h1 className="text-2xl font-extrabold text-[#081B33] mb-2">
-              Seu trial de 7 dias encerrou
+              {billingStatus?.status === 'past_due' || billingStatus?.status === 'inactive'
+                ? 'Regularize sua assinatura para continuar'
+                : 'Seu trial de 7 dias encerrou'}
             </h1>
             <p className="text-sm text-[#596B82] mb-6">
-              Para continuar usando o Kealex, escolha um plano abaixo. Seus dados estao salvos e prontos para uso.
+              {billingStatus?.status === 'past_due' || billingStatus?.status === 'inactive'
+                ? 'O acesso à plataforma está pausado. Regularize o pagamento para recuperar o acesso aos seus dados.'
+                : 'Para continuar usando o Kealex, escolha um plano abaixo. Seus dados estao salvos e prontos para uso.'}
             </p>
 
             {billingStatus?.status === 'pending' && (
@@ -68,7 +72,7 @@ export function TrialExpiradoPage() {
             )}
             {billingStatus?.status === 'past_due' && (
               <div role="alert" className="text-sm text-red-800 bg-red-50 border border-red-200 rounded-xl p-3 mb-5">
-                Não identificamos o pagamento da última cobrança. Atualize a forma de pagamento ou fale com o suporte.
+                Não identificamos o pagamento da última cobrança. Escolha uma forma de pagamento para regularizar.
               </div>
             )}
 
@@ -77,7 +81,7 @@ export function TrialExpiradoPage() {
                 <button
                   key={p.id}
                   type="button"
-                  disabled={billingBlocked}
+                  disabled={billingBlocked || (billingStatus?.status === 'past_due' && p.id !== billingStatus.plano)}
                   onClick={() => {
                     if (user) {
                       setPlanoSelecionado(p.id)
@@ -125,7 +129,7 @@ export function TrialExpiradoPage() {
               }}
               className="w-full inline-flex items-center justify-center gap-2 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-orange-100 text-sm"
             >
-              {billingStatus?.status === 'pending' ? 'Aguardando confirmação' : billingStatus?.status === 'past_due' ? 'Fale com o suporte para regularizar' : 'Assinar agora e continuar'}
+              {billingStatus?.status === 'pending' ? 'Aguardando confirmação' : billingStatus?.status === 'past_due' ? 'Regularizar pagamento' : 'Assinar agora e continuar'}
             </button>
 
             <div className="flex items-center gap-2 justify-center mt-4 text-xs text-[#596B82]">
