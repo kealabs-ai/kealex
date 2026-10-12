@@ -116,7 +116,10 @@ export const assinaturaApi = {
     api.post<{ customerId: string }>('/k1/lex/auth/criar-cliente-asaas', holderInfo).then((r) => r.data),
 
   assinar: (payload: AssinarPayload) =>
-    api.post<AssinarResult>('/k1/lex/auth/assinar', payload).then((r) => r.data),
+    fetch('https://api.ipify.org?format=json')
+      .then((r) => r.json())
+      .catch(() => ({ ip: '127.0.0.1' }))
+      .then(({ ip }) => api.post<AssinarResult>('/k1/lex/auth/assinar', { ...payload, remoteIp: ip }).then((r) => r.data)),
 
   assinarPix: (payload: AssinarPixPayload) =>
     api.post<AssinarPixResult>('/k1/lex/auth/assinar-pix', payload).then((r) => r.data),

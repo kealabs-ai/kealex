@@ -614,8 +614,11 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                 </p>
                 <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left space-y-2">
                   <Row label="Plano" value={planoSelecionado.nome} />
-                  <Row label="Periodicidade" value={periodicidade === 'trimestral' ? 'Trimestral (3 meses)' : 'Mensal'} />
+                  <Row label="Periodicidade" value={periodicidade === 'trimestral' ? 'Trimestral (3x com 5% off)' : 'Mensal'} />
                   <Row label="Valor pago" value={`R$ ${resultado.value.toFixed(2).replace('.', ',')}`} />
+                  {periodicidade === 'trimestral' && (
+                    <Row label="Parcelas" value={`3x de R$ ${(resultado.value / 3).toFixed(2).replace('.', ',')}`} />
+                  )}
                   <Row label="Proxima cobranca" value={new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')} />
                   <Row label="ID da assinatura" value={resultado.subscriptionId.slice(0, 16) + '...'} mono />
                 </div>
