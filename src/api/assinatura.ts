@@ -130,8 +130,8 @@ export const assinaturaApi = {
   getAssinatura: () =>
     api.get<AssinaturaExistente>('/k1/lex/auth/assinatura').then((r) => r.data),
 
-  reativarAssinatura: (subscriptionId: string) =>
-    api.post<AssinarResult>('/k1/lex/auth/assinatura/reativar', { subscriptionId }).then((r) => r.data),
+  reativarAssinatura: () =>
+    api.post<AssinarResult>('/k1/lex/auth/assinatura/reativar', {}).then((r) => r.data),
 }
 
 export const PLANOS_CONFIG = [
