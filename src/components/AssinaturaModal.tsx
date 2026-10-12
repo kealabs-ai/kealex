@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, XCircle, Copy, Check, QrCode } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { useNavigate } from 'react-router-dom'
 import { assinaturaApi, PLANOS_CONFIG, PERIODICIDADES_CONFIG, calcularValores, ASAAS_STATUS_APROVADO, type AssinarPayload, type HolderInfo, type CreditCardData, type Periodicidade } from '../api/assinatura'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from './Toast'
@@ -66,6 +67,7 @@ function formatPhone(v: string) {
 
 export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInicial }: Props) {
   const { user, updateUser } = useAuth()
+  const navigate = useNavigate()
   const { error: toastError } = useToast()
   const { isTrial, daysLeft } = useTrial()
   const { data: billingProfile, isLoading: loadingBillingProfile } = useQuery({
@@ -82,7 +84,26 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
   const [metodo, setMetodo] = useState<MetodoPagamento>('cartao')
   const [pixData, setPixData] = useState<{ qrCode: string; key: string; expiresAt: string; subscriptionId: string; value: number; nextDueDate: string } | null>(null)
   const [copied, setCopied] = useState(false)
-  const pixPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const { data: billingStatus } = useQuery({
+    queryKey: ['billing-status'],
+    queryFn: assinaturaApi.billingStatus,
+    enabled: open && Boolean(user),
+    staleTime: 0,
+    refetchInterval: (query) => (step === 'pix' && query.state.data?.status !== 'active') || query.state.data?.status === 'pending' ? 5000 : false,
+  })
+  const {
+    data: existingSubscription,
+    isLoading: loadingExistingSubscription,
+    isError: failedToLoadExistingSubscription,
+  } = useQuery({
+    queryKey: ['assinatura-existente', user?.tenantId],
+    queryFn: assinaturaApi.getAssinatura,
+    enabled: open && Boolean(user) && billingStatus?.status === 'past_due',
+    staleTime: 0,
+  })
+  const regularizationMethod = billingStatus?.status === 'past_due' && existingSubscription
+    ? existingSubscription.billingType === 'PIX' ? 'pix' : 'cartao'
+    : null
 
   const [titular, setTitular] = useState<HolderInfo>({
     name: user?.nome ?? '',
@@ -103,19 +124,40 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     ccv: '',
   })
 
-  useEffect(() => {
-    if (!billingProfile) return
-    setTitular((current) => ({
-      ...current,
-      cpfCnpj: current.cpfCnpj || formatCpfCnpj(billingProfile.cpfCnpj),
-      phone: current.phone || formatPhone(billingProfile.phone),
-      mobilePhone: current.mobilePhone || formatPhone(billingProfile.mobilePhone),
-    }))
-  }, [billingProfile])
-
   const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number } | null>(null)
   const [erroCartao, setErroCartao] = useState<string | null>(null)
   const [assinaturaExistente, setAssinaturaExistente] = useState(false)
+  const formTitular: HolderInfo = {
+    ...titular,
+    cpfCnpj: titular.cpfCnpj || formatCpfCnpj(billingProfile?.cpfCnpj ?? ''),
+    phone: titular.phone || formatPhone(billingProfile?.phone ?? ''),
+    mobilePhone: titular.mobilePhone || formatPhone(billingProfile?.mobilePhone ?? ''),
+  }
+  const selectedPlanId = billingStatus?.status === 'past_due'
+    && (existingSubscription?.plano === 'starter' || existingSubscription?.plano === 'professional')
+    ? existingSubscription.plano
+    : planoId
+  const selectedPeriodicity = billingStatus?.status === 'past_due' && existingSubscription
+    ? existingSubscription.periodicidade
+    : periodicidade
+  const selectedMethod = regularizationMethod ?? metodo
+  const displayedStep: Step = billingStatus?.status === 'active' && step === 'pix' && pixData
+    ? 'sucesso'
+    : step
+  const successResult = resultado ?? (
+    billingStatus?.status === 'active' && pixData
+      ? { subscriptionId: pixData.subscriptionId, nextDueDate: pixData.nextDueDate, value: pixData.value }
+      : null
+  )
+  const showExistingSubscription = assinaturaExistente || (billingStatus?.status === 'pending' && step !== 'pix')
+
+  useEffect(() => {
+    if (billingStatus?.status !== 'active' || step !== 'pix' || !pixData) return
+    if (user?.plano !== billingStatus.plano || user.subscriptionStatus !== 'active' || user.tenantAtivo === false) {
+      updateUser({ plano: billingStatus.plano, subscriptionStatus: 'active', tenantAtivo: true })
+    }
+    queryClient.setQueryData(['billing-status'], billingStatus)
+  }, [billingStatus, pixData, queryClient, step, updateUser, user])
 
   const mutationPix = useMutation({
     mutationFn: async () => {
@@ -125,15 +167,8 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     onSuccess: (data) => {
       setPixData({ qrCode: data.pixQrCode, key: data.pixKey, expiresAt: data.pixExpiresAt, subscriptionId: data.subscriptionId, value: data.value, nextDueDate: data.nextDueDate })
       setStep('pix')
-      pixPollRef.current = setInterval(async () => {
-        const status = await assinaturaApi.billingStatus()
-        if (status.status === 'active') {
-          clearInterval(pixPollRef.current!)
-          updateUser({ plano: data.plano as any })
-          setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
-          setStep('sucesso')
-        }
-      }, 5000)
+      queryClient.invalidateQueries({ queryKey: ['billing-status'] })
+      queryClient.invalidateQueries({ queryKey: ['assinatura-existente', user?.tenantId] })
     },
     onError: (err: any) => {
       const msg = err.response?.data?.detail ?? 'Erro ao gerar PIX. Tente novamente.'
@@ -161,12 +196,28 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     },
     onSuccess: (data) => {
       if (!ASAAS_STATUS_APROVADO.has(data.status?.toUpperCase())) {
+        if (['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(data.status?.toUpperCase())) {
+          updateUser({ plano: data.plano, subscriptionStatus: 'pending', tenantAtivo: true })
+          queryClient.invalidateQueries({ queryKey: ['billing-status'] })
+          navigate('/pagamento-pendente', {
+            replace: true,
+            state: { plano: data.plano, periodicidade, statusGateway: data.status },
+          })
+          return
+        }
         const msg = resolverMensagemStatus(data.status)
         setErroCartao(msg)
         toastError(msg)
         return
       }
-      updateUser({ plano: data.plano as any })
+      updateUser({ plano: data.plano, subscriptionStatus: 'active', tenantAtivo: true })
+      queryClient.setQueryData(['billing-status'], {
+        plano: data.plano,
+        status: 'active',
+        subscriptionStatus: 'active',
+        nextDueDate: data.nextDueDate,
+        trialExpiresAt: user?.trialExpiresAt ?? null,
+      })
       setErroCartao(null)
       setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
       setStep('sucesso')
@@ -189,7 +240,6 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
 
   function handleClose() {
     if (mutation.isPending || mutationPix.isPending) return
-    if (pixPollRef.current) clearInterval(pixPollRef.current)
     setStep(planoInicial ? 'titular' : 'plano')
     setResultado(null)
     setErroCartao(null)
@@ -260,6 +310,16 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
             <span>Voce esta no trial gratuito. A cobranca so inicia apos os <strong>{daysLeft} dias restantes</strong>.</span>
           </div>
         )}
+        {billingStatus?.status === 'past_due' && step !== 'sucesso' && (
+          <div role="alert" className="bg-red-50 border-b border-red-100 px-6 py-2.5 text-xs text-red-700">
+            O acesso está pausado. A plataforma será liberada após a confirmação da regularização pelo Asaas.
+          </div>
+        )}
+        {billingStatus?.status === 'trial_expired' && step !== 'sucesso' && (
+          <div role="status" className="bg-amber-50 border-b border-amber-100 px-6 py-2.5 text-xs text-amber-800">
+            Seu período de teste encerrou. Escolha uma forma de pagamento para liberar o acesso.
+          </div>
+        )}
 
         <div className="p-6">
           {assinaturaExistente ? (
@@ -274,13 +334,19 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
             {step === 'plano' && (
               <motion.div key="plano" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <p className="text-sm text-slate-500 mb-4">Escolha o plano ideal para voce</p>
+                {billingStatus?.status === 'past_due' && failedToLoadExistingSubscription && (
+                  <div role="alert" className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
+                    Não foi possível consultar a assinatura vencida no Asaas. Tente novamente antes de iniciar o pagamento.
+                  </div>
+                )}
                 <div className="space-y-3 mb-4">
                   {PLANOS_CONFIG.map((p) => (
                     <button
                       key={p.id}
                       type="button"
+                      disabled={billingStatus?.status === 'past_due' && Boolean(existingSubscription) && p.id !== existingSubscription?.plano}
                       onClick={() => setPlanoId(p.id)}
-                      className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                      className={`w-full text-left p-4 rounded-xl border-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                         planoId === p.id ? 'border-[#00C2A8] bg-[#00C2A8]/5' : 'border-slate-200 hover:border-slate-300'
                       }`}
                     >
@@ -317,8 +383,8 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                   {PERIODICIDADES_CONFIG.map((per) => {
                     const v = calcularValores(planoSelecionado.valor, per.id)
                     return (
-                      <button key={per.id} type="button" onClick={() => setPeriodicidade(per.id)}
-                        className={`p-3 rounded-xl border-2 text-left transition-all ${
+                      <button key={per.id} type="button" disabled={billingStatus?.status === 'past_due'} onClick={() => setPeriodicidade(per.id)}
+                        className={`p-3 rounded-xl border-2 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
                           periodicidade === per.id ? 'border-[#00C2A8] bg-[#00C2A8]/5' : 'border-slate-200 hover:border-slate-300'
                         }`}>
                         <div className="flex items-center justify-between mb-0.5">
@@ -333,9 +399,10 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                 </div>
                 <button
                   onClick={() => setStep('titular')}
+                  disabled={billingStatus?.status === 'past_due' && (!existingSubscription || loadingExistingSubscription || failedToLoadExistingSubscription)}
                   className="w-full bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm"
                 >
-                  Continuar <ArrowRight size={15} />
+                  {billingStatus?.status === 'past_due' && loadingExistingSubscription ? 'Consultando assinatura...' : 'Continuar'} <ArrowRight size={15} />
                 </button>
               </motion.div>
             )}
@@ -417,7 +484,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3 mb-6">
-                  {(['cartao', 'pix'] as MetodoPagamento[]).map((m) => (
+                  {(['cartao', 'pix'] as MetodoPagamento[]).filter((m) => !regularizationMethod || m === regularizationMethod).map((m) => (
                     <button key={m} type="button" onClick={() => setMetodo(m)}
                       className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition-all ${
                         metodo === m ? 'border-[#00C2A8] bg-[#00C2A8]/5' : 'border-slate-200 hover:border-slate-300'

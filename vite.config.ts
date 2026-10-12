@@ -8,6 +8,11 @@ export default defineConfig(({ mode }) => {
   if (!apiBaseUrl) throw new Error('KEALEX_API_BASE_URL precisa estar configurada no .env do frontend')
 
   return {
+  // O cliente Axios precisa da URL no bundle de produção. KEALEX_API_BASE_URL
+  // é carregada pelo Vite, mas não é exposta ao navegador sem esta definição.
+  define: {
+    'import.meta.env.KEALEX_API_BASE_URL': JSON.stringify(apiBaseUrl),
+  },
   plugins: [react(), tailwindcss()],
   appType: 'spa',
   server: {

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Clock, XCircle, AlertCircle, Loader2, RefreshCw, Copy, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { assinaturaApi, PLANOS_CONFIG, ASAAS_STATUS_APROVADO, type AssinaturaExistente as AssinaturaExistenteType } from '../api/assinatura'
+import { assinaturaApi, PLANOS_CONFIG, ASAAS_STATUS_APROVADO } from '../api/assinatura'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from './Toast'
 
@@ -19,7 +19,7 @@ function resolverCenario(billing: { status: string; subscriptionStatus: string |
   if (s === 'active' || ASAAS_STATUS_APROVADO.has(ss)) return 'ativa'
   if (s === 'pending' || ['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(ss)) return 'pendente'
   if (s === 'canceled' || ['CANCELED', 'CANCELLED'].includes(ss)) return 'cancelada'
-  if (['DECLINED', 'REFUSED', 'OVERDUE', 'EXPIRED', 'past_due'].includes(s) || ['DECLINED', 'REFUSED', 'OVERDUE', 'EXPIRED'].includes(ss)) return 'recusada'
+  if (['DECLINED', 'REFUSED', 'OVERDUE', 'EXPIRED', 'past_due', 'inactive'].includes(s) || ['DECLINED', 'REFUSED', 'OVERDUE', 'EXPIRED', 'PAST_DUE'].includes(ss)) return 'recusada'
   return 'desconhecido'
 }
 
@@ -73,8 +73,7 @@ function PlanoNome({ plano }: { plano: string }) {
 export function AssinaturaExistente({ onNovaCotratacao, onClose }: Props) {
   const { user, updateUser } = useAuth()
   const navigate = useNavigate()
-  const { error: toastError, success: toastSuccess } = useToast()
-  const queryClient = useQueryClient()
+  const { success: toastSuccess } = useToast()
   const [copied, setCopied] = useState(false)
 
   const { data: assinatura, isLoading, refetch, isFetching } = useQuery({
@@ -98,29 +97,14 @@ export function AssinaturaExistente({ onNovaCotratacao, onClose }: Props) {
     },
   })
 
-  const reativar = useMutation({
-    mutationFn: () => assinaturaApi.reativarAssinatura(assinatura!.subscriptionId),
-    onSuccess: (data) => {
-      if (ASAAS_STATUS_APROVADO.has(data.status?.toUpperCase())) {
-        updateUser({ plano: data.plano as any })
-        queryClient.invalidateQueries({ queryKey: ['billing-status'] })
-        toastSuccess('Pagamento confirmado! Acesso liberado.')
-        navigate('/processos', { replace: true })
-      } else {
-        toastError('Pagamento não confirmado. Tente novamente ou use outro cartão.')
-      }
-    },
-    onError: () => toastError('Não foi possível reativar. Tente novamente.'),
-  })
-
   // Redireciona automaticamente quando o billing confirmar pagamento
   useEffect(() => {
     if (billingStatus?.status === 'active') {
-      updateUser({ plano: billingStatus.plano as any })
+      updateUser({ plano: billingStatus.plano, subscriptionStatus: 'active', tenantAtivo: true })
       toastSuccess('Pagamento confirmado! Acesso liberado.')
       navigate('/processos', { replace: true })
     }
-  }, [billingStatus?.status])
+  }, [billingStatus, navigate, toastSuccess, updateUser])
 
   if (isLoading && !billingStatus) {
     return (
@@ -220,20 +204,11 @@ export function AssinaturaExistente({ onNovaCotratacao, onClose }: Props) {
         {cenario === 'recusada' && (
           <>
             <button
-              onClick={() => reativar.mutate()}
-              disabled={reativar.isPending}
-              className="w-full bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2"
+              onClick={() => onNovaCotratacao ? onNovaCotratacao() : navigate('/trial-expirado')}
+              className="w-full bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2"
             >
-              {reativar.isPending ? <><Loader2 size={15} className="animate-spin" /> Processando...</> : 'Tentar novamente o pagamento'}
+              Regularizar pagamento
             </button>
-            {onNovaCotratacao && (
-              <button
-                onClick={onNovaCotratacao}
-                className="w-full border border-slate-200 text-slate-600 font-semibold py-2.5 rounded-xl text-sm hover:bg-slate-50"
-              >
-                Nova contratação
-              </button>
-            )}
           </>
         )}
 

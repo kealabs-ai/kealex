@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle2, Clock, XCircle, RefreshCw } from 'lucide-react'
@@ -12,8 +12,8 @@ import { AssinaturaModal } from '../components/AssinaturaModal'
 type LocationState = { plano?: 'starter' | 'professional'; periodicidade?: Periodicidade; statusGateway?: string } | null
 
 const STATUS_MSGS: Record<string, { icon: typeof AlertCircle; cor: string; titulo: string; msg: string }> = {
-  PENDING: { icon: Clock, cor: 'amber', titulo: 'Pagamento pendente', msg: 'Seu pagamento ainda está sendo processado. Aguarde ou tente novamente.' },
-  AWAITING_RISK_ANALYSIS: { icon: Clock, cor: 'amber', titulo: 'Em análise', msg: 'Seu pagamento está em análise de risco. Aguarde a confirmação.' },
+  PENDING: { icon: Clock, cor: 'amber', titulo: 'Pagamento pendente', msg: 'Aguardamos a confirmação do Asaas. Não é necessário iniciar outra cobrança.' },
+  AWAITING_RISK_ANALYSIS: { icon: Clock, cor: 'amber', titulo: 'Em análise', msg: 'Seu pagamento está em análise de risco. Aguarde a confirmação do Asaas.' },
   DECLINED: { icon: XCircle, cor: 'red', titulo: 'Pagamento recusado', msg: 'Seu cartão foi recusado pelo banco. Verifique os dados ou use outro cartão.' },
   REFUSED: { icon: XCircle, cor: 'red', titulo: 'Pagamento recusado', msg: 'Seu cartão foi recusado pelo banco. Verifique os dados ou use outro cartão.' },
   CANCELED: { icon: XCircle, cor: 'red', titulo: 'Pagamento cancelado', msg: 'O pagamento foi cancelado. Tente novamente.' },
@@ -21,7 +21,7 @@ const STATUS_MSGS: Record<string, { icon: typeof AlertCircle; cor: string; titul
 }
 
 function getStatusInfo(status?: string) {
-  if (!status) return STATUS_MSGS.DECLINED
+  if (!status) return STATUS_MSGS.PENDING
   return STATUS_MSGS[status.toUpperCase()] ?? { icon: AlertCircle, cor: 'red', titulo: 'Pagamento não confirmado', msg: `Pagamento não aprovado (status: ${status}). Verifique os dados e tente novamente.` }
 }
 
@@ -36,7 +36,7 @@ export function PagamentoPendentePage() {
   const statusInfo = getStatusInfo(statusGateway)
   const StatusIcon = statusInfo.icon
   const corClasse = statusInfo.cor === 'amber' ? { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-500', titulo: 'text-amber-800', msg: 'text-amber-700' } : { bg: 'bg-red-50', border: 'border-red-200', icon: 'text-red-500', titulo: 'text-red-800', msg: 'text-red-700' }
-  const [assinaturaOpen, setAssinaturaOpen] = useState(false)
+  const [assinaturaOpen, setAssinaturaOpen] = useState(Boolean(user))
 
   const { data: billingStatus, isFetching } = useQuery({
     queryKey: ['billing-status'],
@@ -45,12 +45,11 @@ export function PagamentoPendentePage() {
     refetchInterval: 10_000,
   })
 
-  // Se o pagamento foi confirmado externamente, libera acesso
-  if (billingStatus?.status === 'active') {
-    if (user?.plano !== billingStatus.plano) updateUser({ plano: billingStatus.plano as any })
+  useEffect(() => {
+    if (billingStatus?.status !== 'active') return
+    updateUser({ plano: billingStatus.plano, subscriptionStatus: 'active', tenantAtivo: true })
     navigate('/processos', { replace: true })
-    return null
-  }
+  }, [billingStatus, navigate, updateUser])
 
   function handleLogout() {
     logout()
@@ -78,14 +77,16 @@ export function PagamentoPendentePage() {
             <h1 className="text-2xl font-extrabold text-[#081B33] mb-2">{statusInfo.titulo}</h1>
             <p className="text-sm text-[#596B82] mb-6">{statusInfo.msg}</p>
 
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left space-y-2">
-              <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">O que pode ter ocorrido</p>
-              <ul className="space-y-1.5 text-xs text-slate-600">
-                <li className="flex items-start gap-2"><CheckCircle2 size={12} className="shrink-0 mt-0.5 text-slate-400" /> Dados do cartão incorretos (número, validade ou CVV)</li>
-                <li className="flex items-start gap-2"><CheckCircle2 size={12} className="shrink-0 mt-0.5 text-slate-400" /> Cartão sem limite disponível</li>
-                <li className="flex items-start gap-2"><CheckCircle2 size={12} className="shrink-0 mt-0.5 text-slate-400" /> Cartão bloqueado pelo banco emissor</li>
-              </ul>
-            </div>
+            {!['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(statusGateway?.toUpperCase() ?? '') && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left space-y-2">
+                <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">O que pode ter ocorrido</p>
+                <ul className="space-y-1.5 text-xs text-slate-600">
+                  <li className="flex items-start gap-2"><CheckCircle2 size={12} className="shrink-0 mt-0.5 text-slate-400" /> Dados do cartão incorretos (número, validade ou CVV)</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 size={12} className="shrink-0 mt-0.5 text-slate-400" /> Cartão sem limite disponível</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 size={12} className="shrink-0 mt-0.5 text-slate-400" /> Cartão bloqueado pelo banco emissor</li>
+                </ul>
+              </div>
+            )}
 
             <button
               onClick={() => setAssinaturaOpen(true)}

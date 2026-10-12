@@ -1,7 +1,9 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { Sidebar } from './Sidebar'
 import { useTrial } from '../hooks/useTrial'
+import { assinaturaApi } from '../api/assinatura'
 import type { Role } from '../types'
 
 const roleRequired: Record<string, Role[]> = {
@@ -20,12 +22,25 @@ const roleRequired: Record<string, Role[]> = {
 export function ProtectedLayout() {
   const { user, role } = useAuth()
   const location = useLocation()
-  const { isExpired, isPending } = useTrial()
+  const trial = useTrial()
+  const { data: billingStatus } = useQuery({
+    queryKey: ['billing-status'],
+    queryFn: assinaturaApi.billingStatus,
+    enabled: Boolean(user && role !== 'admin'),
+    staleTime: 0,
+    refetchInterval: 30_000,
+  })
 
   if (!user) {
     const from = location.pathname !== '/entrar' ? location : undefined
     return <Navigate to="/entrar" state={{ from }} replace />
   }
+
+  const status = billingStatus?.status
+  const isPending = status ? status === 'pending' : trial.isPending
+  const isExpired = status
+    ? ['trial_expired', 'past_due', 'canceled', 'inactive'].includes(status)
+    : trial.isExpired
 
   if (isPending) return <Navigate to="/pagamento-pendente" replace />
 

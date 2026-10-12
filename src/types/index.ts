@@ -142,6 +142,8 @@ export interface AuthUser {
   email: string
   role: Role
   accessToken: string
+  subscriptionStatus?: string | null
+  tenantAtivo?: boolean
   trialStartedAt?: string
   trialExpiresAt?: string
   plano?: Plano | string
