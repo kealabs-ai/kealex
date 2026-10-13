@@ -42,8 +42,7 @@ export function ProtectedLayout() {
     ? ['trial_expired', 'past_due', 'canceled', 'inactive'].includes(status)
     : trial.isExpired
 
-  if (isPending) return <Navigate to="/pagamento-pendente" replace />
-
+  // pending: mantém o usuário na plataforma — o banner no TopBar trata o caso
   if (isExpired) return <Navigate to="/trial-expirado" replace />
 
   const required = roleRequired[location.pathname]
