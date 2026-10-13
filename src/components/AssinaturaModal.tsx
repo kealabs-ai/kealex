@@ -163,6 +163,30 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     state: '',
   })
 
+  // Preencher dados do billingProfile quando carrega
+  useEffect(() => {
+    if (billingProfile && !titular.cpfCnpj) {
+      setTitular((prev) => ({
+        ...prev,
+        name: prev.name || billingProfile.name || '',
+        email: prev.email || billingProfile.email || '',
+        cpfCnpj: formatCpfCnpj(billingProfile.billing_cpf_cnpj || billingProfile.cpfCnpj || ''),
+        phone: prev.phone || formatPhone(billingProfile.phone || ''),
+        mobilePhone: prev.mobilePhone || formatPhone(billingProfile.mobilePhone || ''),
+        postalCode: prev.postalCode || formatCep(billingProfile.postalCode || ''),
+        address: prev.address || billingProfile.address || '',
+        addressNumber: prev.addressNumber || billingProfile.addressNumber || '',
+        addressComplement: prev.addressComplement || billingProfile.addressComplement || '',
+        neighborhood: prev.neighborhood || billingProfile.neighborhood || '',
+        city: prev.city || billingProfile.city || '',
+        state: prev.state || billingProfile.state || '',
+      }))
+      if (billingProfile.city && billingProfile.state) {
+        setCidadeQuery(`${billingProfile.city}, ${billingProfile.state}`)
+      }
+    }
+  }, [billingProfile])
+
   const [cartao, setCartao] = useState<CreditCardData>({
     holderName: user?.nome ?? '',
     number: '',
@@ -178,10 +202,10 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     ...titular,
     name: titular.name || billingProfile?.name || '',
     email: titular.email || billingProfile?.email || '',
-    cpfCnpj: titular.cpfCnpj || formatCpfCnpj(billingProfile?.cpfCnpj ?? ''),
-    phone: titular.phone || formatPhone(billingProfile?.phone ?? ''),
-    mobilePhone: titular.mobilePhone || formatPhone(billingProfile?.mobilePhone ?? ''),
-    postalCode: titular.postalCode || formatCep(billingProfile?.postalCode ?? ''),
+    cpfCnpj: titular.cpfCnpj || formatCpfCnpj(billingProfile?.billing_cpf_cnpj || billingProfile?.cpfCnpj || ''),
+    phone: titular.phone || formatPhone(billingProfile?.phone || ''),
+    mobilePhone: titular.mobilePhone || formatPhone(billingProfile?.mobilePhone || ''),
+    postalCode: titular.postalCode || formatCep(billingProfile?.postalCode || ''),
     address: titular.address || billingProfile?.address || '',
     addressNumber: titular.addressNumber || billingProfile?.addressNumber || '',
     addressComplement: titular.addressComplement || billingProfile?.addressComplement || '',

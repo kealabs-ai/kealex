@@ -104,6 +104,7 @@ export interface BillingProfile {
   name: string
   email: string
   cpfCnpj: string
+  billing_cpf_cnpj?: string
   phone: string
   mobilePhone: string
   postalCode: string
