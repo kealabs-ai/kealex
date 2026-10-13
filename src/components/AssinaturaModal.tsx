@@ -324,7 +324,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
           city: data.localidade || t.city,
           state: data.uf || t.state,
         }))
-        setCidadeQuery(data.localidade)
+        setCidadeQuery(`${data.localidade}, ${data.uf}`)
       }
     }
   }
@@ -344,7 +344,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
 
   function selectCidade(cidade: { nome: string; uf: string }) {
     setTitular((t) => ({ ...t, city: cidade.nome, state: cidade.uf }))
-    setCidadeQuery(cidade.nome)
+    setCidadeQuery(`${cidade.nome}, ${cidade.uf}`)
     setShowCidadeSugestoes(false)
   }
 
@@ -542,8 +542,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                             <li key={`${c.nome}-${c.uf}`}
                               onMouseDown={() => selectCidade(c)}
                               className="px-3 py-2 text-xs text-slate-700 hover:bg-[#00C2A8]/10 cursor-pointer flex items-center justify-between">
-                              <span>{c.nome}</span>
-                              <span className="text-slate-400 font-mono">{c.uf}</span>
+                              <span>{c.nome}, {c.uf}</span>
                             </li>
                           ))}
                         </ul>

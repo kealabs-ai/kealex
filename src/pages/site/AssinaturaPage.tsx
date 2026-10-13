@@ -1,9 +1,9 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Lock, Eye, EyeOff } from 'lucide-react'
+import { Check, CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { assinaturaApi, PLANOS_CONFIG, PERIODICIDADES_CONFIG, calcularValores, ASAAS_STATUS_APROVADO, type HolderInfo, type CreditCardData, type Periodicidade } from '../../api/assinatura'
 import { Modal } from '../../components/Modal'
 import { AssinaturaExistente } from '../../components/AssinaturaExistente'
@@ -103,8 +103,34 @@ export function AssinaturaPage() {
   const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number; periodicidade: Periodicidade } | null>(null)
   const [apiError, setApiError] = useState('')
   const [assinaturaExistente, setAssinaturaExistente] = useState(false)
+  const [cepLoading, setCepLoading] = useState(false)
+  const [cepError, setCepError] = useState('')
   const plano = PLANOS_CONFIG.find((p) => p.id === planoId) ?? PLANOS_CONFIG[1]
   const valores = calcularValores(plano.valor, periodicidade)
+
+  useEffect(() => {
+    const cepDigitos = titular.postalCode.replace(/\D/g, '')
+    if (cepDigitos.length === 8) {
+      setCepLoading(true)
+      setCepError('')
+      fetch(`https://viacep.com.br/ws/${cepDigitos}/json/`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.erro) {
+            setCepError('CEP não encontrado')
+          } else {
+            const cidadeEstado = data.localidade && data.uf ? `${data.localidade}, ${data.uf}` : ''
+            setTitular((prev) => ({
+              ...prev,
+              addressComplement: cidadeEstado || '',
+            }))
+            setCepError('')
+          }
+        })
+        .catch(() => setCepError('Erro ao buscar CEP'))
+        .finally(() => setCepLoading(false))
+    }
+  }, [titular.postalCode])
 
   const contaOk = conta.nome.trim().length >= 3 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(conta.email) && conta.senha.length >= 8 && conta.senha === conta.confirmar
   const titularOk = titular.name && titular.email && [11, 14].includes(titular.cpfCnpj.replace(/\D/g, '').length) && titular.postalCode.replace(/\D/g, '').length === 8 && titular.addressNumber
@@ -293,7 +319,13 @@ export function AssinaturaPage() {
                   <div className="sm:col-span-2"><F label="Nome completo"><input value={titular.name} onChange={(e) => setTitular({ ...titular, name: e.target.value })} placeholder="Como aparece no cartao" className={inp} /></F></div>
                   <F label="E-mail"><input type="email" autoComplete="email" value={titular.email} onChange={(e) => setTitular({ ...titular, email: e.target.value })} placeholder="email@exemplo.com" className={inp} /></F>
                   <F label="CPF ou CNPJ"><input inputMode="numeric" autoComplete="off" value={titular.cpfCnpj} onChange={(e) => setTitular({ ...titular, cpfCnpj: fmtCpfCnpj(e.target.value) })} placeholder="CPF ou CNPJ" className={inp} /></F>
-                  <F label="CEP"><input inputMode="numeric" autoComplete="postal-code" value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: fmtCep(e.target.value) })} placeholder="00000-000" className={inp} /></F>
+                  <F label="CEP">
+                    <div className="relative">
+                      <input inputMode="numeric" autoComplete="postal-code" value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: fmtCep(e.target.value) })} placeholder="00000-000" className={inp} />
+                      {cepLoading && <Loader2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
+                    </div>
+                    {cepError && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={12} />{cepError}</p>}
+                  </F>
                   <F label="Número"><input value={titular.addressNumber} onChange={(e) => setTitular({ ...titular, addressNumber: e.target.value })} placeholder="123" className={inp} /></F>
                   <div className="sm:col-span-2"><F label="Complemento (opcional)"><input autoComplete="address-line2" value={titular.addressComplement ?? ''} onChange={(e) => setTitular({ ...titular, addressComplement: e.target.value })} placeholder="Apto, sala..." className={inp} /></F></div>
                   <F label="Telefone"><input type="tel" autoComplete="tel" value={titular.phone ?? ''} onChange={(e) => setTitular({ ...titular, phone: fmtPhone(e.target.value) })} placeholder="(11) 3333-4444" className={inp} /></F>
