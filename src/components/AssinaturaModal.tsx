@@ -134,6 +134,16 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     staleTime: 0,
     refetchInterval: (query) => (step === 'pix' && query.state.data?.status !== 'active') || query.state.data?.status === 'pending' ? 5000 : false,
   })
+
+  // Quando pending: pula direto para cartao com dados já carregados
+  useEffect(() => {
+    if (!open) return
+    if (billingStatus?.status === 'pending' && billingProfile && step === 'plano') {
+      const plan = (billingStatus.plano as 'starter' | 'professional') ?? planoInicial ?? 'professional'
+      setPlanoId(plan)
+      setStep('cartao')
+    }
+  }, [open, billingStatus?.status, billingProfile])
   const {
     data: existingSubscription,
     isLoading: loadingExistingSubscription,
@@ -195,7 +205,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     ccv: '',
   })
 
-  const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number } | null>(null)
+  const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number; status?: string } | null>(null)
   const [erroCartao, setErroCartao] = useState<string | null>(null)
   const [assinaturaExistente, setAssinaturaExistente] = useState(false)
   const formTitular: HolderInfo = {
@@ -241,16 +251,14 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const { customerId } = await assinaturaApi.criarClienteAsaas(formTitular)
-      queryClient.setQueryData(['billing-profile', user?.tenantId], {
-        cpfCnpj: formTitular.cpfCnpj,
-        phone: formTitular.phone ?? '',
-        mobilePhone: formTitular.mobilePhone ?? '',
-      })
+      // Atualiza dados do titular (sem criar novo registro)
+      await assinaturaApi.criarClienteAsaas(formTitular)
+      queryClient.invalidateQueries({ queryKey: ['billing-profile', user?.tenantId] })
       // Se já existe assinatura pending, usa reativar em vez de criar nova
       if (billingStatus?.status === 'pending') {
         return assinaturaApi.reativarAssinatura()
       }
+      const { customerId } = await assinaturaApi.criarClienteAsaas(formTitular)
       const payload: AssinarPayload = {
         plano: planoId,
         periodicidade,
@@ -286,7 +294,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
       })
 
       setErroCartao(null)
-      setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value })
+      setResultado({ subscriptionId: data.subscriptionId, nextDueDate: data.nextDueDate, value: data.value, status: data.status })
       setStep('sucesso')
       if (obrigatorio) setTimeout(() => navigate('/processos', { replace: true }), 2500)
     },
@@ -419,6 +427,11 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
           <div className="bg-blue-50 border-b border-blue-100 px-6 py-2.5 flex items-center gap-2 text-xs text-blue-700">
             <ShieldCheck size={13} className="shrink-0" />
             <span>Voce esta no trial gratuito. A cobranca so inicia apos os <strong>{daysLeft} dias restantes</strong>.</span>
+          </div>
+        )}
+        {billingStatus?.status === 'pending' && step !== 'sucesso' && (
+          <div role="alert" className="bg-amber-50 border-b border-amber-200 px-6 py-2.5 text-xs text-amber-800 flex items-center gap-2">
+            <span className="font-bold">Pagamento pendente.</span> Confirme um novo cartão para regularizar sua assinatura.
           </div>
         )}
         {billingStatus?.status === 'past_due' && step !== 'sucesso' && (
@@ -654,9 +667,21 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
             {step === 'cartao' && (
               <motion.div key="cartao" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <p className="text-sm text-slate-500 mb-4">Dados do cartao de credito</p>
-                <div className="bg-slate-50 rounded-xl p-3 mb-4 flex items-center justify-between">
-                  <p className="text-xs text-slate-500">{planoSelecionado.nome} · {periodicidade === 'mensal' ? 'Mensal' : 'Trimestral'}</p>
-                  <p className="font-extrabold text-[#081B33] text-sm">R$ {valores.valorFinal.toFixed(2).replace('.', ',')}</p>
+                <div className="bg-slate-50 rounded-xl p-3 mb-4 space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-slate-500">Plano</p>
+                    <p className="font-bold text-[#081B33] text-sm">{planoSelecionado.nome} · {periodicidade === 'mensal' ? 'Mensal' : 'Trimestral'}</p>
+                  </div>
+                  {valores.valorDesconto > 0 && (
+                    <div className="flex items-center justify-between text-xs text-[#00C2A8]">
+                      <span>Desconto ({(valores.percentualDesconto * 100).toFixed(0)}%)</span>
+                      <span>- R$ {valores.valorDesconto.toFixed(2).replace('.', ',')}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between border-t border-slate-200 pt-1.5">
+                    <p className="text-xs font-bold text-[#081B33]">Total</p>
+                    <p className="font-extrabold text-[#081B33]">R$ {valores.valorFinal.toFixed(2).replace('.', ',')}</p>
+                  </div>
                 </div>
                 <div className="space-y-3 mb-5">
                   <Field label="Nome no cartao">
@@ -679,7 +704,17 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                 </div>
                 {erroCartao && (
                   <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl px-3 py-2.5 mb-3">
-                    <XCircle size={14} className="shrink-0 mt-0.5" /><span>{erroCartao}</span>
+                    <XCircle size={14} className="shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-semibold mb-1">{erroCartao}</p>
+                      <ul className="space-y-1 text-[11px] opacity-90">
+                        <li>• Verifique se o número do cartão está correto</li>
+                        <li>• Confirme a validade (mês e ano)</li>
+                        <li>• Verifique o CVV (3 dígitos no verso)</li>
+                        <li>• Certifique-se de que o cartão tem limite disponível</li>
+                        <li>• Tente com outro cartão ou forma de pagamento</li>
+                      </ul>
+                    </div>
                   </div>
                 )}
                 <div className="flex gap-2">
@@ -766,16 +801,20 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                 </div>
                 <h3 className="text-xl font-extrabold text-[#081B33] mb-2">Assinatura confirmada!</h3>
                 <p className="text-sm text-slate-500 mb-4">
-                  {metodo === 'pix' ? 'Pagamento PIX recebido.' : 'Pagamento aprovado.'} Seu acesso ao plano <strong>{planoSelecionado.nome}</strong> esta ativo.
+                  {metodo === 'pix' ? 'Pagamento PIX recebido com sucesso.' : 'Pagamento aprovado com sucesso.'} Seu acesso ao plano <strong>{planoSelecionado.nome}</strong> está ativo.
                 </p>
                 <div className="bg-slate-50 rounded-xl p-4 mb-6 text-left space-y-2">
                   <Row label="Plano" value={planoSelecionado.nome} />
-                  <Row label="Periodicidade" value={periodicidade === 'trimestral' ? 'Trimestral (3x com 5% off)' : 'Mensal'} />
-                  <Row label="Valor pago" value={`R$ ${resultado.value.toFixed(2).replace('.', ',')}`} />
+                  <Row label="Periodicidade" value={periodicidade === 'trimestral' ? 'Trimestral (3 meses)' : 'Mensal'} />
+                  <Row label="Valor mensal" value={`R$ ${planoSelecionado.valor.toFixed(2).replace('.', ',')}`} />
+                  {valores.valorDesconto > 0 && (
+                    <Row label="Desconto" value={`-R$ ${valores.valorDesconto.toFixed(2).replace('.', ',')}`} />
+                  )}
+                  <Row label="Valor total pago" value={`R$ ${resultado.value.toFixed(2).replace('.', ',')}`} />
                   {periodicidade === 'trimestral' && (
                     <Row label="Parcelas" value={`3x de R$ ${(resultado.value / 3).toFixed(2).replace('.', ',')}`} />
                   )}
-                  <Row label="Proxima cobranca" value={new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')} />
+                  <Row label="Próxima cobrança" value={new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')} />
                   <Row label="ID da assinatura" value={resultado.subscriptionId.slice(0, 16) + '...'} mono />
                 </div>
                 {!obrigatorio && (

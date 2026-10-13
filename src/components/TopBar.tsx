@@ -1,9 +1,11 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, LogOut, ExternalLink, Building2, User, type LucideIcon } from 'lucide-react'
+import { ChevronDown, LogOut, ExternalLink, Building2, User, AlertCircle, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { useTrial } from '../hooks/useTrial'
+import { assinaturaApi } from '../api/assinatura'
 import { AssinaturaModal } from './AssinaturaModal'
 import { ModalidadeModal } from './ModalidadeModal'
 
@@ -34,6 +36,16 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
   const { user, logout } = useAuth()
   const { isTrial, daysLeft } = useTrial()
 
+  const { data: billingStatus } = useQuery({
+    queryKey: ['billing-status'],
+    queryFn: assinaturaApi.billingStatus,
+    enabled: Boolean(user && user.role !== 'admin'),
+    staleTime: 0,
+    refetchInterval: 30_000,
+  })
+
+  const isPendingPayment = billingStatus?.status === 'pending'
+
   const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
   const iconEl = icon
@@ -45,7 +57,23 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
   return (
     <>
       <div className="shrink-0">
-        {isTrial && daysLeft !== null && (
+        {isPendingPayment && (
+          <div className="px-4 py-2 text-xs flex items-center justify-between bg-amber-50 border-b border-amber-200 text-amber-800">
+            <span className="flex items-center gap-1.5">
+              <AlertCircle size={13} className="shrink-0" />
+              <strong>Pagamento pendente.</strong>&nbsp;Seu acesso pode ser suspenso. Regularize agora para continuar usando o Kealex.
+            </span>
+            <button
+              type="button"
+              className="font-bold underline ml-3 shrink-0 hover:text-amber-900"
+              onClick={() => setShowAssinatura(true)}
+            >
+              Pagar agora
+            </button>
+          </div>
+        )}
+
+        {!isPendingPayment && isTrial && daysLeft !== null && (
           <div className={trialBannerClass(daysLeft)}>
             <span>
               {trialBannerText(daysLeft)}
@@ -150,7 +178,11 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
         onClose={() => setShowModalidade(false)}
         onContinueToPayment={() => setShowAssinatura(true)}
       />
-      <AssinaturaModal open={showAssinatura} onClose={() => setShowAssinatura(false)} />
+      <AssinaturaModal 
+        open={showAssinatura} 
+        onClose={() => setShowAssinatura(false)}
+        periodicidadeInicial={isPendingPayment ? 'mensal' : undefined}
+      />
     </>
   )
 }

@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { AlertCircle, CheckCircle2, Clock, XCircle, RefreshCw } from 'lucide-react'
+import { AlertCircle, CheckCircle2, Clock, XCircle, RefreshCw, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useTrial } from '../hooks/useTrial'
 import logo from '../assets/logotipo_kealex.png'
-import { assinaturaApi } from '../api/assinatura'
+import { assinaturaApi, PLANOS_CONFIG } from '../api/assinatura'
 import type { Periodicidade } from '../api/assinatura'
 import { AssinaturaModal } from '../components/AssinaturaModal'
 
@@ -38,12 +39,22 @@ export function PagamentoPendentePage() {
   const corClasse = statusInfo.cor === 'amber' ? { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-500', titulo: 'text-amber-800', msg: 'text-amber-700' } : { bg: 'bg-red-50', border: 'border-red-200', icon: 'text-red-500', titulo: 'text-red-800', msg: 'text-red-700' }
   const [assinaturaOpen, setAssinaturaOpen] = useState(Boolean(user))
 
+  const { isTrial, daysLeft } = useTrial()
   const { data: billingStatus, isFetching } = useQuery({
     queryKey: ['billing-status'],
     queryFn: assinaturaApi.billingStatus,
     enabled: Boolean(user),
     refetchInterval: 10_000,
   })
+
+  const { data: existingSubscription } = useQuery({
+    queryKey: ['assinatura-existente', user?.tenantId],
+    queryFn: assinaturaApi.getAssinatura,
+    enabled: Boolean(user),
+    staleTime: 0,
+  })
+
+  const planoData = existingSubscription ? PLANOS_CONFIG.find((p) => p.id === existingSubscription.plano) : null
 
   useEffect(() => {
     if (billingStatus?.status !== 'active') return
@@ -76,6 +87,51 @@ export function PagamentoPendentePage() {
 
             <h1 className="text-2xl font-extrabold text-[#081B33] mb-2">{statusInfo.titulo}</h1>
             <p className="text-sm text-[#596B82] mb-6">{statusInfo.msg}</p>
+
+            {isTrial && daysLeft !== null && daysLeft > 0 && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2.5 mb-6 flex items-start gap-2 text-xs text-blue-700">
+                <ShieldCheck size={13} className="shrink-0 mt-0.5" />
+                <span>Você está no trial gratuito. A cobrança só inicia após os <strong>{daysLeft} dias restantes</strong>.</span>
+              </div>
+            )}
+
+            {existingSubscription && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left space-y-2">
+                <p className="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3">Assinatura pendente</p>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Plano</span>
+                  <span className="font-semibold text-[#081B33]">{planoData?.nome || existingSubscription.plano}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Periodicidade</span>
+                  <span className="font-semibold text-[#081B33]">{existingSubscription.periodicidade === 'trimestral' ? 'Trimestral (3 meses)' : 'Mensal'}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Valor</span>
+                  <span className="font-semibold text-[#081B33]">R$ {existingSubscription.valor.toFixed(2).replace('.', ',')}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm border-t border-slate-200 pt-2 mt-2">
+                  <span className="text-slate-500">Status</span>
+                  <span className="font-semibold text-amber-600">Pendente</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-500">Criada em</span>
+                  <span className="font-semibold text-[#081B33]">{new Date(existingSubscription.createdAt).toLocaleDateString('pt-BR')}</span>
+                </div>
+                {existingSubscription.nextDueDate && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Próximo vencimento</span>
+                    <span className="font-semibold text-[#081B33]">{new Date(existingSubscription.nextDueDate).toLocaleDateString('pt-BR')}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {existingSubscription && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-6 text-left">
+                <p className="text-xs text-blue-700"><strong>Não criamos uma nova cobrança.</strong> Continue o pagamento existente.</p>
+              </div>
+            )}
 
             {!['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(statusGateway?.toUpperCase() ?? '') && (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left space-y-2">
