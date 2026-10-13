@@ -17,6 +17,10 @@ export interface HolderInfo {
   addressComplement?: string
   phone?: string
   mobilePhone?: string
+  address?: string
+  neighborhood?: string
+  city?: string
+  state?: string
 }
 
 export type Periodicidade = 'mensal' | 'trimestral'
@@ -97,9 +101,18 @@ export interface AssinaturaExistente {
 }
 
 export interface BillingProfile {
+  name: string
+  email: string
   cpfCnpj: string
   phone: string
   mobilePhone: string
+  postalCode: string
+  address: string
+  addressNumber: string
+  addressComplement: string
+  neighborhood: string
+  city: string
+  state: string
 }
 
 export interface PreRegisterResult {

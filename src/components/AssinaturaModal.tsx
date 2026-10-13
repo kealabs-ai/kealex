@@ -59,6 +59,43 @@ function formatCep(v: string) {
   return d.length > 5 ? `${d.slice(0, 5)}-${d.slice(5)}` : d
 }
 
+interface ViaCepResult {
+  logradouro: string
+  bairro: string
+  localidade: string
+  uf: string
+  erro?: boolean
+}
+
+async function fetchCep(cep: string): Promise<ViaCepResult | null> {
+  const digits = cep.replace(/\D/g, '')
+  if (digits.length !== 8) return null
+  try {
+    const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`)
+    const data = await res.json()
+    return data.erro ? null : data
+  } catch {
+    return null
+  }
+}
+
+async function searchCidades(query: string): Promise<{ nome: string; uf: string }[]> {
+  if (query.length < 3) return []
+  try {
+    const res = await fetch(
+      `https://servicodados.ibge.gov.br/api/v1/localidades/municipios?orderBy=nome`
+    )
+    const data: Array<{ nome: string; microrregiao: { mesorregiao: { UF: { sigla: string } } } }> = await res.json()
+    const q = query.toLowerCase()
+    return data
+      .filter((c) => c.nome.toLowerCase().includes(q))
+      .slice(0, 8)
+      .map((c) => ({ nome: c.nome, uf: c.microrregiao.mesorregiao.UF.sigla }))
+  } catch {
+    return []
+  }
+}
+
 function formatPhone(v: string) {
   const d = v.replace(/\D/g, '').slice(0, 11)
   if (d.length <= 2) return d ? `(${d}` : ''
@@ -86,6 +123,10 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
   const [metodo, setMetodo] = useState<MetodoPagamento>('cartao')
   const [pixData, setPixData] = useState<{ qrCode: string; key: string; expiresAt: string; subscriptionId: string; value: number; nextDueDate: string } | null>(null)
   const [copied, setCopied] = useState(false)
+  const [cepLoading, setCepLoading] = useState(false)
+  const [cidadeSugestoes, setCidadeSugestoes] = useState<{ nome: string; uf: string }[]>([])
+  const [cidadeQuery, setCidadeQuery] = useState('')
+  const [showCidadeSugestoes, setShowCidadeSugestoes] = useState(false)
   const { data: billingStatus } = useQuery({
     queryKey: ['billing-status'],
     queryFn: assinaturaApi.billingStatus,
@@ -116,6 +157,10 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     addressComplement: '',
     phone: '',
     mobilePhone: '',
+    address: '',
+    neighborhood: '',
+    city: '',
+    state: '',
   })
 
   const [cartao, setCartao] = useState<CreditCardData>({
@@ -131,9 +176,18 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
   const [assinaturaExistente, setAssinaturaExistente] = useState(false)
   const formTitular: HolderInfo = {
     ...titular,
+    name: titular.name || billingProfile?.name || '',
+    email: titular.email || billingProfile?.email || '',
     cpfCnpj: titular.cpfCnpj || formatCpfCnpj(billingProfile?.cpfCnpj ?? ''),
     phone: titular.phone || formatPhone(billingProfile?.phone ?? ''),
     mobilePhone: titular.mobilePhone || formatPhone(billingProfile?.mobilePhone ?? ''),
+    postalCode: titular.postalCode || formatCep(billingProfile?.postalCode ?? ''),
+    address: titular.address || billingProfile?.address || '',
+    addressNumber: titular.addressNumber || billingProfile?.addressNumber || '',
+    addressComplement: titular.addressComplement || billingProfile?.addressComplement || '',
+    neighborhood: titular.neighborhood || billingProfile?.neighborhood || '',
+    city: titular.city || billingProfile?.city || '',
+    state: titular.state || billingProfile?.state || '',
   }
   useEffect(() => {
     if (billingStatus?.status !== 'active' || step !== 'pix' || !pixData) return
@@ -251,7 +305,47 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
 
   function titularValido() {
     return titular.name && titular.email && [11, 14].includes(titular.cpfCnpj.replace(/\D/g, '').length)
-      && titular.postalCode.replace(/\D/g, '').length === 8 && titular.addressNumber
+      && titular.postalCode.replace(/\D/g, '').length === 8 && titular.addressNumber && titular.mobilePhone
+  }
+
+  async function handleCepChange(cep: string) {
+    const formatted = formatCep(cep)
+    setTitular((t) => ({ ...t, postalCode: formatted }))
+    const digits = cep.replace(/\D/g, '')
+    if (digits.length === 8) {
+      setCepLoading(true)
+      const data = await fetchCep(digits)
+      setCepLoading(false)
+      if (data) {
+        setTitular((t) => ({
+          ...t,
+          address: data.logradouro || t.address,
+          neighborhood: data.bairro || t.neighborhood,
+          city: data.localidade || t.city,
+          state: data.uf || t.state,
+        }))
+        setCidadeQuery(`${data.localidade}, ${data.uf}`)
+      }
+    }
+  }
+
+  async function handleCidadeSearch(query: string) {
+    setCidadeQuery(query)
+    setTitular((t) => ({ ...t, city: query }))
+    if (query.length >= 3) {
+      const sugestoes = await searchCidades(query)
+      setCidadeSugestoes(sugestoes)
+      setShowCidadeSugestoes(true)
+    } else {
+      setCidadeSugestoes([])
+      setShowCidadeSugestoes(false)
+    }
+  }
+
+  function selectCidade(cidade: { nome: string; uf: string }) {
+    setTitular((t) => ({ ...t, city: cidade.nome, state: cidade.uf }))
+    setCidadeQuery(`${cidade.nome}, ${cidade.uf}`)
+    setShowCidadeSugestoes(false)
   }
 
   function cartaoValido() {
@@ -403,7 +497,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
             {step === 'titular' && (
               <motion.div key="titular" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <p className="text-sm text-slate-500 mb-4">Dados do titular do cartao</p>
-                {loadingBillingProfile && <p className="text-xs text-slate-500 mb-3" role="status">Recuperando CPF e telefone cadastrados...</p>}
+                {loadingBillingProfile && <p className="text-xs text-slate-500 mb-3" role="status">Recuperando dados cadastrados...</p>}
                 <div className="space-y-3 mb-6">
                   <div className="grid grid-cols-2 gap-3">
                     <div className="col-span-2">
@@ -412,18 +506,48 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                           placeholder="Nome como no cartao" className={inputCls} />
                       </Field>
                     </div>
-                    <Field label="E-mail">
-                      <input type="email" autoComplete="email" value={titular.email} onChange={(e) => setTitular({ ...titular, email: e.target.value })}
-                        placeholder="email@exemplo.com" className={inputCls} />
-                    </Field>
                     <Field label="CPF ou CNPJ">
                       <input inputMode="numeric" value={titular.cpfCnpj} onChange={(e) => setTitular({ ...titular, cpfCnpj: formatCpfCnpj(e.target.value) })}
                         placeholder="CPF ou CNPJ" className={inputCls} />
                     </Field>
-                    <Field label="CEP">
-                      <input inputMode="numeric" autoComplete="postal-code" value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: formatCep(e.target.value) })}
-                        placeholder="00000-000" className={inputCls} />
+                    <Field label="E-mail">
+                      <input type="email" autoComplete="email" value={titular.email} onChange={(e) => setTitular({ ...titular, email: e.target.value })}
+                        placeholder="email@exemplo.com" className={inputCls} />
                     </Field>
+                    <div className="col-span-2">
+                      <Field label="Celular (WhatsApp) *">
+                        <input inputMode="numeric" value={titular.mobilePhone ?? ''} onChange={(e) => setTitular({ ...titular, mobilePhone: formatPhone(e.target.value) })}
+                          placeholder="(11) 99999-9999" className={inputCls} />
+                      </Field>
+                    </div>
+                    <Field label="CEP">
+                      <div className="relative">
+                        <input inputMode="numeric" autoComplete="postal-code" value={titular.postalCode}
+                          onChange={(e) => handleCepChange(e.target.value)}
+                          placeholder="00000-000" className={inputCls} />
+                        {cepLoading && (
+                          <Loader2 size={13} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-[#00C2A8]" />
+                        )}
+                      </div>
+                    </Field>
+                    <div className="relative">
+                      <Field label="Cidade">
+                        <input value={cidadeQuery} onChange={(e) => handleCidadeSearch(e.target.value)}
+                          onBlur={() => setTimeout(() => setShowCidadeSugestoes(false), 150)}
+                          placeholder="Buscar cidade..." className={inputCls} />
+                      </Field>
+                      {showCidadeSugestoes && cidadeSugestoes.length > 0 && (
+                        <ul className="absolute z-10 left-0 right-0 bg-white border border-slate-200 rounded-xl shadow-lg mt-1 max-h-40 overflow-y-auto">
+                          {cidadeSugestoes.map((c) => (
+                            <li key={`${c.nome}-${c.uf}`}
+                              onMouseDown={() => selectCidade(c)}
+                              className="px-3 py-2 text-xs text-slate-700 hover:bg-[#00C2A8]/10 cursor-pointer flex items-center justify-between">
+                              <span>{c.nome}, {c.uf}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
                     <Field label="Numero">
                       <input value={titular.addressNumber} onChange={(e) => setTitular({ ...titular, addressNumber: e.target.value })}
                         placeholder="123" className={inputCls} />
@@ -432,14 +556,18 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                       <input value={titular.addressComplement ?? ''} onChange={(e) => setTitular({ ...titular, addressComplement: e.target.value })}
                         placeholder="Apto, sala..." className={inputCls} />
                     </Field>
-                    <Field label="Telefone">
-                      <input value={titular.phone ?? ''} onChange={(e) => setTitular({ ...titular, phone: formatPhone(e.target.value) })}
-                        placeholder="(11) 3333-4444" className={inputCls} />
-                    </Field>
-                    <Field label="Celular">
-                      <input value={titular.mobilePhone ?? ''} onChange={(e) => setTitular({ ...titular, mobilePhone: formatPhone(e.target.value) })}
-                        placeholder="(11) 99999-9999" className={inputCls} />
-                    </Field>
+                    <div className="col-span-2">
+                      <Field label="Rua">
+                        <input value={titular.address ?? ''} onChange={(e) => setTitular({ ...titular, address: e.target.value })}
+                          placeholder="Rua, Av., Alameda..." className={inputCls} />
+                      </Field>
+                    </div>
+                    <div className="col-span-2">
+                      <Field label="Bairro">
+                        <input value={titular.neighborhood ?? ''} onChange={(e) => setTitular({ ...titular, neighborhood: e.target.value })}
+                          placeholder="Bairro" className={inputCls} />
+                      </Field>
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2">
