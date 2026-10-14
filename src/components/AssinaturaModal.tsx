@@ -9,6 +9,7 @@ import { useAuth } from '../context/AuthContext'
 import { useToast } from './Toast'
 import { useTrial } from '../hooks/useTrial'
 import { AssinaturaExistente } from './AssinaturaExistente'
+import { CardBrandIndicator } from './CardBrandIndicator'
 
 interface Props {
   open: boolean
@@ -684,8 +685,8 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                   </Field>
                   <Field label="Numero do cartao">
                     <div className="relative">
-                      <CreditCard size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input inputMode="numeric" autoComplete="cc-number" value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: formatCardNumber(e.target.value) })} placeholder="0000 0000 0000 0000" className={`${inputCls} pl-9`} />
+                      <span className="absolute left-3 top-1/2 flex h-5 w-7 -translate-y-1/2 items-center justify-center"><CardBrandIndicator number={cartao.number} /></span>
+                      <input inputMode="numeric" autoComplete="cc-number" value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: formatCardNumber(e.target.value) })} placeholder="0000 0000 0000 0000" className={`${inputCls} pl-12`} />
                     </div>
                   </Field>
                   <div className="grid grid-cols-3 gap-3">

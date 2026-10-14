@@ -93,6 +93,7 @@ export interface BillingStatus {
   subscriptionStatus: string | null
   nextDueDate: string | null
   trialExpiresAt: string | null
+  subscriptionExpiresAt: string | null
 }
 
 export interface AssinaturaExistente {

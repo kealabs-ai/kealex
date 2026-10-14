@@ -3,10 +3,11 @@ import type { ReactNode } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check, CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { Check, CheckCircle2, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
 import { assinaturaApi, PLANOS_CONFIG, PERIODICIDADES_CONFIG, calcularValores, ASAAS_STATUS_APROVADO, type HolderInfo, type CreditCardData, type Periodicidade } from '../../api/assinatura'
 import { Modal } from '../../components/Modal'
 import { AssinaturaExistente } from '../../components/AssinaturaExistente'
+import { CardBrandIndicator } from '../../components/CardBrandIndicator'
 import logo from '../../assets/logotipo_kealex.png'
 
 function fmtCard(v: string) {
@@ -100,7 +101,7 @@ export function AssinaturaPage() {
     mobilePhone: '',
   })
   const [cartao, setCartao] = useState<CreditCardData>({ holderName: '', number: '', expiryMonth: '', expiryYear: '', ccv: '' })
-  const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number; periodicidade: Periodicidade } | null>(null)
+  const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number; periodicidade: Periodicidade; status: string } | null>(null)
   const [apiError, setApiError] = useState('')
   const [assinaturaExistente, setAssinaturaExistente] = useState(false)
   const [cepLoading, setCepLoading] = useState(false)
@@ -174,7 +175,13 @@ export function AssinaturaPage() {
       }
     },
     onSuccess: (data) => {
-      if (!ASAAS_STATUS_APROVADO.has(data.status?.toUpperCase())) {
+      if (!data?.subscriptionId || !data.status) {
+        setApiError('O servidor retornou uma resposta incompleta. Consulte o suporte antes de tentar novamente para evitar criar outra assinatura.')
+        return
+      }
+      const status = data.status.toUpperCase()
+      const isPending = ['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(status)
+      if (!ASAAS_STATUS_APROVADO.has(status) && !isPending) {
         const statusMsg = resolverMensagemStatus(data.status)
         setApiError(statusMsg)
         return
@@ -184,6 +191,7 @@ export function AssinaturaPage() {
         nextDueDate: data.nextDueDate,
         value: data.value,
         periodicidade: data.periodicidade ?? periodicidade,
+        status,
       })
       setStep(4)
     },
@@ -377,8 +385,8 @@ export function AssinaturaPage() {
                   <F label="Nome no cartão"><input autoComplete="cc-name" value={cartao.holderName} onChange={(e) => setCartao({ ...cartao, holderName: e.target.value.toUpperCase() })} placeholder="NOME COMO NO CARTÃO" className={inp} /></F>
                   <F label="Numero do cartao">
                     <div className="relative">
-                      <CreditCard size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                      <input inputMode="numeric" autoComplete="cc-number" value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: fmtCard(e.target.value) })} placeholder="0000 0000 0000 0000" className={`${inp} pl-9`} />
+                      <span className="absolute left-3 top-1/2 flex h-5 w-7 -translate-y-1/2 items-center justify-center"><CardBrandIndicator number={cartao.number} /></span>
+                      <input inputMode="numeric" autoComplete="cc-number" value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: fmtCard(e.target.value) })} placeholder="0000 0000 0000 0000" className={`${inp} pl-12`} />
                     </div>
                   </F>
                   <div className="grid grid-cols-3 gap-3">
@@ -408,24 +416,31 @@ export function AssinaturaPage() {
           {!assinaturaExistente && step === 4 && resultado && (
             <motion.div key="s4" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} className="text-center">
               <Steps cur={4} />
-              <div className="w-16 h-16 rounded-2xl bg-[#00C2A8]/10 border border-[#00C2A8]/30 flex items-center justify-center mx-auto mb-4">
-                <CheckCircle2 size={32} className="text-[#00C2A8]" />
+              <div className={`w-16 h-16 rounded-2xl ${resultado.status === 'PENDING' || resultado.status === 'AWAITING_RISK_ANALYSIS' ? 'bg-amber-400/10 border-amber-300/30' : 'bg-[#00C2A8]/10 border-[#00C2A8]/30'} border flex items-center justify-center mx-auto mb-4`}>
+                {resultado.status === 'PENDING' || resultado.status === 'AWAITING_RISK_ANALYSIS'
+                  ? <AlertCircle size={32} className="text-amber-300" />
+                  : <CheckCircle2 size={32} className="text-[#00C2A8]" />}
               </div>
-              <h1 className="text-2xl font-extrabold text-white mb-2">Assinatura confirmada!</h1>
-              <p className="text-sm text-white/60 mb-6">Pagamento aprovado. O plano {plano.nome} está ativo. Sua conta e período de teste de 7 dias estão prontos.</p>
+              <h1 className="text-2xl font-extrabold text-white mb-2">{resultado.status === 'PENDING' || resultado.status === 'AWAITING_RISK_ANALYSIS' ? 'Pagamento pendente' : 'Assinatura confirmada!'}</h1>
+              <p className="text-sm text-white/60 mb-6">{resultado.status === 'PENDING'
+                ? 'O Asaas recebeu a assinatura e o pagamento aguarda confirmação. Não envie os dados novamente; acompanhe o status na sua conta.'
+                : resultado.status === 'AWAITING_RISK_ANALYSIS'
+                  ? 'O Asaas recebeu a assinatura e está analisando o pagamento. A confirmação será atualizada quando o processamento terminar.'
+                  : `Pagamento aprovado. O plano ${plano.nome} está ativo. Sua conta e período de teste de 7 dias estão prontos.`}</p>
 
               <Card>
                 <div className="space-y-3 text-left">
                   <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Plano</span><span className="font-semibold text-[#081B33]">{plano.nome}</span></div>
                   <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Periodicidade</span><span className="font-semibold text-[#081B33]">{resultado.periodicidade === 'trimestral' ? 'Trimestral (3 meses)' : 'Mensal'}</span></div>
-                  <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Valor pago</span><span className="font-semibold text-[#081B33]">R$ {resultado.value.toFixed(2).replace('.', ',')}</span></div>
+                  <div className="flex items-center justify-between text-sm"><span className="text-slate-500">{resultado.status === 'PENDING' || resultado.status === 'AWAITING_RISK_ANALYSIS' ? 'Valor da cobrança' : 'Valor pago'}</span><span className="font-semibold text-[#081B33]">R$ {resultado.value.toFixed(2).replace('.', ',')}</span></div>
+                  <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Status</span><span className={`font-semibold ${resultado.status === 'PENDING' || resultado.status === 'AWAITING_RISK_ANALYSIS' ? 'text-amber-700' : 'text-[#081B33]'}`}>{resultado.status === 'AWAITING_RISK_ANALYSIS' ? 'Em análise' : resultado.status === 'PENDING' ? 'Pendente' : 'Aprovado'}</span></div>
                   <div className="flex items-center justify-between text-sm"><span className="text-slate-500">Proxima cobranca</span><span className="font-semibold text-[#081B33]">{new Date(resultado.nextDueDate).toLocaleDateString('pt-BR')}</span></div>
                   <div className="flex items-center justify-between text-sm"><span className="text-slate-500">ID da assinatura</span><span className="font-mono text-xs font-semibold text-[#081B33]">{resultado.subscriptionId.slice(0, 16)}...</span></div>
                 </div>
               </Card>
 
               <div className="mt-5 flex gap-3">
-                <Link to="/entrar" className="flex-1 bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-orange-900/30">Acessar meu teste grátis <ArrowRight size={15} /></Link>
+                <Link to="/entrar" className="flex-1 bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-orange-900/30">{resultado.status === 'PENDING' || resultado.status === 'AWAITING_RISK_ANALYSIS' ? 'Acessar minha conta' : 'Acessar meu teste grátis'} <ArrowRight size={15} /></Link>
                 <Link to="/" className="flex-1 border border-white/20 text-white/80 font-semibold rounded-xl hover:bg-white/5 flex items-center justify-center gap-2 text-sm">Voltar ao inicio</Link>
               </div>
             </motion.div>
