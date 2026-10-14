@@ -20,16 +20,17 @@ interface Props {
 }
 
 type MetodoPagamento = 'cartao' | 'pix'
-type Step = 'plano' | 'titular' | 'metodo' | 'cartao' | 'pix' | 'sucesso'
+type Step = 'plano' | 'titular' | 'metodo' | 'cartao' | 'pix' | 'confirmacao' | 'sucesso'
 
 const STEP_LABELS: Record<string, string> = {
   plano: 'Plano',
   titular: 'Titular',
   metodo: 'Pagamento',
-  sucesso: 'Confirmacao',
+  confirmacao: 'Confirmacao',
+  sucesso: 'Concluido',
 }
 
-const STEPS: Step[] = ['plano', 'titular', 'metodo', 'sucesso']
+const STEPS: Step[] = ['plano', 'titular', 'metodo', 'confirmacao', 'sucesso']
 
 function formatCardNumber(v: string) {
   return v.replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim()
@@ -135,15 +136,15 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     refetchInterval: (query) => (step === 'pix' && query.state.data?.status !== 'active') || query.state.data?.status === 'pending' ? 5000 : false,
   })
 
-  // Quando pending: pula direto para cartao com dados já carregados
+  // Quando pending: mantém na step plano para o usuário escolher novamente
   useEffect(() => {
     if (!open) return
-    if (billingStatus?.status === 'pending' && billingProfile && step === 'plano') {
+    if (billingStatus?.status === 'pending' && step === 'plano') {
       const plan = (billingStatus.plano as 'starter' | 'professional') ?? planoInicial ?? 'professional'
       setPlanoId(plan)
-      setStep('cartao')
+      setPeriodicidade('mensal')
     }
-  }, [open, billingStatus?.status, billingProfile])
+  }, [open, billingStatus?.status])
   const {
     data: existingSubscription,
     isLoading: loadingExistingSubscription,
@@ -251,17 +252,10 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // Atualiza dados do titular (sem criar novo registro)
-      await assinaturaApi.criarClienteAsaas(formTitular)
-      queryClient.invalidateQueries({ queryKey: ['billing-profile', user?.tenantId] })
-      // Se já existe assinatura pending, usa reativar em vez de criar nova
-      if (billingStatus?.status === 'pending') {
-        return assinaturaApi.reativarAssinatura()
-      }
       const { customerId } = await assinaturaApi.criarClienteAsaas(formTitular)
+      queryClient.invalidateQueries({ queryKey: ['billing-profile', user?.tenantId] })
       const payload: AssinarPayload = {
-        plano: planoId,
-        periodicidade,
+        plano: planoId, periodicidade,
         asaasCustomerId: customerId,
         creditCard: cartao,
         holderInfo: formTitular,
@@ -309,9 +303,9 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     },
   })
 
-  const planoSelecionado = PLANOS_CONFIG.find((p) => p.id === planoId)!
+  const planoSelecionado = PLANOS_CONFIG.find((p) => p.id === planoId) || PLANOS_CONFIG[1]
   const valores = calcularValores(planoSelecionado.valor, periodicidade)
-  const stepIndexMap: Record<Step, number> = { plano: 0, titular: 1, metodo: 2, cartao: 2, pix: 2, sucesso: 3 }
+  const stepIndexMap: Record<Step, number> = { plano: 0, titular: 1, metodo: 2, cartao: 2, pix: 2, confirmacao: 3, sucesso: 4 }
   const stepIndex = stepIndexMap[step]
 
   function handleClose() {
@@ -406,7 +400,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
           </div>
           {/* Steps */}
           <div className="flex items-center gap-1">
-            {STEPS.filter((s) => s !== 'sucesso').map((s, i) => (
+            {STEPS.filter((s) => s !== 'sucesso' && s !== 'cartao' && s !== 'pix').map((s, i) => (
               <div key={s} className="flex items-center gap-1 flex-1">
                 <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   stepIndex > i ? 'bg-[#00C2A8] text-white' : stepIndex === i ? 'bg-white text-[#081B33]' : 'bg-white/20 text-white/50'
@@ -416,7 +410,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                 <span className={`text-xs hidden sm:block ${stepIndex === i ? 'text-white' : 'text-white/50'}`}>
                   {STEP_LABELS[s]}
                 </span>
-                {i < 2 && <div className="flex-1 h-px bg-white/20 mx-1" />}
+                {i < 3 && <div className="flex-1 h-px bg-white/20 mx-1" />}
               </div>
             ))}
           </div>
@@ -504,7 +498,8 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                 <p className="text-xs font-semibold text-slate-600 mb-2">Periodicidade</p>
                 <div className="grid grid-cols-2 gap-2 mb-5">
                   {PERIODICIDADES_CONFIG.map((per) => {
-                    const v = calcularValores(planoSelecionado.valor, per.id)
+                    const planoPoriodicidade = PLANOS_CONFIG.find((p) => p.id === planoId) || PLANOS_CONFIG[1]
+                    const v = calcularValores(planoPoriodicidade.valor, per.id)
                     return (
                       <button key={per.id} type="button" disabled={billingStatus?.status === 'past_due'} onClick={() => setPeriodicidade(per.id)}
                         className={`p-3 rounded-xl border-2 text-left transition-all disabled:opacity-50 disabled:cursor-not-allowed ${
@@ -721,15 +716,15 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                   <button onClick={() => setStep('metodo')} className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-sm">
                     <ArrowLeft size={15} /> Voltar
                   </button>
-                  <button onClick={() => { setErroCartao(null); mutation.mutate() }} disabled={!cartaoValido() || mutation.isPending}
+                  <button onClick={() => { setErroCartao(null); setStep('confirmacao') }} disabled={!cartaoValido()}
                     className="flex-1 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
-                    {mutation.isPending ? <><Loader2 size={15} className="animate-spin" /> Processando...</> : <>Confirmar <ArrowRight size={15} /></>}
+                    Confirmar <ArrowRight size={15} />
                   </button>
                 </div>
               </motion.div>
             )}
 
-            {/* STEP: PIX */}
+{/* STEP: PIX */}
             {step === 'pix' && (
               <motion.div key="pix" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 {mutationPix.isPending ? (
@@ -783,13 +778,61 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                       <button onClick={() => setStep('metodo')} className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-sm">
                         <ArrowLeft size={15} /> Voltar
                       </button>
-                      <button onClick={() => { setErroCartao(null); mutationPix.mutate() }}
+                      <button onClick={() => { setErroCartao(null); setStep('confirmacao') }}
                         className="flex-1 bg-[#00C2A8] hover:bg-[#00a896] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
-                        <QrCode size={15} /> Gerar QR Code
+                        <QrCode size={15} /> Confirmar
                       </button>
                     </div>
                   </>
                 )}
+              </motion.div>
+            )}
+
+            {/* STEP: CONFIRMACAO */}
+            {step === 'confirmacao' && (
+              <motion.div key="confirmacao" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+                <p className="text-sm text-slate-500 mb-4">Confirme os dados antes de prosseguir</p>
+                <div className="space-y-4 mb-6">
+                  <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+                    <div className="border-b border-slate-200 pb-3">
+                      <p className="text-xs text-slate-500 mb-1">Plano e Periodicidade</p>
+                      <p className="font-bold text-[#081B33]">{planoSelecionado.nome} · {periodicidade === 'mensal' ? 'Mensal' : 'Trimestral (3 meses)'}</p>
+                    </div>
+                    <div className="border-b border-slate-200 pb-3">
+                      <p className="text-xs text-slate-500 mb-1">Titular</p>
+                      <p className="font-bold text-[#081B33]">{titular.name}</p>
+                      <p className="text-xs text-slate-600 mt-1">{titular.email}</p>
+                    </div>
+                    <div className="border-b border-slate-200 pb-3">
+                      <p className="text-xs text-slate-500 mb-1">Forma de Pagamento</p>
+                      <p className="font-bold text-[#081B33]">{metodo === 'cartao' ? `Cartão (${cartao.number.slice(-4)})` : 'PIX'}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 mb-2">Resumo do Pagamento</p>
+                      <div className="space-y-1.5">
+                        <Row label="Valor mensal" value={`R$ ${planoSelecionado.valor.toFixed(2).replace('.', ',')}`} />
+                        {valores.valorDesconto > 0 && (
+                          <Row label={`Desconto (${(valores.percentualDesconto * 100).toFixed(0)}%)`} value={`-R$ ${valores.valorDesconto.toFixed(2).replace('.', ',')}`} />
+                        )}
+                        <div className="border-t border-slate-300 pt-1.5">
+                          <Row label="Total a pagar" value={`R$ ${valores.valorFinal.toFixed(2).replace('.', ',')}`} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-4">
+                  <ShieldCheck size={12} className="text-[#00C2A8]" /> Pagamento processado com seguranca via Asaas.
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => setStep(metodo)} className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-sm">
+                    <ArrowLeft size={15} /> Voltar
+                  </button>
+                  <button onClick={() => { setErroCartao(null); metodo === 'cartao' ? mutation.mutate() : mutationPix.mutate() }} disabled={mutation.isPending || mutationPix.isPending}
+                    className="flex-1 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
+                    {mutation.isPending || mutationPix.isPending ? <><Loader2 size={15} className="animate-spin" /> Processando...</> : <>Confirmar Pagamento <ArrowRight size={15} /></>}
+                  </button>
+                </div>
               </motion.div>
             )}
 

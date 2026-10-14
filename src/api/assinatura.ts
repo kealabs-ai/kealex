@@ -68,6 +68,16 @@ export interface AssinarPixResult {
 /** Status Asaas que representam pagamento aprovado/ativo */
 export const ASAAS_STATUS_APROVADO = new Set(['ACTIVE', 'CONFIRMED', 'RECEIVED'])
 
+async function getPayerIp(): Promise<string> {
+  const response = await fetch('https://api.ipify.org?format=json', {
+    signal: AbortSignal.timeout(5000),
+  })
+  if (!response.ok) throw new Error('Não foi possível identificar o IP do pagador para processar o cartão.')
+  const data: { ip?: string } = await response.json()
+  if (!data.ip) throw new Error('O serviço de identificação do IP não retornou um endereço válido.')
+  return data.ip
+}
+
 export function calcularValores(valorMensal: number, periodicidade: Periodicidade) {
   const meses = periodicidade === 'trimestral' ? 3 : 1
   const percentualDesconto = periodicidade === 'trimestral' ? 0.05 : 0
@@ -130,7 +140,9 @@ export const assinaturaApi = {
     api.post<{ customerId: string }>('/k1/lex/auth/criar-cliente-asaas', holderInfo).then((r) => r.data),
 
   assinar: (payload: AssinarPayload) =>
-    api.post<AssinarResult>('/k1/lex/auth/assinar', { ...payload, remoteIp: '127.0.0.1' }).then((r) => r.data),
+    getPayerIp().then((remoteIp) =>
+      api.post<AssinarResult>('/k1/lex/auth/assinar', { ...payload, remoteIp }, { timeout: 60_000 }).then((r) => r.data),
+    ),
 
   assinarPix: (payload: AssinarPixPayload) =>
     api.post<AssinarPixResult>('/k1/lex/auth/assinar-pix', payload).then((r) => r.data),
@@ -145,7 +157,7 @@ export const assinaturaApi = {
     api.get<AssinaturaExistente>('/k1/lex/auth/assinatura').then((r) => r.data),
 
   reativarAssinatura: () =>
-    api.post<AssinarResult>('/k1/lex/auth/assinatura/reativar', {}).then((r) => r.data),
+    api.post<AssinarResult>('/k1/lex/auth/assinatura/reativar', {}, { timeout: 60_000 }).then((r) => r.data),
 }
 
 export const PLANOS_CONFIG = [

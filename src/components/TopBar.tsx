@@ -181,7 +181,6 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
       <AssinaturaModal 
         open={showAssinatura} 
         onClose={() => setShowAssinatura(false)}
-        periodicidadeInicial={isPendingPayment ? 'mensal' : undefined}
       />
     </>
   )
