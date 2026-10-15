@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, LogOut, ExternalLink, Building2, User, AlertCircle, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
@@ -8,6 +8,7 @@ import { useTrial } from '../hooks/useTrial'
 import { assinaturaApi } from '../api/assinatura'
 import { AssinaturaModal } from './AssinaturaModal'
 import { ModalidadeModal } from './ModalidadeModal'
+import { Modal } from './Modal'
 
 interface TopbarProps {
   title: string
@@ -33,6 +34,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showModalidade, setShowModalidade] = useState(false)
   const [showAssinatura, setShowAssinatura] = useState(false)
+  const [showExpirationNotice, setShowExpirationNotice] = useState(false)
   const { user, logout } = useAuth()
   const { isTrial, daysLeft } = useTrial()
 
@@ -45,6 +47,47 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
   })
 
   const isPendingPayment = billingStatus?.status === 'pending'
+  const subscriptionExpiresAt = billingStatus?.subscriptionExpiresAt
+  const subscriptionDaysLeft = subscriptionExpiresAt
+    ? Math.ceil((new Date(subscriptionExpiresAt).getTime() - Date.now()) / 86_400_000)
+    : null
+  const isSubscriptionExpiring = billingStatus?.status === 'active'
+    && subscriptionDaysLeft !== null
+    && subscriptionDaysLeft >= 1
+    && subscriptionDaysLeft <= 10
+
+  useEffect(() => {
+    if (
+      !user?.tenantId
+      || billingStatus?.status !== 'active'
+      || !subscriptionExpiresAt
+      || subscriptionDaysLeft === null
+      || subscriptionDaysLeft < 1
+      || subscriptionDaysLeft > 10
+    ) return
+
+    const noticeKey = `subscription-expiration-notice:${user.tenantId}:${subscriptionExpiresAt}`
+    if (sessionStorage.getItem(noticeKey) !== 'shown') setShowExpirationNotice(true)
+  }, [billingStatus?.status, subscriptionDaysLeft, subscriptionExpiresAt, user?.tenantId])
+
+  function dismissExpirationNotice() {
+    if (user?.tenantId && subscriptionExpiresAt) {
+      sessionStorage.setItem(`subscription-expiration-notice:${user.tenantId}:${subscriptionExpiresAt}`, 'shown')
+    }
+    setShowExpirationNotice(false)
+  }
+
+  function openRenewalPayment() {
+    dismissExpirationNotice()
+    setShowAssinatura(true)
+  }
+
+  function handleLogout() {
+    Object.keys(sessionStorage)
+      .filter((key) => key.startsWith('subscription-expiration-notice:'))
+      .forEach((key) => sessionStorage.removeItem(key))
+    logout()
+  }
 
   const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
@@ -73,7 +116,26 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
           </div>
         )}
 
-        {!isPendingPayment && isTrial && daysLeft !== null && (
+        {!isPendingPayment && isSubscriptionExpiring && subscriptionDaysLeft !== null && (
+          <div className="px-4 py-2 text-xs flex items-center justify-between gap-3 bg-amber-50 border-b border-amber-200 text-amber-900">
+            <span className="flex items-center gap-1.5">
+              <AlertCircle size={13} className="shrink-0" />
+              <span>
+                <strong>Sua assinatura expira em {subscriptionDaysLeft} dia{subscriptionDaysLeft === 1 ? '' : 's'}.</strong>
+                {' '}Renove para evitar a interrupção do acesso.
+              </span>
+            </span>
+            <button
+              type="button"
+              className="font-bold underline shrink-0 hover:text-amber-950"
+              onClick={openRenewalPayment}
+            >
+              Renovar agora
+            </button>
+          </div>
+        )}
+
+        {!isPendingPayment && !isSubscriptionExpiring && isTrial && daysLeft !== null && (
           <div className={trialBannerClass(daysLeft)}>
             <span>
               {trialBannerText(daysLeft)}
@@ -157,7 +219,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                           <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
                         </div>
                         <button
-                          onClick={() => { setShowUserMenu(false); logout() }}
+                          onClick={() => { setShowUserMenu(false); handleLogout() }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                         >
                           <LogOut size={16} />
@@ -181,8 +243,39 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
       <AssinaturaModal 
         open={showAssinatura} 
         onClose={() => setShowAssinatura(false)}
-        periodicidadeInicial={isPendingPayment ? 'mensal' : undefined}
       />
+      {showExpirationNotice && isSubscriptionExpiring && subscriptionDaysLeft !== null && subscriptionExpiresAt && (
+        <Modal
+          title="Seu acesso está perto de expirar"
+          subtitle="Aviso de vencimento da assinatura"
+          onClose={dismissExpirationNotice}
+          size="sm"
+        >
+          <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+            <p>
+              Seu acesso à plataforma expirará em <strong className="text-slate-900 dark:text-white">{subscriptionDaysLeft} dia{subscriptionDaysLeft === 1 ? '' : 's'}</strong>,
+              {' '}em {new Date(subscriptionExpiresAt).toLocaleDateString('pt-BR')}.
+            </p>
+            <p>Renove antes dessa data para evitar a interrupção do acesso.</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={dismissExpirationNotice}
+                className="flex-1 rounded-xl border border-slate-200 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
+              >
+                Depois
+              </button>
+              <button
+                type="button"
+                onClick={openRenewalPayment}
+                className="flex-1 rounded-xl bg-[#081B33] px-4 py-2.5 font-semibold text-white hover:bg-[#0f2d4a]"
+              >
+                Renovar agora
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </>
   )
 }

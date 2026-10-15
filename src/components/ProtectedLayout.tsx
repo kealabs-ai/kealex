@@ -37,7 +37,6 @@ export function ProtectedLayout() {
   }
 
   const status = billingStatus?.status
-  const isPending = status ? status === 'pending' : trial.isPending
   const isExpired = status
     ? ['trial_expired', 'past_due', 'canceled', 'inactive'].includes(status)
     : trial.isExpired

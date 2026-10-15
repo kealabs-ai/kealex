@@ -262,3 +262,11 @@ Backend /api/cobrancas
 - `KEALEX_API_BASE_URL`: Backend API URL
 - `KEALEX_OPENAI_API_KEY`: OpenAI API key
 - Vite `define` for runtime environment variables
+
+## Subscription and Renewal UI
+
+- `src/api/assinatura.ts` defines subscription checkout and billing-status types, including `subscriptionExpiresAt`.
+- `src/components/AssinaturaModal.tsx` is the authenticated subscription/payment modal; `src/pages/site/AssinaturaPage.tsx` provides public signup checkout.
+- `src/components/CardBrandIndicator.tsx` is shared by both card forms to display the detected card brand.
+- `src/components/TopBar.tsx` reads billing status, presents renewal messaging within 10 days of expiration, and opens `AssinaturaModal` from the renewal action.
+- The backend owns Asaas customer/subscription creation, payment confirmation, webhook event storage, and access-period grants. The frontend displays returned status and expiration information.

@@ -141,7 +141,7 @@ export function AssinaturaExistente({ onNovaCotratacao, onClose }: Props) {
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-4 space-y-2 text-sm">
           <Row label="Plano" value={<PlanoNome plano={assinatura.plano} />} />
           <Row label="Periodicidade" value={assinatura.periodicidade === 'trimestral' ? 'Trimestral (3 meses)' : 'Mensal'} />
-          <Row label="Valor" value={fmtValor(assinatura.valor)} />
+          {assinatura.valor && <Row label="Valor" value={fmtValor(assinatura.valor)} />}
           <Row label="Status" value={<StatusBadge cenario={cenario} subscriptionStatus={assinatura.subscriptionStatus} />} />
           <Row label="Criada em" value={fmtData(assinatura.createdAt)} />
           {assinatura.nextDueDate && <Row label="Próximo vencimento" value={fmtData(assinatura.nextDueDate)} />}
