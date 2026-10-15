@@ -48,17 +48,17 @@ function NavItem({
         to={to}
         className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
           isActive
-            ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/30'
+            ? 'bg-[#087E96] text-white'
             : 'text-slate-400 dark:text-slate-400 hover:text-white hover:bg-white/8 dark:hover:bg-white/5'
         }`}
       >
         <Icon
           size={16}
-          className={`shrink-0 transition-all duration-300 ${isActive ? 'text-white' : 'text-slate-500 group-hover:text-indigo-400'}`}
+          className={`shrink-0 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#20B987]'}`}
         />
         <span className="flex-1 truncate">{label}</span>
         {badge && !isActive && (
-          <span className="text-[9px] font-bold bg-violet-500/20 text-violet-300 px-1.5 py-0.5 rounded-full shrink-0">
+          <span className="text-[9px] font-bold bg-[#20B987]/15 text-[#A7B3C5] px-1.5 py-0.5 rounded-full shrink-0">
             {badge}
           </span>
         )}
@@ -76,14 +76,14 @@ export function Sidebar() {
   const links = isCliente ? clienteLinks : advogadoLinks
 
   return (
-    <aside className="w-64 flex flex-col min-h-screen bg-slate-950 dark:bg-[#070514] border-r border-indigo-950/40 shrink-0">
+    <aside className="w-64 flex flex-col min-h-screen bg-[#102B46] border-r border-white/10 shrink-0">
       {/* Logo */}
-      <div className="px-5 py-4 border-b border-indigo-950/40">
+      <div className="px-5 py-4 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Kealex" className={`h-8 w-auto object-contain transition-all ${isDark ? 'brightness-0 invert' : ''}`} />
+          <img src={logo} alt="Kealex" className="h-8 w-auto object-contain brightness-0 invert" />
           <button
             onClick={toggle}
-            className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/5 transition-all duration-300"
+            className="ml-auto p-1.5 rounded-lg text-[#A7B3C5] hover:text-white hover:bg-white/10 transition-colors duration-200"
             title={isDark ? 'Modo claro' : 'Modo escuro'}
           >
             {isDark ? <Sun size={14} /> : <Moon size={14} />}
@@ -95,43 +95,43 @@ export function Sidebar() {
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {isAdmin ? (
           <>
-            <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-2">Escritório</p>
+            <p className="text-[10px] font-semibold text-[#A7B3C5] uppercase tracking-widest px-3 mb-2">Escritório</p>
             {advogadoLinks.map(({ to, label, icon, badge }, i) => (
               <NavItem key={to} to={to} label={label} icon={icon} badge={badge} delay={i * 0.03} />
             ))}
-            <div className="my-3 border-t border-indigo-950/40" />
-            <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-2">Administração</p>
+            <div className="my-3 border-t border-white/10" />
+            <p className="text-[10px] font-semibold text-[#A7B3C5] uppercase tracking-widest px-3 mb-2">Administração</p>
             <NavItem to="/admin" label="Configurações" icon={Settings} delay={0.25} />
-            <div className="my-3 border-t border-indigo-950/40" />
+            <div className="my-3 border-t border-white/10" />
           </>
         ) : (
           <>
-            <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-2">
+            <p className="text-[10px] font-semibold text-[#A7B3C5] uppercase tracking-widest px-3 mb-2">
               {isCliente ? 'Minha Área' : 'Escritório'}
             </p>
             {links.map(({ to, label, icon, badge }, i) => (
               <NavItem key={to} to={to} label={label} icon={icon} badge={badge} delay={i * 0.04} />
             ))}
-            <div className="my-3 border-t border-indigo-950/40" />
+            <div className="my-3 border-t border-white/10" />
           </>
         )}
 
         {/* Kealex AI Hub */}
-        <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-2">
+        <p className="text-[10px] font-semibold text-[#A7B3C5] uppercase tracking-widest px-3 mb-2">
           Inteligência
         </p>
         <NavItem to="/ia" label="Kealex AI Hub" icon={Sparkles} badge="IA" delay={0.3} />
       </nav>
 
       {/* User footer */}
-      <div className="px-4 py-4 border-t border-indigo-950/40">
+      <div className="px-4 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-violet-600 flex items-center justify-center text-xs font-bold text-white shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-[#087E96] flex items-center justify-center text-xs font-bold text-white shrink-0">
             {user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-slate-200 truncate">{user?.nome}</p>
-            <p className="text-[10px] text-slate-500 truncate capitalize">{user?.role}</p>
+            <p className="text-[10px] text-[#A7B3C5] truncate capitalize">{user?.role}</p>
           </div>
         </div>
       </div>

@@ -94,7 +94,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
   const iconEl = icon
     ? React.isValidElement(icon)
       ? icon
-      : (() => { const Icon = icon as LucideIcon; return <Icon size={20} className="text-indigo-600 dark:text-indigo-400" /> })()
+      : (() => { const Icon = icon as LucideIcon; return <Icon size={20} className="text-[#087E96] dark:text-[#20B987]" /> })()
     : null
 
   return (
@@ -153,7 +153,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3">
+        <div className="bg-white dark:bg-[#111827] border-b border-[#E2E8F0] dark:border-white/10 px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               {iconEl}
@@ -174,7 +174,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                 <button
                   onClick={() => setShowModalidade(true)}
                   title={user.modalidade === 'escritorio' ? 'Associado a escritorio' : 'Modo autonomo'}
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#00C2A8] border border-slate-200 dark:border-slate-700 hover:border-[#00C2A8]/50 px-3 py-1.5 rounded-lg transition-all"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#087E96] dark:hover:text-[#20B987] border border-slate-200 dark:border-slate-700 hover:border-[#087E96]/50 px-3 py-1.5 rounded-lg transition-all"
                 >
                   {user.modalidade === 'escritorio' ? <Building2 size={12} /> : <User size={12} />}
                   {user.modalidade === 'escritorio' ? 'Escritorio' : 'Autonomo'}
@@ -184,7 +184,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
               {user?.role === 'cliente' && (
                 <Link
                   to="/"
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#00C2A8] border border-slate-200 dark:border-slate-700 hover:border-[#00C2A8]/50 px-3 py-1.5 rounded-lg transition-all"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#087E96] dark:hover:text-[#20B987] border border-slate-200 dark:border-slate-700 hover:border-[#087E96]/50 px-3 py-1.5 rounded-lg transition-all"
                 >
                   <ExternalLink size={12} /> Voltar ao site
                 </Link>
@@ -200,7 +200,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.nome}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{user?.role === 'admin' ? 'Administrador' : user?.role}</p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-indigo-600 dark:to-violet-700 flex items-center justify-center text-sm font-bold text-white shadow-md">
+                    <div className="w-10 h-10 rounded-xl bg-[#102B46] flex items-center justify-center text-sm font-bold text-white">
                       {initials}
                     </div>
                     <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
@@ -268,7 +268,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
               <button
                 type="button"
                 onClick={openRenewalPayment}
-                className="flex-1 rounded-xl bg-[#081B33] px-4 py-2.5 font-semibold text-white hover:bg-[#0f2d4a]"
+                className="flex-1 rounded-xl bg-[#102B46] px-4 py-2.5 font-semibold text-white hover:bg-[#0B2035]"
               >
                 Renovar agora
               </button>

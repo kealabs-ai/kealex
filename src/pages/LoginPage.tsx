@@ -7,9 +7,8 @@ import { useNavigate, useLocation, Navigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { authApi } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
-import { Mail, Lock, ArrowRight, Sparkles, ShieldCheck, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, ArrowRight, ShieldCheck, Eye, EyeOff, Scale, FolderKanban, CalendarCheck, FileText } from 'lucide-react'
 import { useToast } from '../components/Toast'
-import fundoImg from '../assets/fundo_home_kealex.jpg'
 import logo from '../assets/logotipo_kealex.png'
 import { TrialModal } from '../components/site/TrialModal'
 
@@ -54,101 +53,79 @@ export function LoginPage() {
   if (user) return <Navigate to="/processos" replace />
 
   return (
-    <div className="min-h-screen flex font-sans">
-      {/* ── Painel esquerdo — imagem + copy ── */}
-      <div className="hidden lg:flex lg:w-[55%] relative overflow-hidden flex-col justify-between p-12">
-        {/* Imagem de fundo */}
-        <img
-          src={fundoImg}
-          alt="Kealex Platform"
-          className="absolute inset-0 w-full h-full object-cover object-center"
-        />
-        {/* Overlay navy */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#081B33]/90 via-[#081B33]/75 to-[#0f2d4a]/80" />
-
-        {/* Ambient glow */}
-        <div className="absolute top-1/3 right-0 w-80 h-80 bg-[#00C2A8]/15 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-[#F96313]/10 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Logo */}
-        <div className="relative z-10">
+    <div className="min-h-screen flex bg-[#F8FAFC] dark:bg-[#070514] font-sans">
+      {/* Painel institucional */}
+      <aside className="hidden lg:flex lg:w-[48%] xl:w-1/2 flex-col justify-between bg-[#081B33] px-12 py-10 xl:px-16 xl:py-12">
+        <div>
           <Link to="/">
-            <img src={logo} alt="Kealex" className="h-9 w-auto object-contain brightness-0 invert" />
+            <img src={logo} alt="Kealex" className="h-10 w-auto object-contain brightness-0 invert" />
           </Link>
         </div>
 
-        {/* Copy central */}
         <motion.div
-          className="relative z-10"
+          className="max-w-xl"
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.6 }}
         >
-          <div className="inline-flex items-center gap-2 bg-[#00C2A8]/15 border border-[#00C2A8]/30 rounded-full px-4 py-1.5 mb-6">
-            <Sparkles size={13} className="text-[#00C2A8]" />
-            <span className="text-xs font-semibold text-[#00C2A8] tracking-wide">Inteligência Artificial Jurídica Brasileira 2026</span>
+          <div className="flex items-center gap-2 text-sm font-semibold text-[#00C2A8] mb-5">
+            <span className="h-px w-8 bg-[#00C2A8]" />
+            Gestão jurídica em um só lugar
           </div>
-
-          <h1 className="text-4xl xl:text-5xl font-extrabold text-white leading-tight mb-5">
-            Gerencie seu escritório.{' '}
-            <span className="bg-gradient-to-r from-[#00C2A8] to-[#38bdf8] bg-clip-text text-transparent">
-              A IA cuida do resto.
-            </span>
+          <h1 className="text-4xl xl:text-[3.25rem] font-bold text-white leading-tight tracking-tight mb-5">
+            Mais clareza para cuidar de cada caso.
           </h1>
-
-          <p className="text-slate-300 text-base leading-relaxed mb-10 max-w-md">
-            Da distribuição ao trânsito em julgado — processos, prazos, cobranças e documentos com IA treinada no CPC, CLT e jurisprudência STF/STJ.
+          <p className="text-[#C3CFDC] text-base leading-relaxed max-w-lg">
+            Organize processos, prazos, documentos e clientes em uma plataforma feita para a rotina do seu escritório.
           </p>
 
-          {/* Stats */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="mt-10 grid gap-3 sm:grid-cols-2">
             {[
-              { label: 'Processos ativos', value: '2.4k+' },
-              { label: 'Documentos', value: '18k+' },
-              { label: 'Advogados', value: '340+' },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
-                <p className="text-2xl font-extrabold text-white">{value}</p>
-                <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+              { label: 'Processos organizados', icon: FolderKanban },
+              { label: 'Prazos acompanhados', icon: CalendarCheck },
+              { label: 'Documentos centralizados', icon: FileText },
+              { label: 'Acesso protegido', icon: ShieldCheck },
+            ].map(({ label, icon: Icon }) => (
+              <div key={label} className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3">
+                <Icon size={17} strokeWidth={1.8} className="text-[#00C2A8]" />
+                <span className="text-sm text-[#E2E8F0]">{label}</span>
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Footer */}
-        <div className="relative z-10 flex items-center justify-between">
-          <p className="text-xs text-slate-500">Kealabs AI © 2026. Todos os direitos reservados.</p>
-          <span className="flex items-center gap-1.5 text-xs text-slate-500">
-            <ShieldCheck size={12} className="text-[#00C2A8]" /> 100% LGPD
-          </span>
+        <div className="flex items-center gap-2 text-xs text-[#93A4B8]">
+          <Scale size={14} className="text-[#00C2A8]" />
+          <span>Kealabs AI © 2026 · Todos os direitos reservados</span>
         </div>
-      </div>
+      </aside>
 
-      {/* ── Painel direito — formulário ── */}
-      <div className="flex-1 flex items-center justify-center p-8 bg-[#F8FAFC]">
+      {/* Formulário */}
+      <main className="flex-1 flex items-center justify-center px-6 py-10 sm:px-10">
         <motion.div
-          className="w-full max-w-sm"
+          className="w-full max-w-[420px]"
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.45 }}
         >
           {/* Logo mobile */}
-          <div className="lg:hidden mb-8">
+          <div className="lg:hidden mb-10">
             <Link to="/">
-              <img src={logo} alt="Kealex" className="h-8 w-auto object-contain" />
+              <img src={logo} alt="Kealex" className="h-8 w-auto object-contain dark:brightness-0 dark:invert" />
             </Link>
           </div>
 
           {/* Heading */}
           <div className="mb-8">
-            <h2 className="text-2xl font-extrabold text-[#081B33] mb-1">Bem-vindo de volta</h2>
-            <p className="text-sm text-[#596B82]">Acesse sua plataforma jurídica com IA</p>
+            <p className="text-sm font-semibold text-[#007A6A] dark:text-[#00C2A8] mb-2">Acesso à plataforma</p>
+            <h2 className="text-3xl font-bold tracking-tight text-[#081B33] dark:text-white mb-2">Bem-vindo de volta</h2>
+            <p className="text-sm leading-6 text-[#596B82] dark:text-slate-400">Entre com os dados da sua conta para continuar.</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
             <div className="space-y-1.5">
-              <label htmlFor="email" className="block text-xs font-bold text-[#081B33] uppercase tracking-wide">Email</label>
+              <label htmlFor="email" className="block text-sm font-semibold text-[#081B33] dark:text-slate-200">E-mail</label>
               <div className="relative">
                 <Mail size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#596B82]" />
                 <input
@@ -157,14 +134,14 @@ export function LoginPage() {
                   type="email"
                   placeholder="seu@escritorio.com.br"
                   autoComplete="email"
-                  className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all text-[#081B33] placeholder-slate-400"
+                  className="w-full pl-10 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-[#D6E0E9] dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#008F7D] dark:focus:border-[#00C2A8] focus:ring-4 focus:ring-[#00C2A8]/15 transition-colors text-[#081B33] dark:text-white placeholder-slate-400"
                 />
               </div>
               {errors.email && <p className="text-xs text-red-500" role="alert">{errors.email.message}</p>}
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="senha" className="block text-xs font-bold text-[#081B33] uppercase tracking-wide">Senha</label>
+              <label htmlFor="senha" className="block text-sm font-semibold text-[#081B33] dark:text-slate-200">Senha</label>
               <div className="relative">
                 <Lock size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#596B82]" />
                 <input
@@ -173,13 +150,13 @@ export function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   autoComplete="current-password"
-                  className="w-full pl-10 pr-10 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all text-[#081B33] placeholder-slate-400"
+                  className="w-full pl-10 pr-10 py-3.5 bg-white dark:bg-slate-900 border border-[#D6E0E9] dark:border-slate-700 rounded-xl text-sm focus:outline-none focus:border-[#008F7D] dark:focus:border-[#00C2A8] focus:ring-4 focus:ring-[#00C2A8]/15 transition-colors text-[#081B33] dark:text-white placeholder-slate-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#596B82] hover:text-[#081B33] transition-colors"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#596B82] dark:text-slate-400 hover:text-[#081B33] dark:hover:text-white transition-colors"
                 >
                   {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
@@ -202,7 +179,7 @@ export function LoginPage() {
               type="submit"
               disabled={mutation.isPending}
               whileTap={{ scale: 0.98 }}
-              className="w-full flex items-center justify-center gap-2 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-60 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg shadow-orange-200 mt-2"
+              className="w-full flex items-center justify-center gap-2 bg-[#081B33] hover:bg-[#102B49] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00C2A8]/30 disabled:opacity-60 text-white py-3.5 rounded-xl text-sm font-semibold transition-colors mt-2"
             >
               {mutation.isPending ? (
                 <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
@@ -216,17 +193,17 @@ export function LoginPage() {
           </form>
 
           {/* Divider */}
-          <div className="flex items-center gap-3 my-6">
-            <div className="flex-1 h-px bg-slate-200" />
-            <span className="text-xs text-slate-400">ou</span>
-            <div className="flex-1 h-px bg-slate-200" />
+          <div className="flex items-center gap-3 my-7">
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
+            <span className="text-xs text-slate-400 dark:text-slate-500">ou</span>
+            <div className="flex-1 h-px bg-slate-200 dark:bg-slate-800" />
           </div>
 
           {/* Trial CTA */}
           <button
             type="button"
             onClick={() => setTrialOpen(true)}
-            className="w-full block text-center py-3 border-2 border-[#081B33] text-[#081B33] font-bold rounded-xl text-sm hover:bg-[#081B33] hover:text-white transition-all"
+            className="w-full block text-center py-3.5 border border-[#B8C8D8] dark:border-slate-700 text-[#081B33] dark:text-slate-200 font-semibold rounded-xl text-sm hover:border-[#008F7D] dark:hover:border-[#00C2A8] hover:bg-[#00C2A8]/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#00C2A8]/20 transition-colors"
           >
             Começar Trial Gratuito — 7 dias
           </button>
@@ -234,11 +211,11 @@ export function LoginPage() {
           <TrialModal open={trialOpen} onClose={() => setTrialOpen(false)} />
 
 
-          <p className="text-xs text-slate-400 text-center mt-6">
-            Kealabs AI © 2026 · <Link to="/privacidade" className="hover:text-[#00C2A8] transition-colors">Privacidade</Link> · <Link to="/lgpd" className="hover:text-[#00C2A8] transition-colors">LGPD</Link>
+          <p className="text-xs text-slate-400 dark:text-slate-500 text-center mt-6">
+            Kealabs AI © 2026 · <Link to="/privacidade" className="hover:text-[#007A6A] dark:hover:text-[#00C2A8] transition-colors">Privacidade</Link> · <Link to="/lgpd" className="hover:text-[#007A6A] dark:hover:text-[#00C2A8] transition-colors">LGPD</Link>
           </p>
         </motion.div>
-      </div>
+      </main>
     </div>
   )
 }
