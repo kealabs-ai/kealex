@@ -32,6 +32,19 @@
   outline-offset: 2px;
 }
 
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
+textarea {
+  border-width: 0 !important;
+  border-color: transparent !important;
+}
+
+.profile-text-input:focus,
+.profile-text-input:focus-visible {
+  border: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
 @theme {
   --color-primary: #087e96;
   --color-primary-dark: #06677c;
@@ -352,21 +365,26 @@ html {
 
 .chat-input-box {
   background: #ffffff;
-  border: 1.5px solid #c8d5e3;
+  border: 0;
   box-shadow: 0 1px 4px rgba(8, 27, 51, 0.07);
 }
 .chat-input-box:focus-within {
-  border-color: #00C2A8;
   box-shadow: 0 0 0 3px rgba(0, 194, 168, 0.12);
+}
+.chat-input-box textarea,
+.chat-input-box textarea:focus,
+.chat-input-box textarea:focus-visible {
+  border: 0;
+  outline: 0;
+  box-shadow: none;
 }
 .dark .chat-input-box {
   background: #1e293b;
-  border-color: rgba(99, 102, 241, 0.2);
+  border: 0;
   box-shadow: none;
 }
 .dark .chat-input-box:focus-within {
-  border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 0 0 3px rgba(32, 185, 135, 0.2);
 }
 
 .chat-send-btn {

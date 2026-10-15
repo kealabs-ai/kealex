@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, LogOut, ExternalLink, Building2, User, AlertCircle, type LucideIcon } from 'lucide-react'
+import { ChevronDown, LogOut, ExternalLink, Building2, User, UserRound, AlertCircle, CalendarDays, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { useTrial } from '../hooks/useTrial'
-import { assinaturaApi } from '../api/assinatura'
+import { assinaturaApi, PLANOS_CONFIG } from '../api/assinatura'
 import { AssinaturaModal } from './AssinaturaModal'
 import { ModalidadeModal } from './ModalidadeModal'
 import { Modal } from './Modal'
+import { ProfileAvatar } from './ProfileAvatar'
 
 interface TopbarProps {
   title: string
@@ -48,6 +49,18 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
 
   const isPendingPayment = billingStatus?.status === 'pending'
   const subscriptionExpiresAt = billingStatus?.subscriptionExpiresAt
+  const activePlan = billingStatus?.status === 'active' && user?.role !== 'admin'
+    ? PLANOS_CONFIG.find((plan) => plan.id === billingStatus.plano)
+    : undefined
+  const nextRenewalDate = billingStatus?.nextDueDate ?? subscriptionExpiresAt
+  const formattedRenewalDate = nextRenewalDate
+    ? (() => {
+        const [year, month, day] = nextRenewalDate.slice(0, 10).split('-').map(Number)
+        return Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)
+          ? new Date(year, month - 1, day).toLocaleDateString('pt-BR')
+          : null
+      })()
+    : null
   const subscriptionDaysLeft = subscriptionExpiresAt
     ? Math.ceil((new Date(subscriptionExpiresAt).getTime() - Date.now()) / 86_400_000)
     : null
@@ -88,8 +101,6 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
       .forEach((key) => sessionStorage.removeItem(key))
     logout()
   }
-
-  const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
   const iconEl = icon
     ? React.isValidElement(icon)
@@ -170,6 +181,18 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
             <div className="flex items-center gap-4">
               {rightContent ?? actions}
 
+              {activePlan && (
+                <div className="hidden lg:flex items-center gap-2.5 border-l border-[#E2E8F0] dark:border-white/10 pl-4" aria-label="Plano e próxima renovação">
+                  <span className="rounded-lg bg-[#087E96]/10 dark:bg-[#087E96]/20 px-2.5 py-1 text-xs font-semibold text-[#087E96] dark:text-[#20B987]">
+                    {activePlan.nome}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <CalendarDays size={14} className="text-[#087E96] dark:text-[#20B987]" />
+                    <span>Próxima renovação: {formattedRenewalDate ?? 'não informada'}</span>
+                  </div>
+                </div>
+              )}
+
               {user && user.role !== 'admin' && (
                 <button
                   onClick={() => setShowModalidade(true)}
@@ -200,9 +223,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.nome}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{user?.role === 'admin' ? 'Administrador' : user?.role}</p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-[#102B46] flex items-center justify-center text-sm font-bold text-white">
-                      {initials}
-                    </div>
+                    <ProfileAvatar user={user} className="h-10 w-10 rounded-xl text-sm" iconSize={19} />
                     <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
                   </button>
 
@@ -212,12 +233,20 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50"
+                        className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50"
                       >
                         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
                           <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.nome}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
                         </div>
+                        <Link
+                          to="/perfil"
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <UserRound size={16} className="text-[#087E96] dark:text-[#20B987]" />
+                          Edição do perfil
+                        </Link>
                         <button
                           onClick={() => { setShowUserMenu(false); handleLogout() }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"

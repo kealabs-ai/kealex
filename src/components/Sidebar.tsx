@@ -8,6 +8,7 @@ import {
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import logo from '../assets/logotipo_kealex.png'
+import { ProfileAvatar } from './ProfileAvatar'
 
 const advogadoLinks: Array<{ to: string; label: string; icon: any; badge?: string }> = [
   { to: '/processos', label: 'Processos & Fases', icon: Briefcase },
@@ -126,9 +127,7 @@ export function Sidebar() {
       {/* User footer */}
       <div className="px-4 py-4 border-t border-white/10">
         <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/3">
-          <div className="w-8 h-8 rounded-lg bg-[#087E96] flex items-center justify-center text-xs font-bold text-white shrink-0">
-            {user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'}
-          </div>
+          <ProfileAvatar user={user} className="h-8 w-8 rounded-lg text-xs" iconSize={16} />
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-slate-200 truncate">{user?.nome}</p>
             <p className="text-[10px] text-[#A7B3C5] truncate capitalize">{user?.role}</p>

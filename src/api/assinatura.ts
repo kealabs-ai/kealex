@@ -154,6 +154,9 @@ export const assinaturaApi = {
   billingProfile: () =>
     api.get<BillingProfile>('/k1/lex/auth/billing-profile').then((r) => r.data),
 
+  updateBillingProfile: (data: BillingProfile) =>
+    api.put<BillingProfile>('/k1/lex/auth/billing-profile', data).then((r) => r.data),
+
   getAssinatura: () =>
     api.get<AssinaturaExistente>('/k1/lex/auth/assinatura').then((r) => r.data),
 
