@@ -2,7 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Briefcase, Bell, Calendar, Gavel, DollarSign, FileText,
-  Users, Sparkles, Settings, Cloud, Database, Bot, Shield,
+  Users, Sparkles, Settings, Shield,
   Sun, Moon, ChevronRight, TrendingUp,
 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
@@ -26,18 +26,6 @@ const clienteLinks: Array<{ to: string; label: string; icon: any; badge?: string
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
   { to: '/documentos', label: 'Documentos', icon: FileText },
   { to: '/lgpd', label: 'LGPD & Privacidade', icon: Shield },
-]
-
-const adminLinks: Array<{ to: string; label: string; icon: any }> = [
-  { to: '/admin?tab=geral',         label: 'Geral',          icon: Settings },
-  { to: '/admin?tab=cdn',           label: 'CDN & Arquivos', icon: Cloud },
-  { to: '/admin?tab=database',      label: 'Banco de Dados', icon: Database },
-  { to: '/admin?tab=ia',            label: 'Config. IA',     icon: Settings },
-  { to: '/admin?tab=agentes',       label: 'Agentes IA',     icon: Bot },
-  { to: '/admin?tab=debug',         label: 'Debug API',      icon: Bot },
-  { to: '/admin?tab=usuarios',      label: 'Usuários',       icon: Users },
-  { to: '/admin?tab=seguranca',     label: 'Segurança',      icon: Shield },
-  { to: '/admin?tab=notificacoes',  label: 'Notificações',   icon: Bell },
 ]
 
 function NavItem({
@@ -112,10 +100,8 @@ export function Sidebar() {
               <NavItem key={to} to={to} label={label} icon={icon} badge={badge} delay={i * 0.03} />
             ))}
             <div className="my-3 border-t border-indigo-950/40" />
-            <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-2">Configurações</p>
-            {adminLinks.map(({ to, label, icon }, i) => (
-              <NavItem key={to} to={to} label={label} icon={icon} delay={i * 0.03} />
-            ))}
+            <p className="text-[10px] font-semibold text-slate-600 uppercase tracking-widest px-3 mb-2">Administração</p>
+            <NavItem to="/admin" label="Configurações" icon={Settings} delay={0.25} />
             <div className="my-3 border-t border-indigo-950/40" />
           </>
         ) : (

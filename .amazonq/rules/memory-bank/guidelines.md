@@ -390,3 +390,11 @@ export function useAuth() {
 - Squash commits before merging
 - Keep commits atomic and focused
 - Reference issues in commit messages
+
+## Subscription and Renewal UX
+
+- Keep subscription renewal inside the existing `AssinaturaModal`; renewal actions should preserve the current payment flow.
+- Use `billingStatus.subscriptionExpiresAt` as the source for expiration messaging. Apply the 10-day window to both the login-time notice and the TopBar banner.
+- Renewal actions open the existing payment modal and retain the current tenant/user context.
+- Use `CardBrandIndicator` in card-number fields so the displayed brand follows the entered number.
+- Treat backend payment status as authoritative. A created subscription or `PENDING` payment is not a confirmed payment.

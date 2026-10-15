@@ -228,6 +228,15 @@ npm run lint
 
 ## Dependencies Summary
 
+## Asaas Subscription Integration
+
+- Subscription requests go through the backend; the browser must not call Asaas directly or contain the Asaas access token.
+- The backend reuses the tenant's stored Asaas customer ID and creates recurring subscriptions through the Asaas subscriptions API. Results exposed to the frontend include subscription ID, next due date, amount, and payment status where applicable.
+- Checkout supports card and PIX. Card data is collected by existing subscription forms, with `CardBrandIndicator` providing a live brand hint.
+- Access duration is calculated server-side after confirmed payment: 30 days for monthly plans and 90 days for quarterly plans. The backend reports the resulting timestamp as `subscriptionExpiresAt` in billing status.
+- Asaas webhooks carry asynchronous payment lifecycle updates. The backend persists events and reconciles subscription/payment state; `PENDING` must not be treated as successful payment.
+- The TopBar uses `subscriptionExpiresAt` to display the 10-day renewal banner and login notice, whose renewal action opens the existing payment modal.
+
 ### Production (17 packages)
 - React ecosystem: react, react-dom, react-router-dom, react-hook-form
 - State: @tanstack/react-query

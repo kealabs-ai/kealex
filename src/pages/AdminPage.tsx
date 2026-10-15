@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Topbar } from '../components/TopBar'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle, RefreshCw, Search, Plus, Pencil, Trash2, Eye, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react'
+import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle, RefreshCw, Search, Plus, Pencil, Trash2, Eye, ToggleLeft, ToggleRight, AlertTriangle, Cloud, Bot, Bell, ArrowLeft, ChevronRight, type LucideIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useConfigDatabase, useSaveConfigDatabase, useDatabaseEnv } from '../hooks/useConfiguracoes'
 import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario } from '../hooks/useUsuarios'
@@ -15,29 +15,94 @@ import { Button, Input, Select, Textarea } from '../components/UI'
 import type { Role, Usuario } from '../types'
 
 type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'seguranca' | 'notificacoes'
+type ConfigOption = { tab: Tab; title: string; description: string; icon: LucideIcon; accent: string }
+
+const configOptions: ConfigOption[] = [
+  { tab: 'geral', title: 'Geral', description: 'Identidade, idioma, fuso horário e informações principais da plataforma.', icon: Settings, accent: 'from-sky-500 to-blue-600' },
+  { tab: 'cdn', title: 'CDN & Arquivos', description: 'Armazenamento, distribuição de arquivos, limites e provedores de mídia.', icon: Cloud, accent: 'from-cyan-500 to-teal-600' },
+  { tab: 'database', title: 'Banco de Dados', description: 'Conexões, ambiente e configurações relacionadas ao banco de dados.', icon: Database, accent: 'from-violet-500 to-indigo-600' },
+  { tab: 'ia', title: 'Configurações de IA', description: 'Provedores, modelos e parâmetros dos recursos de inteligência artificial.', icon: Bot, accent: 'from-fuchsia-500 to-purple-600' },
+  { tab: 'agentes', title: 'Agentes IA', description: 'Gerencie os agentes e suas especializações disponíveis na plataforma.', icon: Bot, accent: 'from-indigo-500 to-violet-600' },
+  { tab: 'debug', title: 'Debug API', description: 'Inspecione integrações e ferramentas de diagnóstico da API.', icon: Activity, accent: 'from-emerald-500 to-teal-600' },
+  { tab: 'usuarios', title: 'Usuários', description: 'Consulte, cadastre e gerencie os acessos dos usuários do sistema.', icon: Users, accent: 'from-orange-500 to-amber-600' },
+  { tab: 'seguranca', title: 'Segurança', description: 'Ajuste recursos e políticas de segurança da plataforma.', icon: Shield, accent: 'from-rose-500 to-red-600' },
+  { tab: 'notificacoes', title: 'Notificações', description: 'Configure canais e preferências de comunicação do sistema.', icon: Bell, accent: 'from-blue-500 to-indigo-600' },
+]
 type FormUsuario = { nome: string; email: string; senha?: string; role: Role; ativo: boolean }
 type UsuariosTabState = { editing: Usuario | null; viewing: Usuario | null; confirmDelete: Usuario | null; open: boolean }
 
 export function AdminPage() {
-  const [searchParams] = useSearchParams()
-  const activeTab = (searchParams.get('tab') as Tab) ?? 'geral'
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requestedTab = searchParams.get('tab') as Tab | null
+  const activeTab = configOptions.some((option) => option.tab === requestedTab) ? requestedTab : null
+  const selectedOption = configOptions.find((option) => option.tab === activeTab)
+
+  function openConfig(tab: Tab) {
+    setSearchParams({ tab })
+  }
+
+  function showConfigHome() {
+    setSearchParams({})
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <Topbar 
-        title="Configurações do Sistema" 
-        subtitle="Gerencie todas as configurações da plataforma" 
-        icon={Settings} 
+        title={selectedOption?.title ?? 'Configurações do Sistema'}
+        subtitle={selectedOption ? 'Configurações da plataforma' : 'Selecione uma área para gerenciar a plataforma'}
+        icon={selectedOption?.icon ?? Settings}
+        actions={activeTab ? (
+          <button
+            type="button"
+            onClick={showConfigHome}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-teal-500/50 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300 dark:hover:text-teal-300"
+          >
+            <ArrowLeft size={16} /> Todas as configurações
+          </button>
+        ) : undefined}
       />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8">
         <motion.div
-          key={activeTab}
+          key={activeTab ?? 'config-home'}
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.2 }}
         >
+          {!activeTab && (
+            <section className="mx-auto w-full max-w-6xl py-2">
+              <div className="mb-7">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Administração</p>
+                <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Central de configurações</h2>
+                <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
+                  Acesse os módulos administrativos para configurar e acompanhar os recursos do Kealex.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                {configOptions.map(({ tab, title, description, icon: Icon, accent }, index) => (
+                  <motion.button
+                    key={tab}
+                    type="button"
+                    onClick={() => openConfig(tab)}
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2, delay: index * 0.035 }}
+                    className="group flex min-h-48 flex-col rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm transition duration-200 hover:-translate-y-1 hover:border-teal-500/50 hover:shadow-lg hover:shadow-slate-900/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-500 dark:border-slate-800 dark:bg-slate-900 dark:hover:border-teal-500/50 dark:hover:shadow-black/20"
+                  >
+                    <span className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${accent} text-white shadow-md`}>
+                      <Icon size={22} strokeWidth={1.8} />
+                    </span>
+                    <span className="flex w-full items-center justify-between gap-3">
+                      <span className="font-semibold text-slate-900 dark:text-white">{title}</span>
+                      <ChevronRight size={17} className="shrink-0 text-slate-400 transition group-hover:translate-x-1 group-hover:text-teal-600 dark:group-hover:text-teal-300" />
+                    </span>
+                    <span className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">{description}</span>
+                  </motion.button>
+                ))}
+              </div>
+            </section>
+          )}
           {activeTab === 'ia' && <IATab />}
           {activeTab === 'agentes' && <AgentesTab />}
           {activeTab === 'debug' && <AgentesDebugPanel />}

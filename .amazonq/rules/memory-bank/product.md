@@ -93,3 +93,12 @@ Kealex is a comprehensive legal technology SaaS platform designed to streamline 
 - **Trial Period**: Limited access for new users
 - **Role-Based Pricing**: Different tiers for admin/lawyer/client access
 - **API Access**: Premium tier for integrations
+
+## Subscription Billing and Expiration
+
+- Paid subscriptions use the Asaas integration and reuse the tenant's existing Asaas customer when available.
+- Checkout supports credit card and PIX. Credit-card forms display the detected card brand while the user types.
+- Pending payments remain pending in the product UI; paid access is granted only after payment confirmation.
+- Confirmed monthly payments grant 30 days of access; quarterly payments grant 90 days. The backend maintains the expiration timestamp and exposes it as `subscriptionExpiresAt`.
+- During the final 10 days before expiration, show a notice at login and a renewal banner in the TopBar. Each provides an action to reopen the payment modal.
+- Asaas webhook events synchronize payment lifecycle changes; persistence and renewal processing are backend responsibilities.
