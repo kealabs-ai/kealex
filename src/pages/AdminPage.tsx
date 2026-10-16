@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Topbar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle, RefreshCw, Search, Plus, Pencil, Trash2, Eye, ToggleLeft, ToggleRight, AlertTriangle, Cloud, Bot, Bell, ArrowLeft, ChevronRight, type LucideIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
@@ -46,24 +47,25 @@ export function AdminPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <Topbar 
-        title={selectedOption?.title ?? 'Configurações do Sistema'}
-        subtitle={selectedOption ? 'Configurações da plataforma' : 'Selecione uma área para gerenciar a plataforma'}
-        icon={selectedOption?.icon ?? Settings}
-        actions={activeTab ? (
-          <button
-            type="button"
-            onClick={showConfigHome}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-teal-500/50 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300 dark:hover:text-teal-300"
-          >
-            <ArrowLeft size={16} /> Todas as configurações
-          </button>
-        ) : undefined}
-      />
+    <div className="kea-process-page">
+      <Topbar title="" hideModuleBar />
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="kea-process-content">
+        <PageBanner
+          section="Administração"
+          title={selectedOption?.title ?? 'Configurações do Sistema'}
+          description={selectedOption?.description ?? 'Selecione uma área para configurar e acompanhar os recursos da plataforma.'}
+          action={activeTab ? (
+            <button
+              type="button"
+              onClick={showConfigHome}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-600 transition hover:border-teal-500/50 hover:text-teal-700 dark:border-slate-700 dark:text-slate-300 dark:hover:text-teal-300"
+            >
+              <ArrowLeft size={16} /> Todas as configurações
+            </button>
+          ) : undefined}
+        />
         <motion.div
           key={activeTab ?? 'config-home'}
           initial={{ opacity: 0, y: 8 }}
@@ -72,13 +74,6 @@ export function AdminPage() {
         >
           {!activeTab && (
             <section className="mx-auto w-full max-w-6xl py-2">
-              <div className="mb-7">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Administração</p>
-                <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Central de configurações</h2>
-                <p className="mt-2 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-                  Acesse os módulos administrativos para configurar e acompanhar os recursos do Kealex.
-                </p>
-              </div>
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
                 {configOptions.map(({ tab, title, description, icon: Icon, accent }, index) => (
                   <motion.button

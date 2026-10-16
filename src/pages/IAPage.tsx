@@ -8,7 +8,6 @@ import { useAgentesPublicos } from '../hooks/useAgentes'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
 import { gerarDocumentoWordDoChat } from '../utils/documentGenerator'
 import { TopBar } from '../components/TopBar'
-import { PageBanner } from '../components/PageBanner'
 import type { AgenteIA } from '../types'
 
 const SUGGESTED_PROMPTS = [
@@ -135,11 +134,9 @@ export function IAPage() {
     <div className="kea-process-page kea-ai-page">
       <TopBar title="" hideModuleBar />
       <div className="kea-process-content">
-        <PageBanner
-          title="Kealex AI Hub"
-          description="Workspace inteligente para consultas jurídicas e criação de documentos."
-          action={
-            <div className="kea-ai-banner-actions">
+        <header className="kea-ai-page-heading">
+          <h1>Kealex AI Hub</h1>
+          <div className="kea-ai-heading-actions">
               {messages.length > 0 && <button type="button" className="kea-ai-new-chat" onClick={clearChat}><RotateCcw size={14} /> Nova conversa</button>}
               {agentesPublicos.length > 0 && (
                 <label className="kea-ai-agent-select">
@@ -151,9 +148,8 @@ export function IAPage() {
                 </label>
               )}
               <span className="kea-ai-model-chip">{config?.modelo || 'Llama 3.3'}</span>
-            </div>
-          }
-        />
+          </div>
+        </header>
 
       {/* Split-screen workspace */}
       <div className="kea-ai-workspace flex-1 flex gap-0 overflow-hidden">
