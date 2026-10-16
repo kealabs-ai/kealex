@@ -252,6 +252,21 @@
 .dark .kea-deadline-row.is-urgent { box-shadow: inset 3px 0 #64748b; }
 .dark .kea-deadline-action.is-edit { border-color: #254a73; background: #102b49; color: #80b4ff; }
 .dark .kea-deadline-action.is-delete { border-color: #63333b; background: #321f25; color: #ff8189; }
+.kea-ai-page { display: flex; height: 100%; min-height: 0; flex-direction: column; }
+.kea-ai-page .kea-process-content { flex: 1; min-height: 0; overflow: hidden; }
+.kea-ai-banner-actions { position: relative; z-index: 2; display: flex; max-width: 42%; align-items: center; justify-content: flex-end; gap: 8px; }
+.kea-ai-new-chat, .kea-ai-agent-select, .kea-ai-model-chip { display: inline-flex; min-height: 38px; align-items: center; gap: 7px; padding: 0 11px; border: 1px solid #d7e3f2; border-radius: 10px; background: rgba(255,255,255,.92); color: #264466; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.kea-ai-new-chat { cursor: pointer; }
+.kea-ai-new-chat:hover { border-color: #a9c9f3; background: #f2f7ff; color: var(--kealex-primary); }
+.kea-ai-agent-select { min-width: 0; color: var(--kealex-primary); }
+.kea-ai-agent-select select { width: min(190px, 18vw); min-width: 95px; border: 0; outline: 0; background: transparent; color: var(--kealex-text); font: inherit; }
+.kea-ai-model-chip { border-color: #cdeee7; background: #effbf8; color: #087e70; }
+.kea-ai-workspace { min-height: 0; border: 1px solid var(--kealex-border); border-radius: 14px; background: var(--kealex-surface); box-shadow: var(--kealex-shadow-card); }
+.dark .kea-ai-new-chat, .dark .kea-ai-agent-select { border-color: #33465c; background: rgba(16,34,56,.94); color: #d2e2f4; }
+.dark .kea-ai-new-chat:hover { border-color: #2760a2; background: #122e4e; color: #8bbaff; }
+.dark .kea-ai-agent-select select { color: #d2e2f4; }
+.dark .kea-ai-model-chip { border-color: #1f554d; background: #102c29; color: #5ed7c2; }
+.dark .kea-ai-workspace { background: var(--kealex-surface); }
 @media (max-width: 1100px) {
   .kea-process-content { padding: 18px; }
   .kea-process-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -266,6 +281,11 @@
   .kea-process-hero-copy { width: 100%; max-width: 440px; }
   .kea-process-hero-copy { padding-bottom: 38px; }
   .kea-process-hero > button { position: absolute; right: 12px; bottom: 12px; margin: 0; }
+  .kea-ai-banner-actions { position: absolute; right: 12px; bottom: 9px; max-width: calc(100% - 24px); gap: 5px; }
+  .kea-ai-new-chat, .kea-ai-agent-select, .kea-ai-model-chip { min-height: 30px; padding: 0 8px; font-size: 10px; }
+  .kea-ai-agent-select select { width: min(145px, 36vw); }
+  .kea-ai-model-chip { display: none; }
+  .kea-ai-workspace { border-radius: 11px; }
   .kea-process-hero-copy > p:last-child { font-size: 12px; }
   .kea-process-stats { gap: 9px; }
   .kea-process-stat { min-height: 112px; gap: 9px; padding: 13px 11px 20px; }

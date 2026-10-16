@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Send, Sparkles, RotateCcw, Copy, Check, Bot, Lightbulb, ChevronRight, AlertCircle, ChevronDown, Download, Edit3 } from 'lucide-react'
+import { Send, Sparkles, RotateCcw, Copy, Check, Bot, Lightbulb, ChevronRight, AlertCircle, Download, Edit3 } from 'lucide-react'
 import { sendMessage, type ChatMessage, type AIConfig } from '../api/ai'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { useAuth } from '../context/AuthContext'
@@ -8,6 +8,7 @@ import { useAgentesPublicos } from '../hooks/useAgentes'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
 import { gerarDocumentoWordDoChat } from '../utils/documentGenerator'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import type { AgenteIA } from '../types'
 
 const SUGGESTED_PROMPTS = [
@@ -42,7 +43,6 @@ export function IAPage() {
   const [streaming, setStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState<string | null>(null)
-  const [showSeletor, setShowSeletor] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<boolean>(false)
@@ -132,85 +132,31 @@ export function IAPage() {
   const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
 
   return (
-    <div className="flex flex-col h-screen mesh-bg dark:bg-transparent">
-      <TopBar
-        icon={Sparkles}
-        title="Kealex AI Hub"
-        subtitle="Workspace Inteligente — Chat + Editor de Documentos"
-        actions={
-          <div className="flex items-center gap-3">
-            {messages.length > 0 && (
-              <button
-                onClick={clearChat}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
-              >
-                <RotateCcw size={13} /> Nova conversa
-              </button>
-            )}
-            {agentesPublicos.length > 0 && (
-              <div className="relative">
-                <button
-                  onClick={() => setShowSeletor(!showSeletor)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-500/30 transition-colors"
-                >
-                  <Bot size={14} className={agenteAtivo ? 'text-indigo-600' : 'text-slate-400'} />
-                  <span className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                    {agenteAtivo?.nome || 'Padrão'}
-                  </span>
-                  <ChevronDown size={12} className="text-slate-400" />
-                </button>
-                {showSeletor && (
-                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-50">
-                    <div className="p-2 space-y-1">
-                      <button
-                        onClick={() => { setAgenteAtivo(null); setShowSeletor(false) }}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                          !agenteAtivo ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                        }`}
-                      >
-                        <div className="font-medium">Agente Padrão</div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                          {configPadrao?.modelo || 'Configuração padrão'}
-                        </div>
-                      </button>
-                      <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-                      {agentesPublicos.filter(a => a.ativo).map((agente) => (
-                        <button
-                          key={agente.id}
-                          onClick={() => { setAgenteAtivo(agente); setShowSeletor(false) }}
-                          className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                            agenteAtivo?.id === agente.id ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          <div className="font-medium">{agente.nome}</div>
-                          {agente.descricao && (
-                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{agente.descricao}</div>
-                          )}
-                          <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500 mt-1">
-                            <span className={agente.provider === 'groq' ? 'text-orange-600' : 'text-indigo-600'}>
-                              {agente.provider === 'groq' ? 'Groq' : 'Cerebras'}
-                            </span>
-                            <span>•</span>
-                            <span>{agente.modelo}</span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            <div className="hidden sm:block px-3 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl">
-              <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                {config?.modelo || 'Llama 3.3'}
-              </span>
+    <div className="kea-process-page kea-ai-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Kealex AI Hub"
+          description="Workspace inteligente para consultas jurídicas e criação de documentos."
+          action={
+            <div className="kea-ai-banner-actions">
+              {messages.length > 0 && <button type="button" className="kea-ai-new-chat" onClick={clearChat}><RotateCcw size={14} /> Nova conversa</button>}
+              {agentesPublicos.length > 0 && (
+                <label className="kea-ai-agent-select">
+                  <Bot size={15} />
+                  <select value={agenteAtivo?.id ?? ''} onChange={(event) => setAgenteAtivo(agentesPublicos.find((agente) => agente.id === event.target.value) ?? null)} aria-label="Selecionar agente de IA">
+                    <option value="">Agente padrão</option>
+                    {agentesPublicos.filter((agente) => agente.ativo).map((agente) => <option key={agente.id} value={agente.id}>{agente.nome} · {agente.modelo}</option>)}
+                  </select>
+                </label>
+              )}
+              <span className="kea-ai-model-chip">{config?.modelo || 'Llama 3.3'}</span>
             </div>
-          </div>
-        }
-      />
+          }
+        />
 
       {/* Split-screen workspace */}
-      <div className="flex-1 flex gap-0 overflow-hidden">
+      <div className="kea-ai-workspace flex-1 flex gap-0 overflow-hidden">
         {/* Left: Chat */}
         <div className="flex-1 flex flex-col overflow-hidden">
           <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
@@ -491,6 +437,7 @@ export function IAPage() {
           </div>
         </div>
       </div>
+    </div>
     </div>
   )
 }
