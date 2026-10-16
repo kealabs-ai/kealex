@@ -394,7 +394,7 @@ input.login-control { box-sizing: border-box; width: 100%; min-width: 0; height:
 .login-password-toggle:hover { background: #eff5fc; color: var(--login-navy); }
 .login-field-error { margin: 0; color: #b42318; font-size: 12px; }
 .login-recovery-row { display: flex; justify-content: flex-end; margin-top: -7px; }
-.login-recovery-row a { color: #0563df; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+.login-recovery-row a, .login-recovery-row button { padding: 0; border: 0; background: transparent; color: #0563df; font: inherit; font-size: 13px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
 .login-error { margin: 0; padding: 11px 13px; border: 1px solid #fecaca; border-radius: 11px; background: #fff1f2; color: #b42318; font-size: 13px; line-height: 1.45; }
 .login-submit { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px; margin-top: 1px; border: 0; border-radius: 14px; background: var(--login-blue); color: #fff; font: inherit; font-size: 16px; font-weight: 700; transition: background .18s, box-shadow .18s; }
 .login-submit:hover:not(:disabled) { background: #0754c4; box-shadow: 0 7px 18px rgba(8,100,232,.22); }
