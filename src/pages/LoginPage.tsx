@@ -9,6 +9,7 @@ import { authApi } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
 import { Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react'
 import { useToast } from '../components/Toast'
+import { TrialModal } from '../components/site/TrialModal'
 import logo from '../assets/logotipo_kealex.png'
 import background from '../assets/bg_login_kealex.png'
 
@@ -26,6 +27,7 @@ export function LoginPage() {
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
   const { error: toastError } = useToast()
   const [showPassword, setShowPassword] = useState(false)
+  const [trialOpen, setTrialOpen] = useState(false)
 
   const mutation = useMutation({
     mutationFn: ({ email, senha }: FormData) => authApi.login(email, senha),
@@ -138,9 +140,10 @@ export function LoginPage() {
 
         <footer className="login-footer">
           <span>Não tem uma conta?</span>{' '}
-          <a href="mailto:contato@kealabs.com.br">Fale com o nosso time</a>
+          <button type="button" onClick={() => setTrialOpen(true)}>Crie sua conta grátis por 7 dias</button>
         </footer>
       </motion.section>
+      <TrialModal open={trialOpen} onClose={() => setTrialOpen(false)} />
     </main>
   )
 }

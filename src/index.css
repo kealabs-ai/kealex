@@ -401,8 +401,20 @@ input.login-control { box-sizing: border-box; width: 100%; min-width: 0; height:
 .login-submit:disabled { cursor: wait; opacity: .74; }
 .login-spinner { width: 17px; height: 17px; border: 2px solid rgba(255,255,255,.45); border-top-color: white; border-radius: 50%; animation: login-spin .7s linear infinite; }
 .login-footer { margin-top: 25px; color: #455d7b; font-size: 13px; text-align: center; }
-.login-footer a { color: #0563df; font-weight: 700; text-decoration: none; }
-.login-footer a:hover { text-decoration: underline; }
+.login-footer a, .login-footer button { padding: 0; border: 0; background: transparent; color: #0563df; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+.login-footer a:hover, .login-footer button:hover { text-decoration: underline; }
+.trial-modal-overlay { box-sizing: border-box; overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom)); }
+.trial-modal-dialog { display: flex; width: min(100%, 520px); max-height: calc(100vh - 24px); max-height: calc(100dvh - 24px); flex-direction: column; margin-block: auto; }
+.trial-modal-header { flex: none; }
+.trial-modal-form { min-height: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
+@media (max-width: 600px) {
+  .trial-modal-overlay { align-items: flex-start; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+  .trial-modal-dialog { width: 100%; max-height: calc(100vh - 16px); max-height: calc(100dvh - 16px); border-radius: 16px; }
+  .trial-modal-header { padding: 15px 17px; }
+  .trial-modal-header h3 { font-size: 16px; line-height: 1.3; }
+  .trial-modal-form { padding: 17px; }
+  .trial-modal-form input, .trial-modal-form select { min-height: 42px; }
+}
 @keyframes login-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 768px) {
