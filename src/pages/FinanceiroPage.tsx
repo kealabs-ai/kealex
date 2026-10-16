@@ -12,6 +12,7 @@ import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards
 import { statusHonorarioBadge } from '../components/Badge'
 import { Button, Input, Select } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { useAuth } from '../context/AuthContext'
 import type { Honorario, StatusHonorario } from '../types'
 
@@ -140,14 +141,14 @@ export function FinanceiroPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-transparent">
-      <TopBar
-        icon={DollarSign}
-        title="Gestão Financeira"
-        subtitle={isCliente ? "Acompanhe seus honorários e pagamentos" : "Análise de receitas, despesas e faturamento"}
-        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Honorário</Button>}
-      />
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+    <div className="kea-process-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Gestão Financeira"
+          description={isCliente ? "Acompanhe seus honorários e pagamentos." : "Analise receitas, despesas e faturamento do escritório."}
+          action={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Honorário</Button>}
+        />
         {stats.length > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.07} />)}

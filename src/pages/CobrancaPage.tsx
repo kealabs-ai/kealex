@@ -9,6 +9,7 @@ import { CobrancaFluxoComponent } from '../components/CobrancaFluxo'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
 import { Button } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { useToast } from '../components/Toast'
 import { useAuth } from '../context/AuthContext'
 import { assinaturaApi } from '../api/assinatura'
@@ -213,19 +214,14 @@ export function CobrancaPage() {
   const labelCls = 'block text-xs font-semibold text-gray-600 dark:text-slate-400 mb-1 uppercase tracking-wide'
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-slate-950">
-      <TopBar
-        icon={TrendingUp}
-        title="Gestão de Cobrança"
-        subtitle="Acompanhe o fluxo de cobrança vinculado a clientes e processos"
-        actions={
-          <Button onClick={() => setShowModal(true)}>
-            <Plus size={15} className="mr-1" />Nova Cobrança
-          </Button>
-        }
-      />
-
-      <div className="flex-1 overflow-y-auto p-8 space-y-6">
+    <div className="kea-process-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Gestão de Cobrança"
+          description="Acompanhe o fluxo de cobrança vinculado a clientes e processos."
+          action={<Button onClick={() => setShowModal(true)}><Plus size={15} className="mr-1" />Nova Cobrança</Button>}
+        />
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.08} />)}

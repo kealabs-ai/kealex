@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import type { ReactNode } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 
 interface StatCardProps {
   label: string
@@ -13,8 +13,8 @@ interface StatCardProps {
 export function StatCard({ label, value, icon, trend, gradient, delay = 0 }: StatCardProps) {
   return (
     <motion.div
-      className="relative overflow-hidden rounded-2xl p-5 card-hover cursor-default"
-      style={{ background: gradient }}
+      className="kea-stat-card relative overflow-hidden rounded-2xl p-5 card-hover cursor-default"
+      style={{ '--stat-accent': gradient } as CSSProperties}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.4 }}
@@ -29,7 +29,7 @@ export function StatCard({ label, value, icon, trend, gradient, delay = 0 }: Sta
             </p>
           )}
         </div>
-        <div className="p-2.5 bg-white/20 rounded-xl text-white">{icon}</div>
+        <div className="kea-stat-icon p-2.5 bg-white/20 rounded-xl text-white">{icon}</div>
       </div>
       {/* decorative circle */}
       <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full bg-white/10" />
@@ -47,7 +47,7 @@ interface DataCardProps {
 export function DataCard({ children, className = '', delay = 0 }: DataCardProps) {
   return (
     <motion.div
-      className={`bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden ${className}`}
+      className={`kea-data-card bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 overflow-hidden ${className}`}
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.35 }}

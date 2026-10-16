@@ -1,7 +1,9 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { Sidebar } from './Sidebar'
+import { AppHeader } from './AppHeader'
 import { useTrial } from '../hooks/useTrial'
 import { assinaturaApi } from '../api/assinatura'
 import type { Role } from '../types'
@@ -23,6 +25,8 @@ export function ProtectedLayout() {
   const { user, role } = useAuth()
   const location = useLocation()
   const trial = useTrial()
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('kealex-sidebar-collapsed') === 'true')
+  const [mobileOpen, setMobileOpen] = useState(false)
   const { data: billingStatus } = useQuery({
     queryKey: ['billing-status'],
     queryFn: assinaturaApi.billingStatus,
@@ -49,12 +53,21 @@ export function ProtectedLayout() {
     return <Navigate to="/processos" replace />
   }
 
+  const toggleSidebar = () => {
+    setCollapsed((value) => {
+      const next = !value
+      localStorage.setItem('kealex-sidebar-collapsed', String(next))
+      return next
+    })
+  }
+
   return (
-    <div className="flex min-h-screen bg-[#F5F8FC] dark:bg-[#070514]">
-      <Sidebar />
-      <main className="flex-1 overflow-auto bg-[#F5F8FC] dark:bg-[#070514]">
-        <Outlet />
-      </main>
+    <div className={`kea-app-shell${collapsed ? ' is-sidebar-collapsed' : ''}`}>
+      <Sidebar collapsed={collapsed} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} onToggle={toggleSidebar} />
+      <div className="kea-app-main">
+        <AppHeader onMenuClick={() => setMobileOpen(true)} />
+        <main className="kea-page-outlet"><Outlet /></main>
+      </div>
     </div>
   )
 }

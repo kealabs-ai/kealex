@@ -10,6 +10,7 @@ import { AssinaturaModal } from './AssinaturaModal'
 import { ModalidadeModal } from './ModalidadeModal'
 import { Modal } from './Modal'
 import { ProfileAvatar } from './ProfileAvatar'
+import mascotBanner from '../assets/mascote_kealex_topo.png'
 
 interface TopbarProps {
   title: string
@@ -17,6 +18,7 @@ interface TopbarProps {
   icon?: LucideIcon | React.ReactNode
   actions?: React.ReactNode
   rightContent?: React.ReactNode
+  hideModuleBar?: boolean
 }
 
 function trialBannerClass(daysLeft: number): string {
@@ -31,7 +33,7 @@ function trialBannerText(daysLeft: number): string {
   return 'Trial gratuito ativo - '
 }
 
-export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarProps) {
+export function TopBar({ title, subtitle, icon, actions, rightContent, hideModuleBar = false }: TopbarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showModalidade, setShowModalidade] = useState(false)
   const [showAssinatura, setShowAssinatura] = useState(false)
@@ -164,9 +166,9 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
           </div>
         )}
 
-        <div className="bg-white dark:bg-[#111827] border-b border-[#E2E8F0] dark:border-white/10 px-6 py-3">
+        <div className={`kea-module-bar bg-white dark:bg-[#111827] border-b border-[#E2E8F0] dark:border-white/10 px-6 py-3${hideModuleBar ? ' hidden' : ''}`} style={{ backgroundImage: `url("${mascotBanner}")` }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            {title && <div className="flex items-center gap-3">
               {iconEl}
               <div>
                 <h1 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h1>
@@ -176,7 +178,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                     : subtitle
                 )}
               </div>
-            </div>
+            </div>}
 
             <div className="flex items-center gap-4">
               {rightContent ?? actions}

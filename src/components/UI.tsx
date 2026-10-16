@@ -23,7 +23,7 @@ export function Button({ variant = 'primary', size = 'md', icon, loading, childr
   return (
     <motion.button
       whileTap={{ scale: 0.97 }}
-      className={`inline-flex items-center font-medium rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`kea-button kea-button-${variant} inline-flex items-center font-medium rounded-xl transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed ${variants[variant]} ${sizes[size]} ${className}`}
       {...(props as any)}
     >
       {loading ? (
@@ -47,7 +47,7 @@ export function Input({ label, error, className = '', ...props }: InputProps) {
     <div className="space-y-1">
       {label && <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">{label}</label>}
       <input
-        className={`w-full border rounded-xl px-3 py-2.5 text-sm transition-all outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
+        className={`kea-ui-input w-full border rounded-xl px-3 py-2.5 text-sm transition-all outline-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500
           ${error ? 'border-red-300 dark:border-red-500/30 focus:ring-2 focus:ring-red-100 dark:focus:ring-red-950/50' : 'border-slate-200 dark:border-slate-700 focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950/50'}
           ${className}`}
         {...props}
@@ -66,7 +66,7 @@ export function Select({ label, children, className = '', ...props }: SelectProp
     <div className="space-y-1">
       {label && <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">{label}</label>}
       <select
-        className={`w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950/50 outline-none transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-white ${className}`}
+        className={`kea-ui-select w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950/50 outline-none transition-all bg-white dark:bg-slate-800 text-slate-900 dark:text-white ${className}`}
         {...props}
       >
         {children}
@@ -84,7 +84,7 @@ export function Textarea({ label, className = '', ...props }: TextareaProps) {
     <div className="space-y-1">
       {label && <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide">{label}</label>}
       <textarea
-        className={`w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950/50 outline-none transition-all resize-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 ${className}`}
+        className={`kea-ui-textarea w-full border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950/50 outline-none transition-all resize-none bg-white dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 ${className}`}
         {...props}
       />
     </div>

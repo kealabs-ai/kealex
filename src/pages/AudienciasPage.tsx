@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Gavel, Plus, Calendar, MapPin, Users, Sparkles, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { DataCard, EmptyState, StatCard, SkeletonRow } from '../components/Cards'
 import { Modal } from '../components/Modal'
 import { Button, Input, Select, Textarea } from '../components/UI'
@@ -60,19 +61,14 @@ export function AudienciasPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-transparent">
-      <TopBar
-        icon={Gavel}
-        title="Audiências Estratégicas"
-        subtitle="Preparação e roteiros inteligentes para audiências"
-        actions={
-          <Button icon={<Plus size={15} />} onClick={() => setOpen(true)}>
-            Nova Audiência
-          </Button>
-        }
-      />
-
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+    <div className="kea-process-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Audiências Estratégicas"
+          description="Prepare audiências com roteiros inteligentes e acompanhe os próximos compromissos."
+          action={<Button icon={<Plus size={15} />} onClick={() => setOpen(true)}>Nova Audiência</Button>}
+        />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.07} />)}
         </div>

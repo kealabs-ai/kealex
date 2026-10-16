@@ -1,16 +1,12 @@
-import { NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import {
-  Briefcase, Bell, Calendar, Gavel, DollarSign, FileText,
-  Users, Sparkles, Settings, Shield,
-  Sun, Moon, ChevronRight, TrendingUp,
-} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
 import logo from '../assets/logotipo_kealex.png'
 import { ProfileAvatar } from './ProfileAvatar'
 
-const advogadoLinks: Array<{ to: string; label: string; icon: any; badge?: string }> = [
+const officeLinks = [
   { to: '/processos', label: 'Processos & Fases', icon: Briefcase },
   { to: '/intimacoes', label: 'Intimações & DJE', icon: Bell, badge: 'Novo' },
   { to: '/prazos', label: 'Calendário de Prazos', icon: Calendar },
@@ -20,8 +16,7 @@ const advogadoLinks: Array<{ to: string; label: string; icon: any; badge?: strin
   { to: '/documentos', label: 'Modelos e Peças', icon: FileText },
   { to: '/clientes', label: 'Clientes & CRM', icon: Users },
 ]
-
-const clienteLinks: Array<{ to: string; label: string; icon: any; badge?: string }> = [
+const clientLinks = [
   { to: '/processos', label: 'Meus Processos', icon: Briefcase },
   { to: '/prazos', label: 'Prazos', icon: Calendar },
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
@@ -29,111 +24,54 @@ const clienteLinks: Array<{ to: string; label: string; icon: any; badge?: string
   { to: '/lgpd', label: 'LGPD & Privacidade', icon: Shield },
 ]
 
-function NavItem({
-  to, label, icon: Icon, badge, delay = 0, exact = false,
-}: {
-  to: string; label: string; icon: any; badge?: string; delay?: number; exact?: boolean
-}) {
-  const location = useLocation()
-  const isAdminTab = to.includes('?tab=')
-  const tab = isAdminTab ? to.split('?tab=')[1] : null
-  const isActive = isAdminTab
-    ? location.pathname === '/admin' && location.search === `?tab=${tab}`
-    : exact
-    ? location.pathname === to
-    : location.pathname.startsWith(to)
+interface Props { collapsed: boolean; mobileOpen: boolean; onClose: () => void; onToggle: () => void }
 
+function NavItem({ to, label, icon: Icon, badge, collapsed, onNavigate }: { to: string; label: string; icon: LucideIcon; badge?: string; collapsed: boolean; onNavigate: () => void }) {
+  const location = useLocation()
+  const active = location.pathname === to || (to === '/admin' && location.pathname === '/admin')
   return (
-    <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay }}>
-      <NavLink
-        to={to}
-        className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-300 ${
-          isActive
-            ? 'bg-[#087E96] text-white'
-            : 'text-slate-400 dark:text-slate-400 hover:text-white hover:bg-white/8 dark:hover:bg-white/5'
-        }`}
-      >
-        <Icon
-          size={16}
-          className={`shrink-0 transition-colors duration-200 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-[#20B987]'}`}
-        />
-        <span className="flex-1 truncate">{label}</span>
-        {badge && !isActive && (
-          <span className="text-[9px] font-bold bg-[#20B987]/15 text-[#A7B3C5] px-1.5 py-0.5 rounded-full shrink-0">
-            {badge}
-          </span>
-        )}
-        {isActive && <ChevronRight size={12} className="shrink-0 opacity-60" />}
+    <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
+      <NavLink to={to} onClick={onNavigate} title={collapsed ? label : undefined} aria-label={label} aria-current={active ? 'page' : undefined} className={`kea-nav-item${active ? ' is-active' : ''}`}>
+        <Icon size={19} aria-hidden="true" />
+        {!collapsed && <span className="kea-nav-label">{label}</span>}
+        {!collapsed && badge && !active && <span className="kea-nav-badge">{badge}</span>}
+        {!collapsed && active && <ChevronRight size={15} className="kea-nav-chevron" />}
       </NavLink>
     </motion.div>
   )
 }
 
-export function Sidebar() {
+export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
   const { user } = useAuth()
-  const { toggle, isDark } = useTheme()
   const isAdmin = user?.role === 'admin'
-  const isCliente = user?.role === 'cliente'
-  const links = isCliente ? clienteLinks : advogadoLinks
+  const isClient = user?.role === 'cliente'
+  const isCollapsed = collapsed && !mobileOpen
+  const links = isClient ? clientLinks : officeLinks
+  const nav = (items: typeof officeLinks) => items.map(({ to, label, icon, badge }) => <NavItem key={to} to={to} label={label} icon={icon} badge={badge} collapsed={isCollapsed} onNavigate={onClose} />)
 
   return (
-    <aside className="w-64 flex flex-col min-h-screen bg-[#102B46] border-r border-white/10 shrink-0">
-      {/* Logo */}
-      <div className="px-5 py-4 border-b border-white/10">
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="Kealex" className="h-8 w-auto object-contain brightness-0 invert" />
-          <button
-            onClick={toggle}
-            className="ml-auto p-1.5 rounded-lg text-[#A7B3C5] hover:text-white hover:bg-white/10 transition-colors duration-200"
-            title={isDark ? 'Modo claro' : 'Modo escuro'}
-          >
-            {isDark ? <Sun size={14} /> : <Moon size={14} />}
+    <>
+      <button type="button" className={`kea-sidebar-scrim${mobileOpen ? ' is-visible' : ''}`} onClick={onClose} aria-label="Fechar menu" tabIndex={mobileOpen ? 0 : -1} />
+      <aside className={`kea-sidebar${isCollapsed ? ' is-collapsed' : ''}${mobileOpen ? ' is-mobile-open' : ''}`} aria-label="Navegação principal">
+        <div className="kea-sidebar-brand">
+          <Link to="/processos" onClick={onClose} aria-label="KEALEX — página inicial"><img src={logo} alt="KEALEX" /></Link>
+          <button type="button" className="kea-sidebar-toggle" onClick={mobileOpen ? onClose : onToggle} aria-label={mobileOpen ? 'Fechar menu' : collapsed ? 'Expandir menu' : 'Recolher menu'} title={mobileOpen ? 'Fechar menu' : collapsed ? 'Expandir menu' : 'Recolher menu'}>
+            {mobileOpen ? <X size={18} /> : <ChevronRight size={18} className={collapsed ? '' : 'is-rotated'} />}
           </button>
         </div>
-      </div>
-
-      {/* Nav */}
-      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
-        {isAdmin ? (
-          <>
-            <p className="text-[10px] font-semibold text-[#A7B3C5] uppercase tracking-widest px-3 mb-2">Escritório</p>
-            {advogadoLinks.map(({ to, label, icon, badge }, i) => (
-              <NavItem key={to} to={to} label={label} icon={icon} badge={badge} delay={i * 0.03} />
-            ))}
-            <div className="my-3 border-t border-white/10" />
-            <p className="text-[10px] font-semibold text-[#A7B3C5] uppercase tracking-widest px-3 mb-2">Administração</p>
-            <NavItem to="/admin" label="Configurações" icon={Settings} delay={0.25} />
-            <div className="my-3 border-t border-white/10" />
-          </>
-        ) : (
-          <>
-            <p className="text-[10px] font-semibold text-[#A7B3C5] uppercase tracking-widest px-3 mb-2">
-              {isCliente ? 'Minha Área' : 'Escritório'}
-            </p>
-            {links.map(({ to, label, icon, badge }, i) => (
-              <NavItem key={to} to={to} label={label} icon={icon} badge={badge} delay={i * 0.04} />
-            ))}
-            <div className="my-3 border-t border-white/10" />
-          </>
-        )}
-
-        {/* Kealex AI Hub */}
-        <p className="text-[10px] font-semibold text-[#A7B3C5] uppercase tracking-widest px-3 mb-2">
-          Inteligência
-        </p>
-        <NavItem to="/ia" label="Kealex AI Hub" icon={Sparkles} badge="IA" delay={0.3} />
-      </nav>
-
-      {/* User footer */}
-      <div className="px-4 py-4 border-t border-white/10">
-        <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/3">
-          <ProfileAvatar user={user} className="h-8 w-8 rounded-lg text-xs" iconSize={16} />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-slate-200 truncate">{user?.nome}</p>
-            <p className="text-[10px] text-[#A7B3C5] truncate capitalize">{user?.role}</p>
-          </div>
+        <nav className="kea-sidebar-nav">
+          {!isCollapsed && <p className="kea-nav-section">{isClient ? 'Minha área' : 'Escritório'}</p>}
+          {nav(links)}
+          {!isClient && isAdmin && !isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Administração</p>}
+          {isAdmin && <NavItem to="/admin" label="Configurações" icon={Settings} collapsed={isCollapsed} onNavigate={onClose} />}
+          {!isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Inteligência</p>}
+          <NavItem to="/ia" label="Kealex AI Hub" icon={Sparkles} badge="IA" collapsed={isCollapsed} onNavigate={onClose} />
+        </nav>
+        <div className="kea-sidebar-user" title={isCollapsed ? user?.nome : undefined}>
+          <ProfileAvatar user={user} className="kea-sidebar-avatar" iconSize={17} />
+          {!isCollapsed && <div className="kea-sidebar-user-info"><strong>{user?.nome}</strong><span>{user?.role === 'admin' ? 'Administrador' : user?.role}</span></div>}
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   )
 }
