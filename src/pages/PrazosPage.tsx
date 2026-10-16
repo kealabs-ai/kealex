@@ -10,6 +10,7 @@ import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards
 import { statusPrazoBadge } from '../components/Badge'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { useAuth } from '../context/AuthContext'
 import type { Prazo, StatusPrazo } from '../types'
 
@@ -58,35 +59,35 @@ export function PrazosPage() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-slate-950">
-      <TopBar
-        icon={Clock}
-        title="Prazos"
-        subtitle={isCliente ? "Acompanhe os prazos dos seus processos" : "Controle de prazos processuais"}
-        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Prazo</Button>}
-      />
-      <div className="flex-1 overflow-y-auto p-8 space-y-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="kea-process-page kea-deadline-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Prazos"
+          description={isCliente ? "Acompanhe os prazos dos seus processos." : "Controle prazos processuais e acompanhe vencimentos dos processos."}
+          action={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Prazo</Button>}
+        />
+        <div className="kea-deadline-stats grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.08} />)}
         </div>
 
         {vencendoList.length > 0 && (
           <motion.div
-            className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 rounded-2xl p-4"
+            className="kea-deadline-alert"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
           >
             <div className="flex items-start gap-3">
-              <div className="p-2 bg-amber-100 dark:bg-amber-900/50 rounded-xl shrink-0">
-                <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400" />
+              <div className="kea-deadline-alert-icon">
+                <AlertTriangle size={17} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">{vencendoList.length} prazo(s) vencendo nos próximos 7 dias</p>
+                <p className="kea-deadline-alert-title">{vencendoList.length} prazo(s) vencendo nos próximos 7 dias</p>
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {vencendoList.map((p) => {
                     const dias = diasRestantes(p.dataVencimento)
                     return (
-                      <span key={p.id} className="inline-flex items-center gap-1 bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-lg px-2 py-0.5 text-[11px] text-amber-700 dark:text-amber-300 break-words max-w-full">
+                      <span key={p.id} className="kea-deadline-alert-item">
                         <Clock size={10} className="shrink-0" />
                         <span className="truncate max-w-[140px]">{p.titulo}</span>
                         <span className="font-bold shrink-0">{dias <= 0 ? 'hoje' : `${dias}d`}</span>
@@ -101,20 +102,20 @@ export function PrazosPage() {
 
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Calendário - Esquerda (1 coluna) */}
-          <div className="lg:col-span-1">
+          <div className="kea-deadline-calendar lg:col-span-1">
             <Calendar prazos={prazosList} onDateSelect={() => {}} />
           </div>
 
           {/* Tabela de Prazos - Direita (3 colunas) */}
-          <div className="lg:col-span-3">
-            <DataCard delay={0.2}>
-              <div className="flex items-center gap-3 p-4 border-b border-gray-200 dark:border-slate-700">
-                <div className="relative flex-1">
-                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-500" />
-                  <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar prazo..." className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-slate-400 focus:outline-none focus:border-indigo-400 dark:focus:border-indigo-500 focus:ring-2 focus:ring-indigo-50 dark:focus:ring-indigo-950 transition-all" />
+          <div className="kea-deadline-list lg:col-span-3">
+            <DataCard delay={0.2} className="kea-deadline-table-card">
+              <div className="kea-deadline-search-row">
+                <div className="kea-deadline-search">
+                  <Search size={16} />
+                  <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar prazo..." aria-label="Buscar prazo" />
                 </div>
               </div>
-              <table className="w-full text-sm">
+              <table className="kea-deadline-table w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50">
                     {['Título', 'Descrição', 'Vencimento', 'Dias', 'Status', ''].map((h) => (
@@ -135,7 +136,7 @@ export function PrazosPage() {
                         return (
                           <motion.tr
                             key={p.id}
-                            className={`border-b border-gray-200 dark:border-slate-700 transition-colors group ${urgente ? 'bg-red-50/40 dark:bg-red-950/20 hover:bg-red-50/60 dark:hover:bg-red-950/30' : 'hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20'}`}
+                            className={`kea-deadline-row ${urgente ? 'is-urgent' : ''}`}
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: i * 0.04 }}
@@ -152,8 +153,8 @@ export function PrazosPage() {
                             <td className="px-4 py-3.5">
                               {!isCliente && (
                                 <div className="flex gap-1.5 justify-end">
-                                  <button onClick={() => openEdit(p)} aria-label={`Editar ${p.titulo}`} style={{ padding: 7, borderRadius: 8, background: '#eef2ff', color: '#4f46e5', border: 'none', cursor: 'pointer', display: 'flex' }} title="Editar"><Pencil size={14} /></button>
-                                  <button onClick={() => setConfirmDelete(p)} aria-label={`Excluir ${p.titulo}`} style={{ padding: 7, borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', display: 'flex' }} title="Excluir"><Trash2 size={14} /></button>
+                                  <button className="kea-deadline-action is-edit" onClick={() => openEdit(p)} aria-label={`Editar ${p.titulo}`} title="Editar"><Pencil size={14} /></button>
+                                  <button className="kea-deadline-action is-delete" onClick={() => setConfirmDelete(p)} aria-label={`Excluir ${p.titulo}`} title="Excluir"><Trash2 size={14} /></button>
                                 </div>
                               )}
                             </td>

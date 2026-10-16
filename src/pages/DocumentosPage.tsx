@@ -9,6 +9,7 @@ import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards
 import { statusDocumentoBadge } from '../components/Badge'
 import { Button, Input, Select } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { useAuth } from '../context/AuthContext'
 import type { Documento, StatusDocumento, TipoDocumento } from '../types'
 
@@ -86,14 +87,14 @@ export function DocumentosPage() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-slate-950">
-      <TopBar
-        icon={FileText}
-        title="Documentos"
-        subtitle={isCliente ? "Acesse os documentos dos seus processos" : "Gestão de documentos processuais"}
-        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Documento</Button>}
-      />
-      <div className="flex-1 overflow-y-auto p-8 space-y-6">
+    <div className="kea-process-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Documentos"
+          description={isCliente ? "Acesse os documentos dos seus processos." : "Organize e acompanhe os documentos processuais do escritório."}
+          action={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Documento</Button>}
+        />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.08} />)}
         </div>

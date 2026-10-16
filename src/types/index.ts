@@ -150,6 +150,8 @@ export interface AuthUser {
   plano?: Plano | string
   modalidade?: 'autonomo' | 'escritorio'
   escritorioId?: string
+  avatarUrl?: string
+  avatarId?: string
 }
 
 export type AIProvider = 'cerebras' | 'groq'

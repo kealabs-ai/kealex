@@ -12,6 +12,7 @@ import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards
 import { statusHonorarioBadge } from '../components/Badge'
 import { Button, Input, Select } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { useAuth } from '../context/AuthContext'
 import type { Honorario, StatusHonorario } from '../types'
 
@@ -140,14 +141,14 @@ export function FinanceiroPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-transparent">
-      <TopBar
-        icon={DollarSign}
-        title="Gestão Financeira"
-        subtitle={isCliente ? "Acompanhe seus honorários e pagamentos" : "Análise de receitas, despesas e faturamento"}
-        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Honorário</Button>}
-      />
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+    <div className="kea-process-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Gestão Financeira"
+          description={isCliente ? "Acompanhe seus honorários e pagamentos." : "Analise receitas, despesas e faturamento do escritório."}
+          action={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Honorário</Button>}
+        />
         {stats.length > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.07} />)}
@@ -168,8 +169,8 @@ export function FinanceiroPage() {
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-indigo-950/40 p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Ticket Médio</span>
-                  <div className="w-7 h-7 rounded-lg bg-violet-50 dark:bg-violet-950/40 flex items-center justify-center">
-                    <Target size={13} className="text-violet-600 dark:text-violet-400" />
+                  <div className="w-7 h-7 rounded-lg bg-[#087E96]/10 dark:bg-[#087E96]/20 flex items-center justify-center">
+                    <Target size={13} className="text-[#087E96] dark:text-[#20B987]" />
                   </div>
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white">{fmt(kpis.ticketMedio)}</p>
@@ -197,8 +198,8 @@ export function FinanceiroPage() {
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-indigo-950/40 p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Inadimplência</span>
-                  <div className="w-7 h-7 rounded-lg bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center">
-                    <TrendingDown size={13} className="text-rose-600 dark:text-rose-400" />
+                  <div className="w-7 h-7 rounded-lg bg-[#DC3545]/10 dark:bg-[#DC3545]/20 flex items-center justify-center">
+                    <TrendingDown size={13} className="text-[#DC3545] dark:text-[#F8717D]" />
                   </div>
                 </div>
                 <p className="text-xl font-bold text-slate-900 dark:text-white">{kpis.taxaInadimplencia}%</p>

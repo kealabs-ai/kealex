@@ -7,6 +7,7 @@ import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
 import { Button, Input, Textarea } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import type { Cliente } from '../types'
 
 type FormData = {
@@ -51,14 +52,14 @@ export function ClientesPage() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-white dark:bg-slate-950">
-      <TopBar
-        icon={UserCheck}
-        title="Clientes"
-        subtitle="Gerencie sua carteira de clientes"
-        actions={<Button icon={<Plus size={15} />} onClick={openCreate}>Novo Cliente</Button>}
-      />
-      <div className="flex-1 overflow-y-auto p-8 space-y-6">
+    <div className="kea-process-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Clientes"
+          description="Gerencie sua carteira de clientes e mantenha os dados organizados."
+          action={<Button icon={<Plus size={15} />} onClick={openCreate}>Novo Cliente</Button>}
+        />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.08} />)}
         </div>

@@ -25,6 +25,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { ErrorPage } from './pages/ErrorPage'
 import { TrialExpiradoPage } from './pages/TrialExpiradoPage'
 import { PagamentoPendentePage } from './pages/PagamentoPendentePage'
+import { PerfilPage } from './pages/PerfilPage'
 import { AssinaturaPage } from './pages/site/AssinaturaPage'
 import { CookieConsent } from './components/CookieConsent'
 
@@ -65,6 +66,7 @@ export default function App() {
                   <Route path="/ia" element={<IAPage />} />
                   <Route path="/intimacoes" element={<IntimacoesPage />} />
                   <Route path="/audiencias" element={<AudienciasPage />} />
+                  <Route path="/perfil" element={<PerfilPage />} />
                 </Route>
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>

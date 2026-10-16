@@ -1,14 +1,16 @@
 import React, { useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ChevronDown, LogOut, ExternalLink, Building2, User, AlertCircle, type LucideIcon } from 'lucide-react'
+import { ChevronDown, LogOut, ExternalLink, Building2, User, UserRound, AlertCircle, CalendarDays, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { useTrial } from '../hooks/useTrial'
-import { assinaturaApi } from '../api/assinatura'
+import { assinaturaApi, PLANOS_CONFIG } from '../api/assinatura'
 import { AssinaturaModal } from './AssinaturaModal'
 import { ModalidadeModal } from './ModalidadeModal'
 import { Modal } from './Modal'
+import { ProfileAvatar } from './ProfileAvatar'
+import mascotBanner from '../assets/mascote_kealex_topo.png'
 
 interface TopbarProps {
   title: string
@@ -16,6 +18,7 @@ interface TopbarProps {
   icon?: LucideIcon | React.ReactNode
   actions?: React.ReactNode
   rightContent?: React.ReactNode
+  hideModuleBar?: boolean
 }
 
 function trialBannerClass(daysLeft: number): string {
@@ -30,7 +33,7 @@ function trialBannerText(daysLeft: number): string {
   return 'Trial gratuito ativo - '
 }
 
-export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarProps) {
+export function TopBar({ title, subtitle, icon, actions, rightContent, hideModuleBar = false }: TopbarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showModalidade, setShowModalidade] = useState(false)
   const [showAssinatura, setShowAssinatura] = useState(false)
@@ -48,6 +51,18 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
 
   const isPendingPayment = billingStatus?.status === 'pending'
   const subscriptionExpiresAt = billingStatus?.subscriptionExpiresAt
+  const activePlan = billingStatus?.status === 'active' && user?.role !== 'admin'
+    ? PLANOS_CONFIG.find((plan) => plan.id === billingStatus.plano)
+    : undefined
+  const nextRenewalDate = billingStatus?.nextDueDate ?? subscriptionExpiresAt
+  const formattedRenewalDate = nextRenewalDate
+    ? (() => {
+        const [year, month, day] = nextRenewalDate.slice(0, 10).split('-').map(Number)
+        return Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)
+          ? new Date(year, month - 1, day).toLocaleDateString('pt-BR')
+          : null
+      })()
+    : null
   const subscriptionDaysLeft = subscriptionExpiresAt
     ? Math.ceil((new Date(subscriptionExpiresAt).getTime() - Date.now()) / 86_400_000)
     : null
@@ -89,12 +104,10 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
     logout()
   }
 
-  const initials = user?.nome?.split(' ').map((n) => n[0]).slice(0, 2).join('') ?? '?'
-
   const iconEl = icon
     ? React.isValidElement(icon)
       ? icon
-      : (() => { const Icon = icon as LucideIcon; return <Icon size={20} className="text-indigo-600 dark:text-indigo-400" /> })()
+      : (() => { const Icon = icon as LucideIcon; return <Icon size={20} className="text-[#087E96] dark:text-[#20B987]" /> })()
     : null
 
   return (
@@ -153,9 +166,9 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
           </div>
         )}
 
-        <div className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-6 py-3">
+        <div className={`kea-module-bar bg-white dark:bg-[#111827] border-b border-[#E2E8F0] dark:border-white/10 px-6 py-3${hideModuleBar ? ' hidden' : ''}`} style={{ backgroundImage: `url("${mascotBanner}")` }}>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            {title && <div className="flex items-center gap-3">
               {iconEl}
               <div>
                 <h1 className="text-lg font-bold text-slate-900 dark:text-white">{title}</h1>
@@ -165,16 +178,28 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                     : subtitle
                 )}
               </div>
-            </div>
+            </div>}
 
             <div className="flex items-center gap-4">
               {rightContent ?? actions}
+
+              {activePlan && (
+                <div className="hidden lg:flex items-center gap-2.5 border-l border-[#E2E8F0] dark:border-white/10 pl-4" aria-label="Plano e próxima renovação">
+                  <span className="rounded-lg bg-[#087E96]/10 dark:bg-[#087E96]/20 px-2.5 py-1 text-xs font-semibold text-[#087E96] dark:text-[#20B987]">
+                    {activePlan.nome}
+                  </span>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <CalendarDays size={14} className="text-[#087E96] dark:text-[#20B987]" />
+                    <span>Próxima renovação: {formattedRenewalDate ?? 'não informada'}</span>
+                  </div>
+                </div>
+              )}
 
               {user && user.role !== 'admin' && (
                 <button
                   onClick={() => setShowModalidade(true)}
                   title={user.modalidade === 'escritorio' ? 'Associado a escritorio' : 'Modo autonomo'}
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#00C2A8] border border-slate-200 dark:border-slate-700 hover:border-[#00C2A8]/50 px-3 py-1.5 rounded-lg transition-all"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#087E96] dark:hover:text-[#20B987] border border-slate-200 dark:border-slate-700 hover:border-[#087E96]/50 px-3 py-1.5 rounded-lg transition-all"
                 >
                   {user.modalidade === 'escritorio' ? <Building2 size={12} /> : <User size={12} />}
                   {user.modalidade === 'escritorio' ? 'Escritorio' : 'Autonomo'}
@@ -184,7 +209,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
               {user?.role === 'cliente' && (
                 <Link
                   to="/"
-                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#00C2A8] border border-slate-200 dark:border-slate-700 hover:border-[#00C2A8]/50 px-3 py-1.5 rounded-lg transition-all"
+                  className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#087E96] dark:hover:text-[#20B987] border border-slate-200 dark:border-slate-700 hover:border-[#087E96]/50 px-3 py-1.5 rounded-lg transition-all"
                 >
                   <ExternalLink size={12} /> Voltar ao site
                 </Link>
@@ -200,9 +225,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.nome}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{user?.role === 'admin' ? 'Administrador' : user?.role}</p>
                     </div>
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 dark:from-indigo-600 dark:to-violet-700 flex items-center justify-center text-sm font-bold text-white shadow-md">
-                      {initials}
-                    </div>
+                    <ProfileAvatar user={user} className="h-10 w-10 rounded-xl text-sm" iconSize={19} />
                     <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
                   </button>
 
@@ -212,12 +235,20 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
-                        className="absolute right-0 top-full mt-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50"
+                        className="absolute right-0 top-full mt-2 w-64 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-2 z-50"
                       >
                         <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-700">
                           <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.nome}</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email}</p>
                         </div>
+                        <Link
+                          to="/perfil"
+                          onClick={() => setShowUserMenu(false)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                        >
+                          <UserRound size={16} className="text-[#087E96] dark:text-[#20B987]" />
+                          Edição do perfil
+                        </Link>
                         <button
                           onClick={() => { setShowUserMenu(false); handleLogout() }}
                           className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
@@ -268,7 +299,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent }: TopbarP
               <button
                 type="button"
                 onClick={openRenewalPayment}
-                className="flex-1 rounded-xl bg-[#081B33] px-4 py-2.5 font-semibold text-white hover:bg-[#0f2d4a]"
+                className="flex-1 rounded-xl bg-[#102B46] px-4 py-2.5 font-semibold text-white hover:bg-[#0B2035]"
               >
                 Renovar agora
               </button>

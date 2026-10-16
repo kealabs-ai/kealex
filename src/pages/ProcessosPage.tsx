@@ -1,15 +1,16 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Briefcase, Search, Filter, FileText, Download, ChevronUp } from 'lucide-react'
+import { Plus, Pencil, Trash2, Briefcase, Search, FileText, Download, ChevronUp, CircleCheck, Archive, CircleX, FolderOpen } from 'lucide-react'
 import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso, useAvancarFase } from '../hooks/useProcessos'
 import { useClientes } from '../hooks/useClientes'
 import { ProcessoTimeline } from '../components/ProcessoTimeline'
 import { Modal } from '../components/Modal'
-import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
+import { DataCard, SkeletonRow, EmptyState } from '../components/Cards'
 import { statusProcessoBadge } from '../components/Badge'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { gerarGuiaTJMG } from '../utils/guiaGenerator'
@@ -24,7 +25,7 @@ type FormData = {
 export function ProcessosPage() {
   const { user } = useAuth()
   const { success, error: toastError } = useToast()
-  const { data: processos, isLoading } = useProcessos()
+  const { data: processos, isLoading, isError } = useProcessos()
   const isCliente = user?.role === 'cliente'
   const { data: clientes } = useClientes()
   const create = useCreateProcesso()
@@ -38,6 +39,9 @@ export function ProcessosPage() {
   const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Processo | null>(null)
   const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState('todos')
+  const [tribunalFilter, setTribunalFilter] = useState('todos')
+  const [clienteFilter, setClienteFilter] = useState('todos')
   const [customFases, setCustomFases] = useState<string[]>([])
   const [novaFase, setNovaFase] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
@@ -89,48 +93,69 @@ export function ProcessosPage() {
     else create.mutate(payload as any, { onSuccess: close })
   }
 
-  const displayProcessos = processos?.filter((p) =>
-    p.titulo.toLowerCase().includes(search.toLowerCase()) ||
-    p.numero.toLowerCase().includes(search.toLowerCase())
-  ) ?? []
+  const allProcessos = Array.isArray(processos) ? processos : []
+  const normalizedSearch = search.trim().toLocaleLowerCase('pt-BR')
+  const tribunalOptions = [...new Set(allProcessos.map((p) => p.tribunal).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  const clienteOptions = [...new Map(allProcessos.filter((p) => p.clienteId).map((p) => [p.clienteId, p.clienteNome || 'Cliente']))]
+    .sort((a, b) => a[1].localeCompare(b[1], 'pt-BR'))
+  const displayProcessos = allProcessos.filter((p) => {
+    const matchesSearch = [p.titulo, p.numero, p.clienteNome, p.tribunal, p.vara]
+      .some((value) => value?.toLocaleLowerCase('pt-BR').includes(normalizedSearch))
+    return matchesSearch
+      && (statusFilter === 'todos' || p.status === statusFilter)
+      && (tribunalFilter === 'todos' || p.tribunal === tribunalFilter)
+      && (clienteFilter === 'todos' || p.clienteId === clienteFilter)
+  })
+  const activeFilterCount = [search.trim(), statusFilter !== 'todos', tribunalFilter !== 'todos', clienteFilter !== 'todos'].filter(Boolean).length
 
   const stats = [
-    { label: 'Total', value: displayProcessos?.length ?? 0, gradient: 'linear-gradient(135deg,#6366f1,#8b5cf6)', icon: <Briefcase size={18} /> },
-    { label: 'Ativos', value: displayProcessos?.filter((p) => p.status === 'ativo').length ?? 0, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <Briefcase size={18} /> },
-    { label: 'Arquivados', value: displayProcessos?.filter((p) => p.status === 'arquivado').length ?? 0, gradient: 'linear-gradient(135deg,#f59e0b,#d97706)', icon: <Briefcase size={18} /> },
-    { label: 'Encerrados', value: displayProcessos?.filter((p) => p.status === 'encerrado').length ?? 0, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <Briefcase size={18} /> },
+    { label: 'Total de Processos', value: allProcessos.length, description: 'Todos os processos cadastrados', tone: 'blue', icon: <Briefcase size={20} /> },
+    { label: 'Processos Ativos', value: allProcessos.filter((p) => p.status === 'ativo').length, description: 'Em andamento', tone: 'green', icon: <CircleCheck size={20} /> },
+    { label: 'Arquivados', value: allProcessos.filter((p) => p.status === 'arquivado').length, description: 'Processos arquivados', tone: 'orange', icon: <Archive size={20} /> },
+    { label: 'Encerrados', value: allProcessos.filter((p) => p.status === 'encerrado').length, description: 'Processos finalizados', tone: 'red', icon: <CircleX size={20} /> },
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-transparent">
-      <TopBar
-        icon={Briefcase}
-        title="Processos & Fases"
-        subtitle={isCliente ? "Acompanhe seus processos jurídicos" : "Gerencie processos com esteira de fases interativa"}
-        actions={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Processo</Button>}
-      />
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((s, i) => (
-            <StatCard key={s.label} {...s} delay={i * 0.07} />
+    <div className="kea-process-page">
+      <TopBar title="" hideModuleBar />
+      <div className="kea-process-content">
+        <PageBanner
+          title="Processos & Fases"
+          description={isCliente ? 'Acompanhe seus processos jurídicos e consulte suas fases.' : 'Gerencie seus processos com uma esteira de fases interativa e acompanhe prazos, movimentações e documentos em um só lugar.'}
+          action={!isCliente && <Button icon={<Plus size={15} />} onClick={openCreate}>Novo Processo</Button>}
+        />
+        <div className="kea-process-stats">
+          {stats.map((stat) => (
+            <article key={stat.label} className={`kea-process-stat is-${stat.tone}`}>
+              <span className="kea-process-stat-icon">{stat.icon}</span>
+              <div className="kea-process-stat-copy"><span>{stat.label}</span><strong>{isLoading || isError ? '—' : stat.value}</strong><small>{stat.description}</small></div>
+              <span className="kea-process-stat-accent" />
+            </article>
           ))}
         </div>
 
-        <DataCard delay={0.2}>
-          <div className="flex items-center gap-3 p-4 border-b border-slate-100 dark:border-indigo-950/40">
-            <div className="relative flex-1">
-              <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <DataCard delay={0.2} className="kea-process-filter-card">
+          <div className="kea-process-filters">
+            <div className="kea-process-search">
+              <Search size={18} />
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por título ou número..."
-                className="w-full pl-9 pr-4 py-2 text-sm bg-transparent border border-slate-200 dark:border-indigo-950/60 rounded-xl focus:outline-none focus:border-indigo-400 focus:ring-2 focus:ring-indigo-500/10 transition-all text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-500"
+                placeholder="Buscar por título, número, cliente, tribunal ou vara..."
+                aria-label="Buscar processos"
               />
             </div>
-            <Button variant="secondary" size="sm" icon={<Filter size={13} />}>Filtrar</Button>
+            <label className="kea-process-status-filter"><span>Status</span><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filtrar por status"><option value="todos">Todos</option><option value="ativo">Ativos</option><option value="arquivado">Arquivados</option><option value="encerrado">Encerrados</option></select></label>
+            <label className="kea-process-status-filter"><span>Tribunal</span><select value={tribunalFilter} onChange={(e) => setTribunalFilter(e.target.value)} aria-label="Filtrar por tribunal"><option value="todos">Todos</option>{tribunalOptions.map((tribunal) => <option key={tribunal} value={tribunal}>{tribunal}</option>)}</select></label>
+            <label className="kea-process-status-filter"><span>Cliente</span><select value={clienteFilter} onChange={(e) => setClienteFilter(e.target.value)} aria-label="Filtrar por cliente"><option value="todos">Todos</option>{clienteOptions.map(([id, nome]) => <option key={id} value={id}>{nome}</option>)}</select></label>
+            {(search || statusFilter !== 'todos' || tribunalFilter !== 'todos' || clienteFilter !== 'todos') && <button type="button" className="kea-process-clear" onClick={() => { setSearch(''); setStatusFilter('todos'); setTribunalFilter('todos'); setClienteFilter('todos') }}>Limpar</button>}
+            {activeFilterCount > 0 && <span className="kea-process-active-filter-count" aria-live="polite">{activeFilterCount} filtro{activeFilterCount === 1 ? '' : 's'} ativo{activeFilterCount === 1 ? '' : 's'}</span>}
           </div>
-          <div className="divide-y divide-slate-100 dark:divide-indigo-950/30">
-            {isLoading ? (
+          <div className="kea-process-list-heading"><h2>Processos cadastrados</h2><span>{isLoading ? 'Carregando…' : `${displayProcessos.length} ${displayProcessos.length === 1 ? 'registro' : 'registros'}`}</span></div>
+          <div className="kea-process-list">
+            {isError ? (
+              <p className="kea-process-empty-error" role="alert">Não foi possível carregar os processos. Tente novamente em instantes.</p>
+            ) : isLoading ? (
               [...Array(4)].map((_, i) => <SkeletonRow key={i} variant="list" />)
             ) : displayProcessos.length === 0 ? (
               <div className="p-8"><EmptyState message="Nenhum processo encontrado" icon={<Briefcase size={28} className="text-slate-300" />} /></div>
@@ -141,13 +166,15 @@ export function ProcessosPage() {
                   return (
                     <motion.div
                       key={p.id}
-                      className="p-4 hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition-all duration-200"
+                      className="kea-process-record"
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.04 }}
                     >
-                      <div className="flex items-start gap-4">
-                        <div className="flex-1 min-w-0">
+                      <div className="kea-process-record-main">
+                        <div className="kea-process-identification">
+                          <span className="kea-process-folder"><FolderOpen size={21} /></span>
+                          <div className="kea-process-identification-copy">
                           <div className="flex items-center gap-2 flex-wrap mb-1">
                             <span className="text-xs font-mono text-indigo-500 dark:text-indigo-400">{p.numero}</span>
                             {statusProcessoBadge(p.status)}
@@ -158,6 +185,17 @@ export function ProcessosPage() {
                           </p>
 
                           {/* Timeline expandível */}
+                          </div>
+                        </div>
+                        <div className="kea-process-phase-column">
+                          <div className="kea-process-phase-summary">
+                            <span>Fase atual</span>
+                            {p.fases?.length ? <div className="kea-process-phase-steps">
+                              {p.fases.slice(0, 5).map((fase, index) => <div key={fase.id || `${fase.label}-${index}`} className={`kea-process-phase-step is-${fase.status}`} title={`${fase.label}: ${fase.status}`}><b>{fase.status === 'concluida' ? '✓' : index + 1}</b><small>{fase.label}</small></div>)}
+                              {p.fases.length > 5 && <small className="kea-process-more-phases">+{p.fases.length - 5}</small>}
+                            </div> : <p className="kea-process-phase-empty">Fases não cadastradas</p>}
+                            {p.fases?.length ? <strong>{p.fases.find((fase) => fase.status === 'ativa')?.label || p.fases[Math.min(p.faseAtual ?? 0, p.fases.length - 1)]?.label}</strong> : null}
+                          </div>
                           <AnimatePresence>
                             {isExpanded && (
                               <motion.div
@@ -181,7 +219,7 @@ export function ProcessosPage() {
                           </AnimatePresence>
                         </div>
 
-                        <div className="flex items-center gap-2 shrink-0">
+                        <div className="kea-process-actions">
                           <motion.button
                             onClick={() => setExpandedTimeline(isExpanded ? null : p.id)}
                             className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all"

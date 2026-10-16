@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, Search, Sparkles, Clock, CheckCircle, Eye, AlertTriangle, RefreshCw, FileText } from 'lucide-react'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { DataCard, EmptyState, StatCard, SkeletonRow } from '../components/Cards'
 import { useIntimacoes, useUpdateIntimacao } from '../hooks/useIntimacoes'
 import type { StatusIntimacao } from '../types'
@@ -53,25 +54,25 @@ export function IntimacoesPage() {
   ]
 
   return (
-    <div className="flex flex-col h-screen bg-slate-50 dark:bg-transparent">
-      <TopBar
-        icon={Bell}
-        title="Intimações & DJE"
-        subtitle="Central de triagem de publicações em Diários de Justiça"
-        actions={
-          <motion.button
-            whileTap={{ scale: 0.96 }}
-            onClick={() => refetch()}
-            disabled={isRefetching}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all duration-300 disabled:opacity-60"
-          >
-            <RefreshCw size={14} className={isRefetching ? 'animate-spin' : ''} />
-            {isRefetching ? 'Atualizando...' : 'Atualizar'}
-          </motion.button>
-        }
-      />
+    <div className="kea-process-page">
+      <TopBar title="" hideModuleBar />
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-5">
+      <div className="kea-process-content">
+        <PageBanner
+          title="Intimações & DJE"
+          description="Central de triagem de publicações em Diários de Justiça. Acompanhe novidades e prazos em um só lugar."
+          action={
+            <motion.button
+              whileTap={{ scale: 0.96 }}
+              onClick={() => refetch()}
+              disabled={isRefetching}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-sm font-semibold rounded-xl shadow-md shadow-indigo-600/30 hover:shadow-indigo-600/50 transition-all duration-300 disabled:opacity-60"
+            >
+              <RefreshCw size={14} className={isRefetching ? 'animate-spin' : ''} />
+              {isRefetching ? 'Atualizando...' : 'Atualizar'}
+            </motion.button>
+          }
+        />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {stats.map((s, i) => <StatCard key={s.label} {...s} delay={i * 0.07} />)}
         </div>
