@@ -101,21 +101,21 @@ export function TrialModal({ open, onClose }: Props) {
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+          className="trial-modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={(e) => e.target === e.currentTarget && handleClose()}
         >
           <motion.div
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
+            className="trial-modal-dialog bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden"
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.9, opacity: 0 }}
           >
             {!done ? (
               <>
-                <div className="bg-[#081B33] px-7 py-5 flex items-start justify-between">
+                <div className="trial-modal-header bg-[#081B33] px-7 py-5 flex items-start justify-between">
                   <div>
                     <h3 className="text-lg font-bold text-white">Começar Teste Grátis de 7 Dias</h3>
                     <p className="text-xs text-slate-400 mt-0.5">Sem cartão de crédito · Cancele quando quiser</p>
@@ -125,7 +125,7 @@ export function TrialModal({ open, onClose }: Props) {
                   </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="p-7 space-y-4">
+                <form onSubmit={handleSubmit} className="trial-modal-form p-7 space-y-4">
                   {[
                     { label: 'Nome completo',       key: 'nome',  type: 'text',  placeholder: 'Dr. Rafael Mendes' },
                     { label: 'E-mail profissional', key: 'email', type: 'email', placeholder: 'rafael@escritorio.com.br' },
