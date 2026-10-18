@@ -67,9 +67,9 @@ export function FeaturesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Plataforma Completa</p>
+          <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Recursos</p>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-[#081B33] mb-4">
-            Tudo que seu escritório precisa
+            Uma plataforma completa para sua gestão jurídica
           </h2>
           <p className="text-[#596B82] max-w-xl mx-auto">
             8 módulos integrados em uma única plataforma. Sem integrações complexas, sem dados espalhados.

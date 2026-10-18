@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ShieldCheck } from 'lucide-react'
+import { Globe, Mail, ShieldCheck } from 'lucide-react'
 import logo from '../../assets/logotipo_kealex.png'
 import { scrollToSiteSection } from './navigation'
 
@@ -25,33 +25,36 @@ export function SiteFooter() {
           <div className="lg:col-span-1">
             <img src={logo} alt="Kealex" className="h-8 w-auto object-contain mb-4 brightness-0 invert" />
             <p className="text-sm leading-relaxed mb-4">
-              Plataforma jurídica SaaS com IA especializada no direito brasileiro. Processos, prazos, cobranças e documentos em um só lugar.
+              Tecnologia, inteligência artificial e gestão para conectar sua prática jurídica ao futuro.
             </p>
             <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="w-2 h-2 rounded-full bg-[#00C2A8] animate-pulse shrink-0" />
-              <span>Todos os sistemas operacionais</span>
+              <span className="w-2 h-2 rounded-full bg-[#00C2A8] shrink-0" />
+              <span>Legal Tech para profissionais do Direito</span>
             </div>
           </div>
 
-          {/* Plataforma */}
+          {/* Navegação */}
           <div>
-            <p className="text-xs font-bold text-white uppercase tracking-widest mb-4">Plataforma</p>
+            <p className="text-xs font-bold text-white uppercase tracking-widest mb-4">Navegação</p>
             <ul className="space-y-2.5 text-sm">
+              <li><AnchorLink href="sobre-nos">Sobre Nós</AnchorLink></li>
+              <li><AnchorLink href="solucoes">Soluções</AnchorLink></li>
+              <li><AnchorLink href="demonstracao">Plataforma</AnchorLink></li>
+              <li><AnchorLink href="beneficios">Benefícios</AnchorLink></li>
+              <li><AnchorLink href="demonstracao">Demonstração</AnchorLink></li>
               <li><AnchorLink href="recursos">Recursos</AnchorLink></li>
-              <li><AnchorLink href="plataforma">Por dentro do KeaLex</AnchorLink></li>
-              <li><AnchorLink href="roi">Calculadora de ROI</AnchorLink></li>
-              <li><AnchorLink href="precos">Planos e Preços</AnchorLink></li>
-              <li><AnchorLink href="diagnostico">Diagnóstico Expresso</AnchorLink></li>
+              <li><AnchorLink href="roi">Simule ROI</AnchorLink></li>
             </ul>
           </div>
 
-          {/* Confiança */}
+          {/* Informações */}
           <div>
-            <p className="text-xs font-bold text-white uppercase tracking-widest mb-4">Confiança</p>
+            <p className="text-xs font-bold text-white uppercase tracking-widest mb-4">Informações</p>
             <ul className="space-y-2.5 text-sm">
+              <li><AnchorLink href="precos">Preços</AnchorLink></li>
+              <li><AnchorLink href="faq">FAQ</AnchorLink></li>
+              <li><AnchorLink href="contato">Contato</AnchorLink></li>
               <li><AnchorLink href="depoimentos">Depoimentos</AnchorLink></li>
-              <li><AnchorLink href="beneficios">Benefícios</AnchorLink></li>
-              <li><AnchorLink href="faq">Perguntas Frequentes</AnchorLink></li>
               <li>
                 <AnchorLink href="seguranca">
                   <span className="flex items-center gap-1.5">
@@ -63,10 +66,13 @@ export function SiteFooter() {
             </ul>
           </div>
 
-          {/* Legal & Suporte */}
+          {/* Contato e informações legais */}
           <div>
-            <p className="text-xs font-bold text-white uppercase tracking-widest mb-4">Legal &amp; Suporte</p>
+            <p className="text-xs font-bold text-white uppercase tracking-widest mb-4">Contato e Legal</p>
             <ul className="space-y-2.5 text-sm">
+              <li><a href="mailto:contato@kealabs.com.br" className="flex items-center gap-2 hover:text-[#00C2A8] transition-colors"><Mail size={14}/>contato@kealabs.com.br</a></li>
+              <li><a href="https://www.kealex.com.br" target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-[#00C2A8] transition-colors"><Globe size={14}/>www.kealex.com.br</a></li>
+              <li><a href="mailto:suporte@kealabs.com.br" className="hover:text-[#00C2A8] transition-colors">Suporte</a></li>
               <li>
                 <Link to="/lgpd" className="hover:text-[#00C2A8] transition-colors flex items-center gap-1.5">
                   LGPD &amp; Privacidade
@@ -75,7 +81,6 @@ export function SiteFooter() {
               </li>
               <li><Link to="/termos" className="hover:text-[#00C2A8] transition-colors">Termos de Uso</Link></li>
               <li><a href="mailto:suporte@kealabs.com.br" className="hover:text-[#00C2A8] transition-colors">Suporte</a></li>
-              <li><a href="mailto:contato@kealabs.com.br" className="hover:text-[#00C2A8] transition-colors">Contato</a></li>
             </ul>
           </div>
         </div>

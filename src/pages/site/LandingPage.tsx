@@ -1,11 +1,9 @@
 import { useEffect, useState } from 'react'
 import { SiteHeader } from '../../components/site/SiteHeader'
 import { HeroSection } from '../../components/site/HeroSection'
-import { DiagnosticoSection } from '../../components/site/DiagnosticoSection'
 import { BeforeAfterSection } from '../../components/site/BeforeAfterSection'
 import { TestimonialsSection } from '../../components/site/TestimonialsSection'
 import { FeaturesSection } from '../../components/site/FeaturesSection'
-import { PlatformShowcaseSection } from '../../components/site/PlatformShowcaseSection'
 import { ROICalculatorSection } from '../../components/site/ROICalculatorSection'
 import { PricingSection } from '../../components/site/PricingSection'
 import { TrustSection } from '../../components/site/TrustSection'
@@ -13,6 +11,9 @@ import { FAQSection } from '../../components/site/FAQSection'
 import { TrialSection } from '../../components/site/TrialSection'
 import { SiteFooter } from '../../components/site/SiteFooter'
 import { AboutSection } from '../../components/site/AboutSection'
+import { SolutionsSection } from '../../components/site/SolutionsSection'
+import { DemoSection } from '../../components/site/DemoSection'
+import { ContactSection } from '../../components/site/ContactSection'
 import { KeaLexAdvisorWidget } from '../../components/site/KeaLexAdvisorWidget'
 import { MotionConfig } from 'framer-motion'
 
@@ -42,16 +43,17 @@ export function LandingPage() {
       <main>
         <HeroSection />
         <AboutSection />
+        <SolutionsSection />
+        <DemoSection />
         <FeaturesSection />
-        <PlatformShowcaseSection />
         <BeforeAfterSection />
-        <DiagnosticoSection />
         <TestimonialsSection />
         <ROICalculatorSection />
         <PricingSection />
         <FAQSection />
         <TrustSection />
         <TrialSection />
+        <ContactSection />
       </main>
       <SiteFooter />
       <KeaLexAdvisorWidget />

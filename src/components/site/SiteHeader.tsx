@@ -10,33 +10,28 @@ type NavLink = { label: string; href: string; clearance?: number }
 const MENUS = [
   {
     label: 'Soluções',
-    links: [{ label: 'Para escritórios e profissionais', href: 'precos', clearance: 10 }],
+    links: [{ label: 'Escritórios e profissionais', href: 'solucoes' }],
   },
   {
     label: 'Plataforma',
     links: [
-      { label: 'Visão geral', href: 'plataforma' },
-      { label: 'Demonstração da plataforma', href: 'plataforma' },
-      { label: 'Inteligência artificial', href: 'recurso-ia' },
-    ],
-  },
-  {
-    label: 'Recursos',
-    links: [
-      { label: 'Gestão de processos', href: 'recurso-processos' },
-      { label: 'Gestão de documentos', href: 'recurso-documentos' },
-      { label: 'Agenda e prazos', href: 'recurso-prazos' },
-      { label: 'Calculadora de ROI', href: 'roi' },
-      { label: 'Perguntas frequentes', href: 'faq' },
+      { label: 'Demonstração', href: 'demonstracao' },
+      { label: 'Recursos', href: 'recursos' },
+      { label: 'Simule ROI', href: 'roi' },
     ],
   },
 ]
 
-const SIMPLE_LINKS: NavLink[] = [
+const INTRO_LINKS: NavLink[] = [
+  { label: 'Sobre Nós', href: 'sobre-nos' },
+]
+const END_LINKS: NavLink[] = [
   { label: 'Benefícios', href: 'beneficios' },
   { label: 'Preços', href: 'precos' },
+  { label: 'FAQ', href: 'faq' },
+  { label: 'Contato', href: 'contato' },
 ]
-const SECTION_IDS = [...MENUS.flatMap((menu) => menu.links.map((link) => link.href)), ...SIMPLE_LINKS.map((link) => link.href)]
+const SECTION_IDS = [...INTRO_LINKS, ...MENUS.flatMap((menu) => menu.links), ...END_LINKS].map((link) => link.href)
 
 export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false)
@@ -106,6 +101,7 @@ export function SiteHeader() {
         </a>
 
         <nav aria-label="Navegação principal" className="hidden flex-1 items-center justify-center gap-1 xl:flex">
+          {INTRO_LINKS.map((link) => <button key={link.href} onClick={() => goTo(link.href)} className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F96313] ${active === link.href ? 'text-[#e65b13]' : 'text-slate-700'}`}>{link.label}</button>)}
           {MENUS.map((menu) => {
             const expanded = openMenu === menu.label
             const menuActive = menu.links.some((link) => link.href === active)
@@ -120,8 +116,7 @@ export function SiteHeader() {
               </AnimatePresence>
             </div>
           })}
-          {SIMPLE_LINKS.map((link) => <button key={link.href} onClick={() => goTo(link.href)} className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F96313] ${active === link.href ? 'text-[#e65b13]' : 'text-slate-700'}`}>{link.label}</button>)}
-          <a href="mailto:contato@kealabs.com.br" className="rounded-lg px-3 py-2 text-[13px] font-semibold text-slate-700 transition-colors hover:bg-slate-50 hover:text-[#e65b13] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F96313]">Contato</a>
+          {END_LINKS.map((link) => <button key={link.href} onClick={() => goTo(link.href)} className={`rounded-lg px-3 py-2 text-[13px] font-semibold transition-colors hover:bg-slate-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F96313] ${active === link.href ? 'text-[#e65b13]' : 'text-slate-700'}`}>{link.label}</button>)}
         </nav>
 
         <div className="hidden shrink-0 items-center gap-2 xl:flex">
@@ -140,6 +135,7 @@ export function SiteHeader() {
       <AnimatePresence>
         {mobileOpen && <motion.div id="site-mobile-menu" initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="max-h-[calc(100dvh-5rem)] overflow-y-auto border-t border-slate-100 bg-white shadow-lg xl:hidden">
           <nav aria-label="Navegação móvel" className="mx-auto max-w-3xl px-4 py-3">
+            {INTRO_LINKS.map((link) => <button key={link.href} onClick={() => goTo(link.href)} className="block w-full rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-800 hover:bg-slate-50">{link.label}</button>)}
             {MENUS.map((menu) => {
               const expanded = mobileExpanded === menu.label
               return <div key={menu.label} className="border-b border-slate-100 last:border-0">
@@ -147,8 +143,7 @@ export function SiteHeader() {
                 {expanded && <div className="pb-2 pl-3">{menu.links.map((link: NavLink) => <button key={link.label} onClick={() => goTo(link.href, link.clearance)} className={`block w-full rounded-lg px-3 py-2.5 text-left text-sm hover:bg-orange-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F96313] ${active === link.href ? 'font-semibold text-[#e65b13]' : 'text-slate-600'}`}>{link.label}</button>)}</div>}
               </div>
             })}
-            {SIMPLE_LINKS.map((link) => <button key={link.href} onClick={() => goTo(link.href)} className="block w-full rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-800 hover:bg-slate-50">{link.label}</button>)}
-            <a href="mailto:contato@kealabs.com.br" className="block rounded-lg px-3 py-3 text-sm font-semibold text-slate-800 hover:bg-slate-50">Contato</a>
+            {END_LINKS.map((link) => <button key={link.href} onClick={() => goTo(link.href)} className="block w-full rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-800 hover:bg-slate-50">{link.label}</button>)}
             <div className="mt-2 grid grid-cols-2 gap-2 border-t border-slate-100 pt-3">
               <a href="/entrar" className="inline-flex items-center justify-center gap-2 rounded-lg border border-slate-200 py-2.5 text-sm font-semibold text-[#081B33]"><UserRound size={16} />Entrar</a>
               <button onClick={() => { setTrialOpen(true); setMobileOpen(false) }} className="rounded-lg bg-[#F96313] py-2.5 text-sm font-bold text-white">Testar grátis</button>

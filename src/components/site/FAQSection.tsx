@@ -49,8 +49,8 @@ export function FAQSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Dúvidas Frequentes</p>
-          <h2 className="text-3xl lg:text-4xl font-extrabold text-[#081B33] mb-3">Perguntas frequentes</h2>
+          <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Perguntas Frequentes</p>
+          <h2 className="text-3xl lg:text-4xl font-extrabold text-[#081B33] mb-3">Tire suas dúvidas sobre a plataforma Kealex.</h2>
           <p className="text-sm text-[#596B82]">Não encontrou sua dúvida?{' '}
             <a href="mailto:contato@kealabs.com.br" className="text-[#00C2A8] font-semibold hover:underline">Fale com a gente</a>.
           </p>
@@ -70,6 +70,8 @@ export function FAQSection() {
                 onClick={() => setOpen(open === i ? null : i)}
                 className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-slate-50 transition-colors"
                 aria-expanded={open === i}
+                aria-controls={`faq-answer-${i}`}
+                id={`faq-question-${i}`}
               >
                 <span className="text-sm font-semibold text-[#081B33] pr-4">{faq.q}</span>
                 <motion.div animate={{ rotate: open === i ? 45 : 0 }} transition={{ duration: 0.2 }}>
@@ -79,6 +81,9 @@ export function FAQSection() {
               <AnimatePresence>
                 {open === i && (
                   <motion.div
+                    id={`faq-answer-${i}`}
+                    role="region"
+                    aria-labelledby={`faq-question-${i}`}
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: 'auto', opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}

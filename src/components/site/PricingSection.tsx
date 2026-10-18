@@ -102,8 +102,7 @@ export function PricingSection() {
         >
           <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Planos e Preços</p>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-[#081B33] mb-4">
-            Invista menos do que um estagiário.{' '}
-            <span className="text-[#00C2A8]">Produza como um time completo.</span>
+            Escolha o plano ideal para sua rotina jurídica
           </h2>
           <p className="text-[#596B82] mb-7 text-sm">7 dias grátis em qualquer plano. Sem cartão de crédito.</p>
 
@@ -186,7 +185,7 @@ export function PricingSection() {
                 {plan.highlight && (
                   <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#00C2A8]">
                     <Zap size={12} fill="currentColor" />
-                    <span>Escolhido por 68% dos novos clientes</span>
+                    <span>Plano em destaque</span>
                   </div>
                 )}
               </div>
