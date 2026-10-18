@@ -1,19 +1,13 @@
 import { Link } from 'react-router-dom'
 import { ShieldCheck } from 'lucide-react'
 import logo from '../../assets/logotipo_kealex.png'
-
-function scrollTo(id: string) {
-  const el = document.getElementById(id)
-  if (!el) return
-  const top = el.getBoundingClientRect().top + window.scrollY - 72
-  window.scrollTo({ top, behavior: 'smooth' })
-}
+import { scrollToSiteSection } from './navigation'
 
 function AnchorLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <a
       href={`#${href}`}
-      onClick={(e) => { e.preventDefault(); scrollTo(href) }}
+      onClick={(e) => { e.preventDefault(); scrollToSiteSection(href) }}
       className="hover:text-[#00C2A8] transition-colors"
     >
       {children}

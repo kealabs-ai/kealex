@@ -21,7 +21,7 @@ export function TrialSection() {
               Transforme seu escritório agora
             </h2>
             <p className="text-slate-400 mb-8 max-w-lg mx-auto">
-              7 dias grátis, sem cartão de crédito. Configure em minutos e veja a diferença no primeiro dia.
+              Conheça os recursos da Kealex na prática durante 7 dias, sem informar cartão de crédito.
             </p>
             <button
               onClick={() => setOpen(true)}
@@ -29,7 +29,7 @@ export function TrialSection() {
             >
               Começar Teste Grátis de 7 Dias <ArrowRight size={18} />
             </button>
-            <p className="text-xs text-slate-500 mt-3">Sem cartão de crédito · Cancele quando quiser · 100% LGPD</p>
+            <p className="text-xs text-slate-500 mt-3">7 dias grátis · Sem cartão de crédito no cadastro</p>
           </motion.div>
         </div>
       </section>

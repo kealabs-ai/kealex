@@ -91,7 +91,7 @@ export function PricingSection() {
 
   return (
     <>
-    <section id="precos" className="py-20 bg-[#F8FAFC]" aria-label="Planos e preços do Kealex">
+    <section id="precos" className="-mt-[70px] py-20 bg-[#F8FAFC]" aria-label="Planos e preços do Kealex">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -130,6 +130,7 @@ export function PricingSection() {
           {PLANS.map((plan, i) => (
             <motion.div
               key={plan.id}
+              id={plan.id === 'autonomo' ? 'plano-autonomo' : plan.id === 'escritorio' ? 'plano-escritorio' : undefined}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}

@@ -12,7 +12,9 @@ import { TrustSection } from '../../components/site/TrustSection'
 import { FAQSection } from '../../components/site/FAQSection'
 import { TrialSection } from '../../components/site/TrialSection'
 import { SiteFooter } from '../../components/site/SiteFooter'
+import { AboutSection } from '../../components/site/AboutSection'
 import { KeaLexAdvisorWidget } from '../../components/site/KeaLexAdvisorWidget'
+import { MotionConfig } from 'framer-motion'
 
 export function LandingPage() {
   const [progress, setProgress] = useState(0)
@@ -27,7 +29,8 @@ export function LandingPage() {
   }, [])
 
   return (
-    <div className="font-sans antialiased">
+    <MotionConfig reducedMotion="user">
+    <div className="site-landing font-sans antialiased">
       {/* Barra de progresso de scroll */}
       <div className="fixed top-0 left-0 right-0 z-[60] h-0.5 bg-transparent pointer-events-none">
         <div
@@ -38,19 +41,21 @@ export function LandingPage() {
       <SiteHeader />
       <main>
         <HeroSection />
-        <DiagnosticoSection />
-        <BeforeAfterSection />
-        <TestimonialsSection />
+        <AboutSection />
         <FeaturesSection />
         <PlatformShowcaseSection />
+        <BeforeAfterSection />
+        <DiagnosticoSection />
+        <TestimonialsSection />
         <ROICalculatorSection />
         <PricingSection />
-        <TrustSection />
         <FAQSection />
+        <TrustSection />
         <TrialSection />
       </main>
       <SiteFooter />
       <KeaLexAdvisorWidget />
     </div>
+    </MotionConfig>
   )
 }

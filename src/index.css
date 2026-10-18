@@ -786,7 +786,7 @@ a, button, [role="button"], label[for], select, input[type="checkbox"], input[ty
 /* ── Smooth scroll global ── */
 html {
   scroll-behavior: smooth;
-  scroll-padding-top: 72px; /* offset do header fixo */
+  scroll-padding-top: 96px; /* header fixo de 80px + respiro */
 }
 
 /* ── Chat input area ── */
@@ -1004,6 +1004,17 @@ input.kea-ui-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]
 .dark .kea-app-shell input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]),
 .dark .kea-app-shell textarea { background-color: #0b1e33; color: #e8f0fa; }
 .dark .kea-module-bar { background-image: none !important; }
+.site-landing { font-family: 'Inter', Arial, sans-serif; }
+.site-landing :is(h1, h2, h3) { font-family: 'Poppins', 'Inter', sans-serif; }
+.site-landing :is(a, button):focus-visible { outline: 2px solid #f96313; outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) {
+  .site-landing *, .site-landing *::before, .site-landing *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 @media (max-width: 700px) {
   .kea-module-bar { min-height: 118px; padding: 14px 16px !important; background-position: right center; background-size: auto 145px; }
   .kea-module-bar > div:first-child { align-items: flex-start; }
