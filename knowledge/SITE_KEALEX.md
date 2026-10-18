@@ -2,6 +2,10 @@
 
 > Kealabs AI © 2025 — Documento interno para briefing e desenvolvimento do site de apresentação da plataforma Kealex.
 
+## Status e fonte de verdade
+
+Este arquivo é um briefing estratégico histórico, não uma descrição fiel da landing page ou dos preços publicados atualmente. A estrutura, os menus, os componentes e as pendências da implementação estão em [`LANDING_PAGE_ATUAL.md`](./LANDING_PAGE_ATUAL.md). Os valores e pacotes sugeridos neste briefing não devem ser usados como preços vigentes sem confirmação comercial.
+
 ---
 
 ## 1. Sobre a Kealex

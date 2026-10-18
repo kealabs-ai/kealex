@@ -2,6 +2,8 @@
 
 ## 🎯 Comece Aqui
 
+- **[LANDING_PAGE_ATUAL.md](./LANDING_PAGE_ATUAL.md)** — Estrutura e navegação atuais da landing page, componentes e pendências.
+
 1. **[README_NOVO.md](./README_NOVO.md)** — Visão geral completa do projeto
 2. **[SUMARIO_EXECUTIVO.md](./SUMARIO_EXECUTIVO.md)** — Resumo executivo para stakeholders
 3. **[RESUMO_VISUAL.md](./RESUMO_VISUAL.md)** — Comparação visual antes/depois

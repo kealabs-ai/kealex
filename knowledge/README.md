@@ -2,6 +2,8 @@
 
 Plataforma jurídica SaaS — Interface React com Tailwind CSS, React Query e IA integrada.
 
+> Referência atual da landing page: [`LANDING_PAGE_ATUAL.md`](./LANDING_PAGE_ATUAL.md). Briefings antigos são identificados como históricos quando diferem da implementação publicada.
+
 ## 🚀 Stack
 
 - **React 18** + **TypeScript**
