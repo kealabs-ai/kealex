@@ -2,23 +2,15 @@ import bannerImg from '../../assets/banner_home_kealex.png'
 
 export function HeroSection() {
   return (
-    <section id="inicio" aria-label="Software jurídico com IA para escritórios de advocacia" className="relative pt-16">
+    <section id="inicio" aria-label="Software jurídico com IA para escritórios de advocacia" className="bg-white pt-20">
+      <h1 className="sr-only">Plataforma de gestão jurídica para advogados e escritórios</h1>
       <img
         src={bannerImg}
-        alt="Kealex — Software Jurídico com IA"
-        className="w-full h-auto block"
+        alt="Banner Kealex: inteligência artificial para transformar a rotina jurídica, com a mascote da marca e uma prévia da plataforma"
+        className="block h-auto w-full"
         loading="eager"
+        fetchPriority="high"
       />
-      <div className="absolute inset-0 flex items-end" style={{ paddingBottom: 'calc(5rem + 50px)' }}>
-        <div className="pl-8 sm:pl-16 lg:pl-24">
-          <a
-            href="#recursos"
-            className="inline-block bg-[#F96313] hover:bg-[#e0550f] text-white font-bold px-8 py-3.5 rounded-full transition-all shadow-lg text-sm sm:text-base"
-          >
-            Conheça a Kealex
-          </a>
-        </div>
-      </div>
     </section>
   )
 }

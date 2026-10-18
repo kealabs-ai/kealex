@@ -1,5 +1,7 @@
 # KeaLex Advisor Widget & Diagnóstico Section
 
+> Estado atualizado em 18/10/2026: o widget flutuante permanece montado em `LandingPage.tsx`. `DiagnosticoSection.tsx` continua no repositório, mas não é renderizado na landing page atual. Para a composição vigente, consulte [`LANDING_PAGE_ATUAL.md`](./LANDING_PAGE_ATUAL.md).
+
 ## Componentes criados
 
 ### `src/components/site/KeaLexAdvisorWidget.tsx`
@@ -16,7 +18,11 @@ Seção inline posicionada logo após o HeroSection com layout 2 colunas:
 - Coluna esquerda: 4 cards clicáveis (opções de gargalo)
 - Coluna direita: resposta dinâmica da IA com formulário de captura acoplado
 
-## Integração em `LandingPage.tsx`
+## Situação na landing page
+
+O widget é renderizado após o rodapé e permanece flutuante. A seção de diagnóstico inline descrita abaixo foi removida da composição pública; o exemplo de ordem antigo não representa a página atual.
+
+## Integração histórica em `LandingPage.tsx`
 ```
 <HeroSection />
 <DiagnosticoSection />   ← novo

@@ -91,7 +91,7 @@ export function PricingSection() {
 
   return (
     <>
-    <section id="precos" className="py-20 bg-[#F8FAFC]" aria-label="Planos e preços do Kealex">
+    <section id="precos" className="-mt-[70px] py-20 bg-[#F8FAFC]" aria-label="Planos e preços do Kealex">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -102,8 +102,7 @@ export function PricingSection() {
         >
           <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Planos e Preços</p>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-[#081B33] mb-4">
-            Invista menos do que um estagiário.{' '}
-            <span className="text-[#00C2A8]">Produza como um time completo.</span>
+            Escolha o plano ideal para sua rotina jurídica
           </h2>
           <p className="text-[#596B82] mb-7 text-sm">7 dias grátis em qualquer plano. Sem cartão de crédito.</p>
 
@@ -130,6 +129,7 @@ export function PricingSection() {
           {PLANS.map((plan, i) => (
             <motion.div
               key={plan.id}
+              id={plan.id === 'autonomo' ? 'plano-autonomo' : plan.id === 'escritorio' ? 'plano-escritorio' : undefined}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -185,7 +185,7 @@ export function PricingSection() {
                 {plan.highlight && (
                   <div className="mt-2.5 flex items-center gap-1.5 text-xs text-[#00C2A8]">
                     <Zap size={12} fill="currentColor" />
-                    <span>Escolhido por 68% dos novos clientes</span>
+                    <span>Plano em destaque</span>
                   </div>
                 )}
               </div>

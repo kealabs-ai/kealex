@@ -1,94 +1,20 @@
 import { motion } from 'framer-motion'
-import { X, Check } from 'lucide-react'
+import { Activity, FolderOpen, Zap, Workflow, Brain, TrendingUp } from 'lucide-react'
 
-const ANTES = [
-  'Prazos anotados em planilhas e post-its',
-  'Cobranças esquecidas e inadimplência alta',
-  'Documentos espalhados em e-mails e pastas',
-  'Sem visibilidade financeira do escritório',
-  'Pesquisa jurídica manual e demorada',
-  'Clientes ligando para saber status do processo',
-]
-
-const DEPOIS = [
-  'Alertas automáticos de prazos CPC/CLT',
-  'Esteira de cobrança com 5 fases automatizadas',
-  'CDN centralizado com acesso por perfil',
-  'Dashboard financeiro com projeções em tempo real',
-  'Kealex AI responde em segundos com STF/STJ',
-  'Portal do cliente com visibilidade 24/7',
+const BENEFITS = [
+  { icon: Activity, title: 'Mais produtividade', text: 'Reduza o esforço dedicado a tarefas repetitivas e recupere tempo para o trabalho jurídico.' },
+  { icon: FolderOpen, title: 'Centralização', text: 'Mantenha documentos, processos e informações organizados em um só ambiente.' },
+  { icon: Zap, title: 'Agilidade', text: 'Facilite consultas, acompanhamento processual e análises jurídicas.' },
+  { icon: Workflow, title: 'Automação', text: 'Simplifique fluxos operacionais, prazos, cobranças e atividades do escritório.' },
+  { icon: Brain, title: 'Inteligência', text: 'Use inteligência artificial para apoiar pesquisas e análises, com decisão profissional.' },
+  { icon: TrendingUp, title: 'Escalabilidade', text: 'Organize sua operação para acompanhar o crescimento do escritório.' },
 ]
 
 export function BeforeAfterSection() {
-  return (
-    <section id="beneficios" className="py-20 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          className="text-center mb-14"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-        >
-          <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Transformação Real</p>
-          <h2 className="text-3xl lg:text-4xl font-extrabold text-[#081B33]">
-            Antes vs. Depois da Kealex
-          </h2>
-        </motion.div>
-
-        <div className="grid lg:grid-cols-2 gap-6">
-          {/* Antes */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="bg-red-50 border border-red-100 rounded-2xl p-8"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center">
-                <X size={20} className="text-red-500" />
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">Advocacia Tradicional</p>
-                <p className="text-xs text-slate-500">Planilhas, risco e retrabalho</p>
-              </div>
-            </div>
-            <ul className="space-y-3">
-              {ANTES.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-slate-600">
-                  <X size={15} className="text-red-400 shrink-0 mt-0.5" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-
-          {/* Depois */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            className="bg-gradient-to-br from-[#f0fdf9] to-white border border-[#00C2A8]/20 rounded-2xl p-8"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-[#00C2A8]/15 flex items-center justify-center">
-                <Check size={20} className="text-[#00C2A8]" />
-              </div>
-              <div>
-                <p className="font-bold text-slate-800">Ecossistema Kealex AI</p>
-                <p className="text-xs text-slate-500">Automação, segurança e escala</p>
-              </div>
-            </div>
-            <ul className="space-y-3">
-              {DEPOIS.map((item) => (
-                <li key={item} className="flex items-start gap-3 text-sm text-slate-700">
-                  <Check size={15} className="text-[#00C2A8] shrink-0 mt-0.5" />
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </motion.div>
-        </div>
-      </div>
-    </section>
-  )
+  return <section id="beneficios" className="bg-white py-20" aria-labelledby="benefits-title">
+    <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <header className="mx-auto mb-12 max-w-2xl text-center"><p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#008f7d]">Transformação Real</p><h2 id="benefits-title" className="text-3xl font-extrabold text-[#081B33] sm:text-4xl">Tecnologia para uma rotina jurídica mais organizada</h2><p className="mt-3 text-[#596B82]">Recursos de gestão e automação para apoiar o dia a dia do escritório.</p></header>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{BENEFITS.map(({ icon: Icon, title, text }, index) => <motion.article key={title} initial={{ opacity: 0, y: 14 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * .05 }} className="rounded-2xl border border-slate-200 bg-[#F8FAFC] p-6 transition hover:-translate-y-1 hover:shadow-lg"><span className="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-[#00C2A8]/10 text-[#008f7d]"><Icon size={21}/></span><h3 className="font-bold text-[#081B33]">{title}</h3><p className="mt-2 text-sm leading-6 text-[#596B82]">{text}</p></motion.article>)}</div>
+    </div>
+  </section>
 }

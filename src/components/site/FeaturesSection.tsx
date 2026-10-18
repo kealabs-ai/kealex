@@ -4,12 +4,14 @@ import { Briefcase, Clock, CreditCard, Bot, FileText, DollarSign, Bell, Users } 
 const MODULES = [
   {
     icon: Briefcase,
+    id: 'recurso-processos',
     color: 'bg-indigo-50 text-indigo-600',
     title: 'Gestão de Processos',
     desc: 'Esteira processual com fases customizáveis, histórico auditável e geração de guias TJMG em PDF.',
   },
   {
     icon: Clock,
+    id: 'recurso-prazos',
     color: 'bg-amber-50 text-amber-600',
     title: 'Controle de Prazos',
     desc: 'Alertas automáticos de prazos CPC/CLT com calendário integrado e notificações de vencimento.',
@@ -22,6 +24,7 @@ const MODULES = [
   },
   {
     icon: Bot,
+    id: 'recurso-ia',
     color: 'bg-[#00C2A8]/10 text-[#00C2A8]',
     title: 'Kealex AI Assistente',
     desc: 'IA treinada no CPC, CLT e jurisprudência STF/STJ. Minutas, prazos e análise de casos em segundos.',
@@ -29,6 +32,7 @@ const MODULES = [
   },
   {
     icon: FileText,
+    id: 'recurso-documentos',
     color: 'bg-purple-50 text-purple-600',
     title: 'Gestão de Documentos',
     desc: 'CDN centralizado com upload seguro, organização por processo e controle de acesso por perfil.',
@@ -63,9 +67,9 @@ export function FeaturesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
         >
-          <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Plataforma Completa</p>
+          <p className="text-xs font-bold text-[#00C2A8] uppercase tracking-widest mb-3">Recursos</p>
           <h2 className="text-3xl lg:text-4xl font-extrabold text-[#081B33] mb-4">
-            Tudo que seu escritório precisa
+            Uma plataforma completa para sua gestão jurídica
           </h2>
           <p className="text-[#596B82] max-w-xl mx-auto">
             8 módulos integrados em uma única plataforma. Sem integrações complexas, sem dados espalhados.
@@ -76,6 +80,7 @@ export function FeaturesSection() {
           {MODULES.map((mod, i) => (
             <motion.div
               key={mod.title}
+              id={'id' in mod ? mod.id : undefined}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
