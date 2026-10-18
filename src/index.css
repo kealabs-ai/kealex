@@ -351,7 +351,7 @@
   background-color: #082441;
   background-position: center;
   background-repeat: no-repeat;
-  background-size: cover;
+  background-size: 100% 100%;
   font-family: Inter, Arial, sans-serif;
 }
 
@@ -418,7 +418,7 @@ input.login-control { box-sizing: border-box; width: 100%; min-width: 0; height:
 @keyframes login-spin { to { transform: rotate(360deg); } }
 
 @media (max-width: 768px) {
-  .login-page { justify-content: center; padding: 24px 16px; background-position: 35% center; }
+  .login-page { justify-content: center; padding: 24px 16px; background-position: center top; }
   .login-page::before { position: absolute; z-index: 0; inset: 0; background: rgba(4, 20, 42, .42); content: ""; }
   .login-card { width: min(100%, 440px); padding: 28px 24px 24px; border-radius: 21px; }
   .login-logo-link { margin-bottom: 18px; }
