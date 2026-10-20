@@ -128,14 +128,13 @@
 .kea-process-content { display: flex; flex-direction: column; gap: 20px; padding: 22px 28px 32px; }
 .kea-process-content > * { min-width: 0; }
 .kea-process-hero { position: relative; display: flex; min-height: 180px; align-items: center; overflow: hidden; padding: 22px 26px; border: 1px solid rgba(217,232,249,.9); border-radius: 15px; background-color: #fff; background-position: right center; background-repeat: no-repeat; background-size: cover; box-shadow: var(--kealex-shadow-card); }
-.kea-process-hero::before { position: absolute; inset: 0; background: linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.95) 38%, rgba(255,255,255,.55) 59%, rgba(255,255,255,0) 78%); content: ""; }
+.kea-process-hero::before { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.95) 38%, rgba(255,255,255,.55) 59%, rgba(255,255,255,0) 78%); content: ""; }
 .kea-process-hero-copy { position: relative; z-index: 1; width: min(59%, 640px); }
 .kea-process-breadcrumb { display: flex; align-items: center; gap: 10px; margin: 0 0 11px; color: #647b9a; font-size: 12px; }
 .kea-process-breadcrumb span { color: #9aacc2; font-size: 18px; }
 .kea-process-hero h1 { margin: 0 0 7px; color: #0b2b52; font-size: clamp(25px, 2vw, 32px); font-weight: 750; letter-spacing: -.04em; line-height: 1.2; }
 .kea-process-hero-copy > p:last-child { max-width: 620px; margin: 0; color: #657b99; font-size: 14px; line-height: 1.55; }
-.kea-process-hero > button { position: relative; z-index: 1; flex: none; margin: 0 0 0 auto; border-radius: 10px !important; background: #075de8 !important; color: #fff !important; box-shadow: 0 5px 14px rgba(7,93,232,.18); }
-.kea-process-hero > button:hover { background: #064fc4 !important; }
+.kea-process-hero-action { position: relative; z-index: 2; flex: none; margin-left: auto; }
 .kea-process-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
 .kea-process-stat { position: relative; display: flex; min-width: 0; min-height: 126px; align-items: flex-start; gap: 14px; overflow: hidden; padding: 19px 17px 22px; border: 1px solid var(--kealex-border); border-radius: 14px; background: var(--kealex-surface); box-shadow: var(--kealex-shadow-card); transition: transform .2s, box-shadow .2s; }
 .kea-process-stat:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(6,30,60,.1); }
@@ -283,7 +282,7 @@
   .dark .kea-process-hero::before { background: linear-gradient(90deg, rgba(10,29,49,.98) 0%, rgba(10,29,49,.88) 60%, rgba(10,29,49,.48) 100%); }
   .kea-process-hero-copy { width: 100%; max-width: 440px; }
   .kea-process-hero-copy { padding-bottom: 38px; }
-  .kea-process-hero > button { position: absolute; right: 12px; bottom: 12px; margin: 0; }
+  .kea-process-hero-action { position: absolute; right: 12px; bottom: 12px; max-width: calc(100% - 24px); }
   .kea-ai-page-heading { min-height: 42px; align-items: flex-start; flex-direction: column; gap: 8px; }
   .kea-ai-page-heading h1 { font-size: 21px; }
   .kea-ai-heading-actions { width: 100%; justify-content: flex-start; gap: 5px; }
@@ -1044,3 +1043,32 @@ input.kea-ui-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]
 .kea-app-shell button[class*="from-indigo-"]:hover,
 .kea-app-shell button[class*="from-violet-"]:hover,
 .kea-app-shell button[class*="from-purple-"]:hover { background: #064fc4 !important; }
+.kea-activity-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); align-items: start; gap: 16px; }
+.kea-activity-column { min-height: 380px; padding: 14px; border: 1px solid color-mix(in srgb, var(--activity-accent) 24%, var(--kealex-border)); border-radius: 16px; background: color-mix(in srgb, var(--activity-accent) 3%, var(--kealex-surface)); transition: border-color .18s, background-color .18s, box-shadow .18s; }
+.kea-activity-column.is-todo { --activity-accent: #075de8; }
+.kea-activity-column.is-in-progress { --activity-accent: #d97706; }
+.kea-activity-column.is-done { --activity-accent: #059669; }
+.kea-activity-column.is-drag-over { border-color: var(--activity-accent); background: color-mix(in srgb, var(--activity-accent) 5%, var(--kealex-surface)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--activity-accent) 13%, transparent); }
+.kea-activity-column-header { display: flex; align-items: center; gap: 9px; margin-bottom: 14px; padding: 10px 11px; border: 1px solid color-mix(in srgb, var(--activity-accent) 22%, var(--kealex-border)); border-top: 3px solid var(--activity-accent); border-radius: 11px; background: color-mix(in srgb, var(--activity-accent) 10%, var(--kealex-surface)); }
+.kea-activity-column-header > div:first-child { flex: 1; }
+.kea-activity-column-header h2 { margin: 0; color: var(--kealex-text); font-size: 14px; font-weight: 700; }
+.kea-activity-count { display: grid; min-width: 26px; height: 26px; place-items: center; border-radius: 8px; background: color-mix(in srgb, var(--activity-accent) 12%, white); color: var(--activity-accent); font-size: 12px; font-weight: 700; }
+.kea-activity-column-body { display: grid; gap: 11px; align-content: start; }
+.kea-activity-empty { display: grid; min-height: 108px; place-items: center; border: 1px dashed #cbd5e1; border-radius: 12px; color: var(--kealex-text-muted); font-size: 12px; }
+.kea-activity-card { padding: 14px; border: 1px solid color-mix(in srgb, var(--activity-accent) 24%, var(--kealex-border)); border-top: 3px solid var(--activity-accent); border-radius: 13px; background: color-mix(in srgb, var(--activity-accent) 4%, var(--kealex-surface)); box-shadow: var(--kealex-shadow-card); cursor: grab; transition: transform .16s, box-shadow .16s, border-color .16s; }
+.kea-activity-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--activity-accent) 42%, var(--kealex-border)); box-shadow: 0 8px 20px rgba(20,45,80,.09); }
+.kea-activity-card:active { cursor: grabbing; }
+.kea-activity-priority { display: inline-flex; align-items: center; padding: 4px 8px; border-radius: 999px; font-size: 10px; font-weight: 700; text-transform: capitalize; }
+.kea-activity-priority.is-baixa { background: #e8f6ef; color: #16834f; }
+.kea-activity-priority.is-media { background: #fff4dc; color: #a96000; }
+.kea-activity-priority.is-alta { background: #ffebed; color: #c5323e; }
+.kea-activity-status-select { max-width: 142px; padding: 5px 7px; border: 1px solid var(--kealex-border); border-radius: 8px; background: var(--kealex-surface); color: var(--kealex-text); font-size: 11px; }
+.kea-activity-icon-button { display: inline-grid; width: 30px; height: 30px; place-items: center; border: 1px solid var(--kealex-border); border-radius: 8px; background: var(--kealex-surface); color: var(--kealex-text-muted); }
+.kea-activity-icon-button:hover { border-color: var(--kealex-primary); color: var(--kealex-primary); }
+.kea-activity-icon-button.is-delete:hover { border-color: #ef9aa1; color: #c5323e; }
+.dark .kea-activity-column { background: color-mix(in srgb, var(--activity-accent) 6%, #111d2c); }
+.dark .kea-activity-count { background: color-mix(in srgb, var(--activity-accent) 20%, #152337); }
+.dark .kea-activity-empty { border-color: #35445a; }
+.dark .kea-activity-priority.is-baixa { background: #15372a; color: #67d59a; }
+.dark .kea-activity-priority.is-media { background: #382b18; color: #f1bf66; }
+.dark .kea-activity-priority.is-alta { background: #3b2027; color: #ff929d; }

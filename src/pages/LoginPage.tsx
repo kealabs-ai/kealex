@@ -12,7 +12,7 @@ import { useToast } from '../components/Toast'
 import { Modal } from '../components/Modal'
 import { TrialModal } from '../components/site/TrialModal'
 import logo from '../assets/logotipo_kealex.png'
-import background from '../assets/bg_login_kealex_new.png'
+import background from '../assets/kealex_background_2560x1440.png'
 
 const schema = z.object({
   email: z.string().min(1, 'Informe seu e-mail').email('E-mail inválido'),

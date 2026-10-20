@@ -17,6 +17,8 @@ const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:n
 
 export function Modal({ title, subtitle, onClose, children, size = 'md' }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
   const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2)}`)
 
   // Focus trap + Escape
@@ -27,10 +29,11 @@ export function Modal({ title, subtitle, onClose, children, size = 'md' }: Modal
 
     // Foca o primeiro elemento focável
     const focusable = el.querySelectorAll<HTMLElement>(FOCUSABLE)
-    focusable[0]?.focus()
+    const initialFocus = el.querySelector<HTMLElement>('[autofocus]') ?? focusable[0]
+    initialFocus?.focus()
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') { onClose(); return }
+      if (e.key === 'Escape') { onCloseRef.current(); return }
       if (e.key !== 'Tab') return
       if (focusable.length === 0) return
       const first = focusable[0]
@@ -47,7 +50,7 @@ export function Modal({ title, subtitle, onClose, children, size = 'md' }: Modal
       document.removeEventListener('keydown', handleKeyDown)
       prev?.focus()
     }
-  }, [onClose])
+  }, [])
 
   return (
     <AnimatePresence>

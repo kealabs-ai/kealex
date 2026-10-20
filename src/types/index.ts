@@ -6,6 +6,8 @@ export type StatusHonorario = 'pendente' | 'pago' | 'vencido' | 'cancelado'
 export type StatusPrazo = 'pendente' | 'concluido' | 'vencido'
 export type StatusIntimacao = 'nova' | 'lida' | 'respondida' | 'ignorada'
 export type StatusAudiencia = 'agendada' | 'realizada' | 'cancelada' | 'adiada'
+export type ActivityStatus = string
+export type ActivityPriority = 'baixa' | 'media' | 'alta'
 export type FaseProcessoStatus = 'concluida' | 'ativa' | 'futura'
 
 export interface BaseEntity {
@@ -101,6 +103,22 @@ export interface Prazo extends BaseEntity {
   descricao: string
   dataVencimento: string
   status: StatusPrazo
+}
+
+export interface Activity extends BaseEntity {
+  userId: string
+  title: string
+  description: string
+  status: ActivityStatus
+  priority: ActivityPriority
+  dueDate: string | null
+}
+
+export interface ActivityColumn extends BaseEntity {
+  userId?: string
+  title: string
+  color: string
+  position: number
 }
 
 export interface Usuario extends BaseEntity {

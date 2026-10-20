@@ -1,13 +1,14 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X } from 'lucide-react'
+import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logotipo_kealex.png'
 import { ProfileAvatar } from './ProfileAvatar'
 
 const officeLinks = [
   { to: '/processos', label: 'Processos & Fases', icon: Briefcase },
+  { to: '/atividades', label: 'Minhas Atividades', icon: ClipboardList },
   { to: '/intimacoes', label: 'Intimações & DJE', icon: Bell, badge: 'Novo' },
   { to: '/prazos', label: 'Calendário de Prazos', icon: Calendar },
   { to: '/audiencias', label: 'Audiências', icon: Gavel, badge: 'Novo' },
@@ -18,6 +19,7 @@ const officeLinks = [
 ]
 const clientLinks = [
   { to: '/processos', label: 'Meus Processos', icon: Briefcase },
+  { to: '/atividades', label: 'Minhas Atividades', icon: ClipboardList },
   { to: '/prazos', label: 'Prazos', icon: Calendar },
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
   { to: '/documentos', label: 'Documentos', icon: FileText },

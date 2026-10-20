@@ -13,6 +13,7 @@ import { TermosPage } from './pages/site/TermosPage'
 import { ProcessosPage } from './pages/ProcessosPage'
 import { DocumentosPage } from './pages/DocumentosPage'
 import { PrazosPage } from './pages/PrazosPage'
+import { ActivitiesPage } from './pages/ActivitiesPage'
 import { FinanceiroPage } from './pages/FinanceiroPage'
 import { CobrancaPage } from './pages/CobrancaPage'
 import { UsuariosPage } from './pages/UsuariosPage'
@@ -58,6 +59,7 @@ export default function App() {
                   <Route path="/processos" element={<ProcessosPage />} />
                   <Route path="/documentos" element={<DocumentosPage />} />
                   <Route path="/prazos" element={<PrazosPage />} />
+                  <Route path="/atividades" element={<ActivitiesPage />} />
                   <Route path="/financeiro" element={<FinanceiroPage />} />
                   <Route path="/cobranca" element={<CobrancaPage />} />
                   <Route path="/usuarios" element={<UsuariosPage />} />
