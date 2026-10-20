@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { ChevronDown, LogOut, Menu, Moon, Search, Sun, UserRound, X } from 'lucide-react'
+import { ChevronDown, History, LogOut, Menu, Moon, Search, Sun, UserRound, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { ProfileAvatar } from './ProfileAvatar'
+import { Modal } from './Modal'
 
 const destinations = [
   { to: '/processos', label: 'Processos & Fases', keywords: 'processo casos' },
@@ -30,6 +31,7 @@ export function AppHeader({ onMenuClick }: Props) {
   const [query, setQuery] = useState('')
   const [focused, setFocused] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
+  const [releaseNotesOpen, setReleaseNotesOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const visibleDestinations = useMemo(() => {
     const available = destinations.filter((item) => (!item.admin || user?.role === 'admin') && (user?.role !== 'cliente' || !['/intimacoes', '/cobranca', '/clientes', '/admin'].includes(item.to)))
@@ -96,6 +98,18 @@ export function AppHeader({ onMenuClick }: Props) {
         )}
       </div>
       <div className="kea-header-spacer" />
+      <div className="flex items-center gap-2 pr-2">
+        <span className="hidden text-xs font-semibold text-slate-500 dark:text-slate-400 sm:inline">V. 1.0.0</span>
+        <button
+          type="button"
+          onClick={() => setReleaseNotesOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-lg border border-[#087E96]/30 px-2.5 py-1.5 text-xs font-semibold text-[#087E96] transition-colors hover:bg-[#087E96]/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#087E96]/20 dark:border-[#20B987]/40 dark:text-[#20B987] dark:hover:bg-[#20B987]/10"
+        >
+          <History size={14} />
+          <span className="hidden md:inline">Notas da versão</span>
+          <span className="md:hidden">Notas</span>
+        </button>
+      </div>
       <button type="button" className="kea-header-icon" onClick={toggle} aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'} title={isDark ? 'Tema claro' : 'Tema escuro'}>
         {isDark ? <Sun size={19} /> : <Moon size={19} />}
       </button>
@@ -111,6 +125,25 @@ export function AppHeader({ onMenuClick }: Props) {
           <button type="button" role="menuitem" onClick={handleLogout}><LogOut size={16} />Sair</button>
         </div>}
       </div>
+      {releaseNotesOpen && (
+        <Modal
+          title="Notas da versão"
+          subtitle="Kealex — V. 1.0.0 · 20/10/2026"
+          onClose={() => setReleaseNotesOpen(false)}
+          size="md"
+        >
+          <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+            <p className="font-semibold text-slate-900 dark:text-white">Primeira versão estável do Kealex.</p>
+            <ul className="list-disc space-y-2 pl-5">
+              <li>Áreas de processos, clientes, documentos, prazos e atividades.</li>
+              <li>Gestão financeira, cobranças, usuários, audiências e intimações.</li>
+              <li>Administração, perfil do usuário e recursos de inteligência artificial.</li>
+              <li>Timeline processual integrada à seção “Fase atual”, com avanço de fase conforme as permissões do usuário.</li>
+              <li>Páginas públicas de apresentação, assinatura, termos de uso e privacidade.</li>
+            </ul>
+          </div>
+        </Modal>
+      )}
     </header>
   )
 }

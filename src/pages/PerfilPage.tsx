@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Building2, CalendarDays, Camera, CreditCard, LoaderCircle, Mail, Save, ShieldCheck, UserRound } from 'lucide-react'
+import { Building2, CalendarDays, Camera, CreditCard, History, LoaderCircle, Mail, Save, ShieldCheck, UserRound } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar } from '../components/TopBar'
 import { AssinaturaModal } from '../components/AssinaturaModal'
+import { Modal } from '../components/Modal'
 import { assinaturaApi, PLANOS_CONFIG, type BillingProfile } from '../api/assinatura'
 import { usuariosApi } from '../api/usuarios'
 import { useAuth } from '../context/AuthContext'
@@ -18,6 +19,7 @@ export function PerfilPage() {
   const [email, setEmail] = useState(user?.email ?? '')
   const [tenantForm, setTenantForm] = useState<BillingProfile | null>(null)
   const [planModalOpen, setPlanModalOpen] = useState(false)
+  const [releaseNotesOpen, setReleaseNotesOpen] = useState(false)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
   const { data: billingStatus, isLoading: loadingBilling } = useQuery({
@@ -383,9 +385,52 @@ export function PerfilPage() {
               </button>
             </div>
           </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.12 }}
+            className="flex flex-col justify-between gap-4 rounded-2xl bg-white p-6 shadow-sm dark:bg-[#111827] sm:flex-row sm:items-center sm:p-8"
+          >
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#087E96]/10 text-[#087E96] dark:bg-[#087E96]/20 dark:text-[#20B987]">
+                <History size={19} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-[#1E293B] dark:text-white">Versão do Kealex</h2>
+                <p className="mt-1 text-sm text-[#64748B] dark:text-slate-400">Versão atual: V. 1.0.0</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setReleaseNotesOpen(true)}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-[#087E96] px-4 py-2.5 text-sm font-semibold text-[#087E96] transition-colors hover:bg-[#087E96]/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#087E96]/20 dark:border-[#20B987] dark:text-[#20B987] dark:hover:bg-[#20B987]/10"
+            >
+              <History size={16} /> Notas da versão
+            </button>
+          </motion.section>
         </div>
       </div>
       <AssinaturaModal open={planModalOpen} onClose={() => setPlanModalOpen(false)} />
+      {releaseNotesOpen && (
+        <Modal
+          title="Notas da versão"
+          subtitle="Kealex — V. 1.0.0 · 20/10/2026"
+          onClose={() => setReleaseNotesOpen(false)}
+          size="md"
+        >
+          <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+            <p className="font-semibold text-slate-900 dark:text-white">Primeira versão estável do Kealex.</p>
+            <ul className="list-disc space-y-2 pl-5">
+              <li>Áreas de processos, clientes, documentos, prazos e atividades.</li>
+              <li>Gestão financeira, cobranças, usuários, audiências e intimações.</li>
+              <li>Administração, perfil do usuário e recursos de inteligência artificial.</li>
+              <li>Timeline processual integrada à seção “Fase atual”, com avanço de fase conforme as permissões do usuário.</li>
+              <li>Páginas públicas de apresentação, assinatura, termos de uso e privacidade.</li>
+            </ul>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }
