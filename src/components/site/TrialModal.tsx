@@ -6,9 +6,9 @@ import { authApi } from '../../api/auth'
 import { useAuth } from '../../context/AuthContext'
 
 const PERFIS = [
-  { value: 'advogado',    label: 'Advogado Autônomo' },
+  { value: 'advogado',    label: 'Autônomo (Advogado)' },
   { value: 'escritorio',  label: 'Escritório de Advocacia' },
-  { value: 'corporativo', label: 'Departamento Jurídico' },
+  { value: 'juridico',    label: 'Departamento Jurídico' },
 ]
 
 interface Props {
@@ -94,7 +94,7 @@ export function TrialModal({ open, onClose }: Props) {
 
   const handleEntrar = () => {
     handleClose()
-    navigate('/processos')
+    navigate(form.perfil === 'escritorio' ? '/equipe' : '/processos')
   }
 
   return (

@@ -8,11 +8,20 @@ export const usuariosApi = {
   get: (id: string) =>
     api.post<Usuario>('/v1/lex/usuarios/get', { id }).then((r) => r.data),
 
-  create: (data: { nome: string; email: string; senha: string; role: Role; escritorioId?: string }) =>
-    api.post<Usuario>('/v1/lex/usuarios', data).then((r) => r.data),
+  create: (data: { nome: string; email: string; senha: string; role: Role; escritorioId?: string; oab?: string }) =>
+    api.post<Usuario>('/v1/lex/usuarios', { ...data, escritorioId: data.escritorioId || undefined }).then((r) => r.data),
 
-  update: (id: string, data: Partial<Usuario & { senha?: string; escritorioId?: string }>) =>
-    api.post<Usuario>('/v1/lex/usuarios/update', { id, ...data }).then((r) => r.data),
+  update: (id: string, data: Partial<Usuario & { senha?: string; escritorioId?: string; clearEscritorio?: boolean }>) => {
+    const payload = { ...data } as typeof data
+    if ('escritorioId' in payload) {
+      if (payload.escritorioId) payload.clearEscritorio = false
+      else {
+        delete payload.escritorioId
+        payload.clearEscritorio = true
+      }
+    }
+    return api.post<Usuario>('/v1/lex/usuarios/update', { id, ...payload }).then((r) => r.data)
+  },
 
   remove: (id: string) =>
     api.post('/v1/lex/usuarios/delete', { id }).then((r) => r.data),

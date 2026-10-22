@@ -1,8 +1,7 @@
-import { PlayCircle, ArrowRight } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRight } from 'lucide-react'
+
 
 export function DemoSection() {
-  const [playing, setPlaying] = useState(false)
   return <section id="demonstracao" className="bg-white py-20" aria-labelledby="demo-title">
     <div className="mx-auto grid max-w-6xl items-start gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
       <div><p className="mb-3 text-xs font-bold uppercase tracking-widest text-[#008f7d]">Demonstração</p>
@@ -11,7 +10,7 @@ export function DemoSection() {
         <a href="/assinar" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#F96313] px-5 py-3 font-bold text-white hover:bg-[#e0550f]">Experimente a Kealex <ArrowRight size={17}/></a>
       </div>
       <div className="mt-8 aspect-video overflow-hidden rounded-2xl border border-slate-200 bg-[#081B33] shadow-xl lg:mt-10">
-        {playing ? <div className="flex h-full flex-col items-center justify-center px-6 text-center text-white"><PlayCircle size={42} className="mb-3 text-[#00D3B4]"/><p className="font-semibold">Demonstração em vídeo em breve</p><p className="mt-1 text-sm text-slate-300">A equipe Kealex ainda não disponibilizou a mídia.</p></div> : <button type="button" onClick={() => setPlaying(true)} aria-label="Abrir espaço reservado para demonstração da plataforma" className="group flex h-full w-full flex-col items-center justify-center bg-[radial-gradient(ellipse_at_top_right,_#14425a,_#081B33_70%)] text-white"><span className="grid h-16 w-16 place-items-center rounded-full bg-[#F96313] shadow-lg transition group-hover:scale-105"><PlayCircle size={34}/></span><span className="mt-4 font-semibold">Conheça a plataforma Kealex</span><span className="mt-1 text-xs text-slate-300">Vídeo demonstrativo em breve</span></button>}
+        <iframe className="h-full w-full" src="https://www.youtube-nocookie.com/embed/Cjh4O4H7RbY?rel=0" title="Conheça a plataforma Kealex" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
       </div>
     </div>
   </section>

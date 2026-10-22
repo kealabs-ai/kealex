@@ -26,6 +26,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { ErrorPage } from './pages/ErrorPage'
 import { TrialExpiradoPage } from './pages/TrialExpiradoPage'
 import { PagamentoPendentePage } from './pages/PagamentoPendentePage'
+import { EquipeEscritorioPage } from './pages/EquipeEscritorioPage'
 import { PerfilPage } from './pages/PerfilPage'
 import { AssinaturaPage } from './pages/site/AssinaturaPage'
 import { CookieConsent } from './components/CookieConsent'
@@ -63,6 +64,7 @@ export default function App() {
                   <Route path="/financeiro" element={<FinanceiroPage />} />
                   <Route path="/cobranca" element={<CobrancaPage />} />
                   <Route path="/usuarios" element={<UsuariosPage />} />
+                  <Route path="/equipe" element={<EquipeEscritorioPage />} />
                   <Route path="/clientes" element={<ClientesPage />} />
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/ia" element={<IAPage />} />

@@ -41,6 +41,13 @@ export const statusPrazoBadge = (s: string) => {
   return <Badge label={s} variant={m[s] ?? 'gray'} />
 }
 export const roleBadge = (r: string) => {
-  const m: Record<string, Variant> = { admin: 'purple', advogado: 'blue', cliente: 'cyan' }
-  return <Badge label={r} variant={m[r] ?? 'gray'} />
+  const m: Record<string, { label: string; variant: Variant }> = {
+    admin: { label: 'Admin', variant: 'purple' },
+    escritorio: { label: 'Escritório', variant: 'green' },
+    advogado: { label: 'Advogado', variant: 'blue' },
+    juridico: { label: 'Departamento Jurídico', variant: 'purple' },
+    cliente: { label: 'Cliente', variant: 'cyan' },
+  }
+  const role = m[r] ?? { label: r, variant: 'gray' as Variant }
+  return <Badge label={role.label} variant={role.variant} />
 }

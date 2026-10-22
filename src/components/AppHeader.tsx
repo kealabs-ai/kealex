@@ -4,6 +4,8 @@ import { ChevronDown, History, LogOut, Menu, Moon, Search, Sun, UserRound, X } f
 import { Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { useQuery } from '@tanstack/react-query'
+import { assinaturaApi, PLANOS_CONFIG } from '../api/assinatura'
 import { ProfileAvatar } from './ProfileAvatar'
 import { Modal } from './Modal'
 
@@ -24,7 +26,17 @@ interface Props { onMenuClick: () => void }
 
 export function AppHeader({ onMenuClick }: Props) {
   const { user } = useAuth()
+  const isEscritorioContext = user?.role === 'escritorio' || user?.modalidade === 'escritorio'
   const { logout } = useAuth()
+  const { data: billingStatus } = useQuery({
+    queryKey: ['billing-status'],
+    queryFn: assinaturaApi.billingStatus,
+    enabled: Boolean(user && user.role !== 'admin'),
+    staleTime: 30_000,
+  })
+  const contractedPlan = billingStatus?.status === 'active'
+    ? PLANOS_CONFIG.find((plan) => plan.id === billingStatus.plano)
+    : undefined
   const { isDark, toggle } = useTheme()
   const navigate = useNavigate()
   const location = useLocation()
@@ -99,7 +111,10 @@ export function AppHeader({ onMenuClick }: Props) {
       </div>
       <div className="kea-header-spacer" />
       <div className="flex items-center gap-2 pr-2">
-        <span className="hidden text-xs font-semibold text-slate-500 dark:text-slate-400 sm:inline">V. 1.0.0</span>
+        <div className="hidden items-center gap-2 sm:flex">
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">V. 1.0.0</span>
+          {isEscritorioContext && contractedPlan && <span className="rounded-lg bg-[#087E96]/10 px-2.5 py-1 text-xs font-semibold text-[#087E96] dark:bg-[#20B987]/15 dark:text-[#20B987]">Plano {contractedPlan.nome}</span>}
+        </div>
         <button
           type="button"
           onClick={() => setReleaseNotesOpen(true)}
@@ -115,8 +130,8 @@ export function AppHeader({ onMenuClick }: Props) {
       </button>
       <div className="kea-header-profile-wrap">
         <button type="button" className="kea-header-user" onClick={() => setUserMenuOpen((open) => !open)} aria-expanded={userMenuOpen} aria-haspopup="menu">
-          <div className="kea-header-user-text"><strong>{user?.nome}</strong><span>{user?.role === 'admin' ? 'Administrador' : user?.role}</span></div>
-          <ProfileAvatar user={user} className="kea-header-avatar" iconSize={18} />
+          {!isEscritorioContext && <div className="kea-header-user-text"><strong>{user?.nome}</strong><span>{user?.role === 'admin' ? 'Administrador' : user?.role}</span></div>}
+          {isEscritorioContext ? <UserRound size={18} aria-hidden="true" /> : <ProfileAvatar user={user} className="kea-header-avatar" iconSize={18} />}
           <ChevronDown size={15} />
         </button>
         {userMenuOpen && <div className="kea-header-user-menu" role="menu">

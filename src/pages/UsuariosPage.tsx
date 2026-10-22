@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, Users, Search, ShieldCheck, Eye, ToggleLeft, ToggleRight, AlertTriangle } from 'lucide-react'
 import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario } from '../hooks/useUsuarios'
+import { useEscritorios } from '../hooks/useEscritorios'
 import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
 import { roleBadge, Badge } from '../components/Badge'
@@ -10,16 +11,19 @@ import { Button, Input, Select } from '../components/UI'
 import { Topbar } from '../components/TopBar'
 import type { Role, Usuario } from '../types'
 
-type FormData = { nome: string; email: string; senha?: string; role: Role; ativo?: boolean }
+type FormData = { nome: string; email: string; senha?: string; role: Role; ativo?: boolean; escritorioId?: string }
 
 const roleColors: Record<Role, string> = {
   admin: 'linear-gradient(135deg,#8b5cf6,#6366f1)',
+  escritorio: 'linear-gradient(135deg,#0f766e,#14b8a6)',
   advogado: 'linear-gradient(135deg,#3b82f6,#06b6d4)',
+  juridico: 'linear-gradient(135deg,#7c3aed,#a855f7)',
   cliente: 'linear-gradient(135deg,#10b981,#059669)',
 }
 
 export function UsuariosPage() {
   const { data: usuarios, isLoading } = useUsuarios()
+  const { data: escritorios = [] } = useEscritorios()
   const isAdmin = true
   const create = useCreateUsuario()
   const update = useUpdateUsuario()
@@ -29,12 +33,17 @@ export function UsuariosPage() {
   const [confirmDelete, setConfirmDelete] = useState<Usuario | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const { register, handleSubmit, reset } = useForm<FormData>()
+  const { register, handleSubmit, reset, watch } = useForm<FormData>()
 
-  const openCreate = () => { reset({ role: 'cliente' }); setEditing(null); setOpen(true) }
-  const openEdit = (u: Usuario) => { reset(u); setEditing(u); setOpen(true) }
+  const openCreate = () => { create.reset(); update.reset(); reset({ role: 'cliente', escritorioId: '' }); setEditing(null); setOpen(true) }
+  const openEdit = (u: Usuario) => { create.reset(); update.reset(); reset(u); setEditing(u); setOpen(true) }
   const close = () => setOpen(false)
+  const selectedEscritorioId = watch('escritorioId') ?? ''
+  const selectedEscritorio = escritorios.find((e) => e.id === selectedEscritorioId)
+  const addsActiveMember = Boolean(selectedEscritorio && (watch('ativo') ?? true) && (!editing?.ativo || editing.escritorioId !== selectedEscritorioId))
+  const officeLimitReached = Boolean(selectedEscritorio && addsActiveMember && (selectedEscritorio.usuariosAtivos ?? 0) >= (selectedEscritorio.limiteAdvogados ?? 3))
   const onSubmit = (data: FormData) => {
+    if (officeLimitReached) return
     if (editing) update.mutate({ id: editing.id, data }, { onSuccess: close })
     else create.mutate(data as any, { onSuccess: close })
   }
@@ -193,9 +202,15 @@ export function UsuariosPage() {
             <div className="grid grid-cols-2 gap-3">
               <Input label={editing ? 'Nova Senha (opcional)' : 'Senha'} {...register('senha')} type="password" placeholder="••••••••" />
               <Select label="Role" {...register('role')}>
-                {(isAdmin ? ['admin', 'advogado', 'cliente'] : ['cliente']).map((r) => <option key={r} value={r}>{r}</option>)}
+                {(isAdmin ? ['admin', 'advogado', 'juridico', 'cliente'] : ['cliente']).map((r) => <option key={r} value={r}>{r === 'juridico' ? 'Departamento Jurídico' : r}</option>)}
               </Select>
             </div>
+            <Select label="Associação ao Escritório" {...register('escritorioId')}>
+              <option value="">Sem escritório</option>
+              {escritorios.map((escritorio) => <option key={escritorio.id} value={escritorio.id}>{escritorio.nome} ({escritorio.usuariosAtivos ?? 0}/{escritorio.limiteAdvogados ?? 3})</option>)}
+            </Select>
+            {officeLimitReached && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800" role="alert">Limite de {selectedEscritorio?.limiteAdvogados ?? 3} advogados atingido para este escritório. Entre em contato com o suporte/admin para alterar o limite.</p>}
+            {(create.isError || update.isError) && <p className="text-sm text-rose-600" role="alert">{((create.error || update.error) as any)?.response?.data?.detail ?? 'Não foi possível salvar o usuário.'}</p>}
             {editing && (
               <label className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
                 <input {...register('ativo')} type="checkbox" className="w-4 h-4 rounded accent-indigo-600" />
@@ -204,7 +219,7 @@ export function UsuariosPage() {
             )}
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
               <Button variant="secondary" type="button" onClick={close}>Cancelar</Button>
-              <Button type="submit" loading={create.isPending || update.isPending}>Salvar</Button>
+              <Button type="submit" loading={create.isPending || update.isPending} disabled={officeLimitReached}>Salvar</Button>
             </div>
           </form>
         </Modal>

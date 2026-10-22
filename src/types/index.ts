@@ -1,4 +1,4 @@
-export type Role = 'admin' | 'advogado' | 'cliente'
+export type Role = 'admin' | 'escritorio' | 'advogado' | 'juridico' | 'cliente'
 export type StatusProcesso = 'ativo' | 'arquivado' | 'encerrado'
 export type TipoDocumento = 'peticao' | 'contrato' | 'comprovante' | 'outro'
 export type StatusDocumento = 'pendente' | 'aprovado' | 'rejeitado'
@@ -127,6 +127,8 @@ export interface Usuario extends BaseEntity {
   email: string
   role: Role
   ativo: boolean
+  escritorioId?: string
+  oab?: string
 }
 
 export type StatusCobranca = 'pendente' | 'pago' | 'cancelado'
@@ -168,6 +170,7 @@ export interface AuthUser {
   plano?: Plano | string
   modalidade?: 'autonomo' | 'escritorio'
   escritorioId?: string
+  oab?: string
   avatarUrl?: string
   avatarId?: string
 }

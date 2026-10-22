@@ -10,15 +10,16 @@ import type { Role } from '../types'
 
 const roleRequired: Record<string, Role[]> = {
   '/usuarios':   ['admin'],
-  '/clientes':   ['admin', 'advogado'],
+  '/equipe':     ['escritorio'],
+  '/clientes':   ['admin', 'advogado', 'juridico'],
   '/admin':      ['admin'],
-  '/cobranca':   ['admin', 'advogado'],
-  '/intimacoes': ['admin', 'advogado'],
-  '/audiencias': ['admin', 'advogado'],
-  '/financeiro': ['admin', 'advogado', 'cliente'],
-  '/prazos':     ['admin', 'advogado', 'cliente'],
-  '/processos':  ['admin', 'advogado', 'cliente'],
-  '/documentos': ['admin', 'advogado', 'cliente'],
+  '/cobranca':   ['admin', 'advogado', 'juridico'],
+  '/intimacoes': ['admin', 'advogado', 'juridico'],
+  '/audiencias': ['admin', 'advogado', 'juridico'],
+  '/financeiro': ['admin', 'advogado', 'juridico', 'cliente'],
+  '/prazos':     ['admin', 'advogado', 'juridico', 'cliente'],
+  '/processos':  ['admin', 'advogado', 'juridico', 'cliente'],
+  '/documentos': ['admin', 'advogado', 'juridico', 'cliente'],
 }
 
 export function ProtectedLayout() {
@@ -47,6 +48,10 @@ export function ProtectedLayout() {
 
   // pending: mantém o usuário na plataforma — o banner no TopBar trata o caso
   if (isExpired) return <Navigate to="/trial-expirado" replace />
+
+  if (role === 'escritorio' && location.pathname !== '/equipe') {
+    return <Navigate to="/equipe" replace />
+  }
 
   const required = roleRequired[location.pathname]
   if (required && role && !required.includes(role)) {

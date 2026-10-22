@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext'
 const roleColors: Record<string, string> = {
   admin: 'from-purple-500 to-indigo-500',
   advogado: 'from-blue-500 to-cyan-500',
+  escritorio: 'from-teal-500 to-emerald-500',
+  juridico: 'from-violet-500 to-purple-500',
   cliente: 'from-emerald-500 to-teal-500',
 }
 
