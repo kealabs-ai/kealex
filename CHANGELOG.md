@@ -2,6 +2,16 @@
 
 Este arquivo registra as alterações de cada versão do Kealex Frontend. As versões seguem o padrão SemVer (`MAJOR.MINOR.PATCH`).
 
+## V. 1.1.0 — 22/10/2026
+
+### Associação entre advogados e escritórios
+
+- Advogados autônomos podem associar a conta usando o código fornecido pelo escritório; o backend valida as vagas disponíveis.
+- O vínculo registra o identificador e o código do escritório no usuário. Quando não há vagas, a API orienta o contato com o escritório para regularizar a associação.
+- A topbar exibe **Associado a: [nome do escritório]** e abre um modal com CNPJ, contato, endereço e código.
+- Advogados associados mantêm os módulos disponíveis para advogados autônomos. A role Escritório pode acessar os módulos de trabalho e a equipe.
+- A área de equipe apresenta o código de associação e instruções para compartilhá-lo.
+
 ## V. 1.0.0 — 20/10/2026
 
 Primeira versão estável registrada do frontend Kealex.

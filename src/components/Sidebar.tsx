@@ -19,7 +19,6 @@ const officeLinks = [
 ]
 const clientLinks = [
   { to: '/processos', label: 'Meus Processos', icon: Briefcase },
-  { to: '/atividades', label: 'Minhas Atividades', icon: ClipboardList },
   { to: '/prazos', label: 'Prazos', icon: Calendar },
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
   { to: '/documentos', label: 'Documentos', icon: FileText },
