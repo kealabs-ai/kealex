@@ -41,6 +41,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
   const { user, logout } = useAuth()
   const { isTrial, daysLeft } = useTrial()
   const isEscritorioContext = user?.role === 'escritorio' || user?.modalidade === 'escritorio'
+  const isEscritorioRole = user?.role === 'escritorio'
 
   const { data: billingStatus } = useQuery({
     queryKey: ['billing-status'],
@@ -222,11 +223,11 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   >
-                    {!isEscritorioContext && <div className="text-right hidden sm:block">
+                    {!isEscritorioRole && <div className="text-right hidden sm:block">
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.nome}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{user?.role === 'admin' ? 'Administrador' : user?.role}</p>
                     </div>}
-                    {isEscritorioContext
+                    {isEscritorioRole
                       ? <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300"><UserRound size={19} /></span>
                       : <ProfileAvatar user={user} className="h-10 w-10 rounded-xl text-sm" iconSize={19} />}
                     <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
