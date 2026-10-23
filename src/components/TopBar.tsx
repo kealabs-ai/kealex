@@ -217,7 +217,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
                 </Link>
               )}
 
-              {!rightContent && (
+              {!rightContent && !isEscritorioRole && (
                 <div className="relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}
