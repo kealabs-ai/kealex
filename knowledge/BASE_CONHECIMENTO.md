@@ -38,20 +38,27 @@ connect-src 'self' localhost https://srv1023256.hstgr.cloud https://api.openai.c
 
 - **Armazenamento:** `localStorage` — chaves `kealex_token` (JWT) e `kealex_user` (JSON)
 - **Validação:** JWT decodificado no cliente, verifica `exp` a cada 60s e no foco da janela
-- **Roles:** `admin` | `advogado` | `cliente`
+- **Roles:** `admin` | `escritorio` | `advogado` | `juridico` | `cliente`
 - **Redirecionamento:** 401 → `/login` (exceto se já estiver em `/login`)
 - **Contexto:** `AuthContext` expõe `user`, `role`, `login()`, `logout()`
 
+### Associação advogado-escritório
+
+- Um advogado mantém a role `advogado` depois de se associar; `modalidade: 'escritorio'` indica o vínculo e não reduz os módulos disponíveis ao advogado.
+- A ação **Associar Escritório** fica disponível na topbar quando o advogado ainda não tem `escritorioId`. Ela envia o código ao endpoint `POST /v1/lex/escritorios/associar-codigo`.
+- O backend valida o código de um escritório ativo, verifica o limite de advogados e grava `usuarios.escritorio_id` e `usuarios.codigo` na associação.
+- Se o limite estiver esgotado, a API responde HTTP 409 e orienta o advogado a procurar o escritório para concluir a associação manualmente ou liberar uma vaga.
+- Para o advogado associado, a topbar mostra **Associado a: [nome]**. O clique consulta `POST /v1/lex/escritorios/get` e abre os dados do escritório. O backend libera a consulta apenas se o registro solicitado corresponde ao vínculo do advogado autenticado.
+- A role `escritorio` acessa a equipe e os módulos de trabalho do advogado. O advogado associado preserva seu menu e suas permissões.
+- Na área **Equipe de Advogados**, a ação **Associe Advogados** mostra o código de convite e instruções para compartilhá-lo.
+
 ### Permissões por role
-| Funcionalidade | admin | advogado | cliente |
-|---|---|---|---|
-| Criar/editar processos | ✅ | ✅ | ❌ |
-| Ver processos | ✅ | ✅ | ✅ (próprios) |
-| Criar honorários | ✅ | ✅ | ❌ |
-| Gerenciar usuários | ✅ | ❌ | ❌ |
-| Painel Admin | ✅ | ❌ | ❌ |
-| Criar documentos | ✅ | ✅ | ❌ |
-| Ver documentos | ✅ | ✅ | ✅ (próprios) |
+| Funcionalidade | admin | escritorio | advogado | juridico | cliente |
+|---|---|---|---|---|---|
+| Acessar módulos de trabalho | ✅ | ✅ | ✅ | ✅ | ✅ (módulos limitados) |
+| Associar-se a escritório por código | ❌ | ❌ | ✅ (advogado autônomo) | ❌ | ❌ |
+| Gerenciar equipe de advogados | ❌ | ✅ | ❌ | ❌ | ❌ |
+| Painel Admin | ✅ | ❌ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -76,6 +83,8 @@ connect-src 'self' localhost https://srv1023256.hstgr.cloud https://api.openai.c
 | `/ia` | IAPage | Autenticado |
 | `/intimacoes` | IntimacoesPage | Autenticado |
 | `/audiencias` | AudienciasPage | Autenticado |
+| `/equipe` | EquipeEscritorioPage | Role `escritorio` |
+| `/atividades` | ActivitiesPage | Autenticado |
 | `/app` | → redirect `/processos` | Autenticado |
 
 ---
@@ -395,7 +404,7 @@ Tabs disponíveis via `?tab=`:
 ## 6. Tipos Principais
 
 ```ts
-type Role = 'admin' | 'advogado' | 'cliente'
+type Role = 'admin' | 'escritorio' | 'advogado' | 'juridico' | 'cliente'
 type StatusProcesso = 'ativo' | 'arquivado' | 'encerrado'
 type TipoDocumento = 'peticao' | 'contrato' | 'comprovante' | 'outro'
 type StatusDocumento = 'pendente' | 'aprovado' | 'rejeitado'
