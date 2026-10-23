@@ -30,7 +30,7 @@ export const escritoriosApi = {
   get: (id: string) =>
     postEscritorio<Escritorio>('/v1/lex/escritorios/get', { id }),
 
-  create: (data: Omit<Escritorio, 'id' | 'codigo' | 'tenantId' | 'ativo' | 'usuariosAtivos' | 'advogadosAtivos' | 'createdAt' | 'updatedAt'> & { emailAcesso: string; senhaInicial: string }) =>
+  create: (data: Omit<Escritorio, 'id' | 'codigo' | 'tenantId' | 'ativo' | 'limiteAdvogados' | 'usuariosAtivos' | 'advogadosAtivos' | 'createdAt' | 'updatedAt'> & { limiteAdvogados?: number; emailAcesso?: string; senhaInicial?: string }) =>
     postEscritorio<Escritorio>('/v1/lex/escritorios', data),
 
   createAccess: (data: { escritorioId: string; emailAcesso: string; senhaInicial: string }) =>
