@@ -26,6 +26,7 @@ const clientLinks = [
   { to: '/lgpd', label: 'LGPD & Privacidade', icon: Shield },
 ]
 const escritorioLinks = [
+  ...officeLinks,
   { to: '/equipe', label: 'Equipe de Advogados', icon: UserRoundCog },
 ]
 
@@ -50,7 +51,7 @@ export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
   const isClient = user?.role === 'cliente'
-  const isEscritorio = user?.role === 'escritorio' || user?.modalidade === 'escritorio'
+  const isEscritorio = user?.role === 'escritorio'
   const isCollapsed = collapsed && !mobileOpen
   const links = isEscritorio ? escritorioLinks : isClient ? clientLinks : officeLinks
   const nav = (items: typeof officeLinks) => items.map(({ to, label, icon, badge }) => <NavItem key={to} to={to} label={label} icon={icon} badge={badge} collapsed={isCollapsed} onNavigate={onClose} />)
@@ -73,7 +74,7 @@ export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
           {!isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Inteligência</p>}
           <NavItem to="/ia" label="Kealex AI Hub" icon={Sparkles} badge="IA" collapsed={isCollapsed} onNavigate={onClose} />
         </nav>
-        {!isEscritorio && <div className="kea-sidebar-user" title={isCollapsed ? user?.nome : undefined}>
+        {user?.role !== 'escritorio' && <div className="kea-sidebar-user" title={isCollapsed ? user?.nome : undefined}>
           <ProfileAvatar user={user} className="kea-sidebar-avatar" iconSize={17} />
           {!isCollapsed && <div className="kea-sidebar-user-info"><strong>{user?.nome}</strong><span>{user?.role === 'admin' ? 'Administrador' : user?.role}</span></div>}
         </div>}

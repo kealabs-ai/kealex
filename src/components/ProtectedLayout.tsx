@@ -11,15 +11,15 @@ import type { Role } from '../types'
 const roleRequired: Record<string, Role[]> = {
   '/usuarios':   ['admin'],
   '/equipe':     ['escritorio'],
-  '/clientes':   ['admin', 'advogado', 'juridico'],
+  '/clientes':   ['admin', 'advogado', 'juridico', 'escritorio'],
   '/admin':      ['admin'],
-  '/cobranca':   ['admin', 'advogado', 'juridico'],
-  '/intimacoes': ['admin', 'advogado', 'juridico'],
-  '/audiencias': ['admin', 'advogado', 'juridico'],
-  '/financeiro': ['admin', 'advogado', 'juridico', 'cliente'],
-  '/prazos':     ['admin', 'advogado', 'juridico', 'cliente'],
-  '/processos':  ['admin', 'advogado', 'juridico', 'cliente'],
-  '/documentos': ['admin', 'advogado', 'juridico', 'cliente'],
+  '/cobranca':   ['admin', 'advogado', 'juridico', 'escritorio'],
+  '/intimacoes': ['admin', 'advogado', 'juridico', 'escritorio'],
+  '/audiencias': ['admin', 'advogado', 'juridico', 'escritorio'],
+  '/financeiro': ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
+  '/prazos':     ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
+  '/processos':  ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
+  '/documentos': ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
 }
 
 export function ProtectedLayout() {
@@ -48,10 +48,6 @@ export function ProtectedLayout() {
 
   // pending: mantém o usuário na plataforma — o banner no TopBar trata o caso
   if (isExpired) return <Navigate to="/trial-expirado" replace />
-
-  if (role === 'escritorio' && location.pathname !== '/equipe') {
-    return <Navigate to="/equipe" replace />
-  }
 
   const required = roleRequired[location.pathname]
   if (required && role && !required.includes(role)) {
