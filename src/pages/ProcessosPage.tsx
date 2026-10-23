@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Pencil, Trash2, Briefcase, Search, FileText, Download, ChevronUp, CircleCheck, Archive, CircleX, FolderOpen } from 'lucide-react'
+import { Plus, Pencil, Trash2, Briefcase, Search, FileText, Download, CircleCheck, Archive, CircleX, FolderOpen } from 'lucide-react'
 import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso, useAvancarFase } from '../hooks/useProcessos'
 import { useClientes } from '../hooks/useClientes'
 import { ProcessoTimeline } from '../components/ProcessoTimeline'
@@ -36,7 +36,6 @@ export function ProcessosPage() {
   const [open, setOpen] = useState(false)
   const [guiaOpen, setGuiaOpen] = useState(false)
   const [selectedProcesso, setSelectedProcesso] = useState<Processo | null>(null)
-  const [expandedTimeline, setExpandedTimeline] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Processo | null>(null)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('todos')
@@ -162,7 +161,6 @@ export function ProcessosPage() {
             ) : (
               <AnimatePresence>
                 {displayProcessos.map((p, i) => {
-                  const isExpanded = expandedTimeline === p.id
                   return (
                     <motion.div
                       key={p.id}
@@ -184,52 +182,26 @@ export function ProcessosPage() {
                             {p.clienteNome} • {p.vara} • {p.tribunal}
                           </p>
 
-                          {/* Timeline expandível */}
                           </div>
                         </div>
                         <div className="kea-process-phase-column">
                           <div className="kea-process-phase-summary">
                             <span>Fase atual</span>
-                            {p.fases?.length ? <div className="kea-process-phase-steps">
-                              {p.fases.slice(0, 5).map((fase, index) => <div key={fase.id || `${fase.label}-${index}`} className={`kea-process-phase-step is-${fase.status}`} title={`${fase.label}: ${fase.status}`}><b>{fase.status === 'concluida' ? '✓' : index + 1}</b><small>{fase.label}</small></div>)}
-                              {p.fases.length > 5 && <small className="kea-process-more-phases">+{p.fases.length - 5}</small>}
-                            </div> : <p className="kea-process-phase-empty">Fases não cadastradas</p>}
-                            {p.fases?.length ? <strong>{p.fases.find((fase) => fase.status === 'ativa')?.label || p.fases[Math.min(p.faseAtual ?? 0, p.fases.length - 1)]?.label}</strong> : null}
+                            <div className="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-indigo-950/40">
+                              <ProcessoTimeline
+                                fases={p.fases}
+                                faseAtual={p.faseAtual}
+                                readonly={isCliente}
+                                isLoading={avancarFase.isPending}
+                                onAvancar={(novaFase) => {
+                                  avancarFase.mutate({ id: p.id, faseAtual: novaFase })
+                                }}
+                              />
+                            </div>
                           </div>
-                          <AnimatePresence>
-                            {isExpanded && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-indigo-950/40">
-                                  <ProcessoTimeline
-                                    fases={p.fases}
-                                    faseAtual={p.faseAtual}
-                                    readonly={isCliente}
-                                    onAvancar={(novaFase) => {
-                                      avancarFase.mutate({ id: p.id, faseAtual: novaFase })
-                                    }}
-                                  />
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
                         </div>
 
                         <div className="kea-process-actions">
-                          <motion.button
-                            onClick={() => setExpandedTimeline(isExpanded ? null : p.id)}
-                            className="p-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 rounded-lg transition-all"
-                            aria-label="Expandir fases"
-                            title="Expandir/Recolher Fases"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            <ChevronUp size={20} className={`transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
-                          </motion.button>
                           <motion.button
                             onClick={() => openGuia(p)}
                             className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg transition-all"

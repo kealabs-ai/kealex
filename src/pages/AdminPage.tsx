@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { Topbar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle, RefreshCw, Search, Plus, Pencil, Trash2, Eye, ToggleLeft, ToggleRight, AlertTriangle, Cloud, Bot, Bell, ArrowLeft, ChevronRight, type LucideIcon } from 'lucide-react'
+import { Settings, Globe, Database, Users, Shield, Server, HardDrive, Activity, Key, Mail, Smartphone, CheckCircle, RefreshCw, Search, Plus, Pencil, Trash2, Eye, ToggleLeft, ToggleRight, AlertTriangle, Cloud, Bot, Bell, Building2, ArrowLeft, ChevronRight, type LucideIcon } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useConfigDatabase, useSaveConfigDatabase, useDatabaseEnv } from '../hooks/useConfiguracoes'
 import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario } from '../hooks/useUsuarios'
@@ -14,8 +14,10 @@ import { Modal } from '../components/Modal'
 import { StatCard, DataCard, SkeletonRow } from '../components/Cards'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import type { Role, Usuario } from '../types'
+import { useEscritorios } from '../hooks/useEscritorios'
+import { EscritoriosTab } from '../components/EscritoriosTab'
 
-type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'seguranca' | 'notificacoes'
+type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'escritorios' | 'seguranca' | 'notificacoes'
 type ConfigOption = { tab: Tab; title: string; description: string; icon: LucideIcon; accent: string }
 
 const configOptions: ConfigOption[] = [
@@ -26,10 +28,11 @@ const configOptions: ConfigOption[] = [
   { tab: 'agentes', title: 'Agentes IA', description: 'Gerencie os agentes e suas especializações disponíveis na plataforma.', icon: Bot, accent: 'from-indigo-500 to-violet-600' },
   { tab: 'debug', title: 'Debug API', description: 'Inspecione integrações e ferramentas de diagnóstico da API.', icon: Activity, accent: 'from-emerald-500 to-teal-600' },
   { tab: 'usuarios', title: 'Usuários', description: 'Consulte, cadastre e gerencie os acessos dos usuários do sistema.', icon: Users, accent: 'from-orange-500 to-amber-600' },
+  { tab: 'escritorios', title: 'Escritório', description: 'Consulte os escritórios e ajuste os limites de usuários associados.', icon: Building2, accent: 'from-teal-500 to-emerald-600' },
   { tab: 'seguranca', title: 'Segurança', description: 'Ajuste recursos e políticas de segurança da plataforma.', icon: Shield, accent: 'from-rose-500 to-red-600' },
   { tab: 'notificacoes', title: 'Notificações', description: 'Configure canais e preferências de comunicação do sistema.', icon: Bell, accent: 'from-blue-500 to-indigo-600' },
 ]
-type FormUsuario = { nome: string; email: string; senha?: string; role: Role; ativo: boolean }
+type FormUsuario = { nome: string; email: string; senha?: string; role: Role; ativo: boolean; escritorioId?: string }
 type UsuariosTabState = { editing: Usuario | null; viewing: Usuario | null; confirmDelete: Usuario | null; open: boolean }
 
 export function AdminPage() {
@@ -105,6 +108,7 @@ export function AdminPage() {
           {activeTab === 'cdn' && <CdnTab />}
           {activeTab === 'database' && <DatabaseTab />}
           {activeTab === 'usuarios' && <UsuariosTab />}
+          {activeTab === 'escritorios' && <EscritoriosTab />}
           {activeTab === 'seguranca' && <SegurancaTab />}
           {activeTab === 'notificacoes' && <NotificacoesTab />}
         </motion.div>
@@ -703,19 +707,26 @@ function DatabaseTab() {
 // ============ USUÁRIOS ============
 function UsuariosTab() {
   const { data: usuarios, isLoading } = useUsuarios()
+  const { data: escritorios = [] } = useEscritorios()
   const create = useCreateUsuario()
   const update = useUpdateUsuario()
   const remove = useDeleteUsuario()
   const [state, setState] = useState<UsuariosTabState>({ editing: null, viewing: null, confirmDelete: null, open: false })
   const [search, setSearch] = useState('')
-  const { register, handleSubmit, reset } = useForm<FormUsuario>()
+  const { register, handleSubmit, reset, watch } = useForm<FormUsuario>()
 
-  const openCreate = () => { reset({ role: 'advogado', ativo: true }); setState({ editing: null, viewing: null, confirmDelete: null, open: true }) }
-  const openEdit = (u: Usuario) => { reset({ nome: u.nome, email: u.email, role: u.role, ativo: u.ativo }); setState({ editing: u, viewing: null, confirmDelete: null, open: true }) }
+  const openCreate = () => { create.reset(); update.reset(); reset({ role: 'advogado', ativo: true, escritorioId: '' }); setState({ editing: null, viewing: null, confirmDelete: null, open: true }) }
+  const openEdit = (u: Usuario) => { create.reset(); update.reset(); reset({ nome: u.nome, email: u.email, role: u.role, ativo: u.ativo, escritorioId: u.escritorioId ?? '' }); setState({ editing: u, viewing: null, confirmDelete: null, open: true }) }
   const close = () => setState(s => ({ ...s, open: false }))
   const toggleAtivo = (u: Usuario) => update.mutate({ id: u.id, data: { ativo: !u.ativo } })
+  const selectedEscritorioId = watch('escritorioId') ?? ''
+  const selectedEscritorio = escritorios.find((e) => e.id === selectedEscritorioId)
+  const activeInOffice = selectedEscritorio?.usuariosAtivos ?? 0
+  const addsActiveMember = Boolean(selectedEscritorio && (watch('ativo') ?? true) && (!state.editing?.ativo || state.editing.escritorioId !== selectedEscritorioId))
+  const officeLimitReached = Boolean(selectedEscritorio && addsActiveMember && activeInOffice >= (selectedEscritorio.limiteAdvogados ?? 3))
 
   const onSubmit = (data: FormUsuario) => {
+    if (officeLimitReached) return
     if (state.editing) update.mutate({ id: state.editing.id, data }, { onSuccess: close })
     else create.mutate(data as any, { onSuccess: close })
   }
@@ -727,11 +738,13 @@ function UsuariosTab() {
 
   const roleColors: Record<Role, string> = {
     admin:    'linear-gradient(135deg,#8b5cf6,#6366f1)',
+    escritorio: 'linear-gradient(135deg,#0f766e,#14b8a6)',
     advogado: 'linear-gradient(135deg,#3b82f6,#06b6d4)',
+    juridico: 'linear-gradient(135deg,#7c3aed,#a855f7)',
     cliente:  'linear-gradient(135deg,#10b981,#059669)',
   }
 
-  const roleLabel: Record<Role, string> = { admin: 'Admin', advogado: 'Advogado', cliente: 'Cliente' }
+  const roleLabel: Record<Role, string> = { admin: 'Admin', escritorio: 'Escritório', advogado: 'Advogado', juridico: 'Departamento Jurídico', cliente: 'Cliente' }
 
   return (
     <div className="space-y-6">
@@ -894,16 +907,24 @@ function UsuariosTab() {
               <Select label="Role" {...register('role', { required: true })}>
                 <option value="admin">Admin</option>
                 <option value="advogado">Advogado</option>
+                <option value="juridico">Departamento Jurídico</option>
                 <option value="cliente">Cliente</option>
               </Select>
             </div>
+            <Select label="Associação ao Escritório" {...register('escritorioId')}>
+              <option value="">Sem escritório</option>
+              {escritorios.map((escritorio) => <option key={escritorio.id} value={escritorio.id}>{escritorio.nome} ({escritorio.usuariosAtivos ?? 0}/{escritorio.limiteAdvogados ?? 3})</option>)}
+            </Select>
+            {officeLimitReached && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800" role="alert">Limite de {selectedEscritorio?.limiteAdvogados ?? 3} advogados atingido para este escritório. Entre em contato com o suporte/admin para alterar o limite.</p>}
+            {create.isError && <p className="text-sm text-rose-600" role="alert">{(create.error as any)?.response?.data?.detail ?? 'Não foi possível criar o usuário.'}</p>}
+            {update.isError && <p className="text-sm text-rose-600" role="alert">{(update.error as any)?.response?.data?.detail ?? 'Não foi possível atualizar o usuário.'}</p>}
             <label className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
               <input {...register('ativo')} type="checkbox" defaultChecked className="w-4 h-4 rounded accent-indigo-600" />
               <span className="text-sm font-medium text-gray-700">Usuário ativo</span>
             </label>
             <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
               <Button variant="secondary" type="button" onClick={close}>Cancelar</Button>
-              <Button type="submit" loading={create.isPending || update.isPending}>Salvar</Button>
+              <Button type="submit" loading={create.isPending || update.isPending} disabled={officeLimitReached}>Salvar</Button>
             </div>
           </form>
         </Modal>

@@ -13,6 +13,7 @@ import { TermosPage } from './pages/site/TermosPage'
 import { ProcessosPage } from './pages/ProcessosPage'
 import { DocumentosPage } from './pages/DocumentosPage'
 import { PrazosPage } from './pages/PrazosPage'
+import { ActivitiesPage } from './pages/ActivitiesPage'
 import { FinanceiroPage } from './pages/FinanceiroPage'
 import { CobrancaPage } from './pages/CobrancaPage'
 import { UsuariosPage } from './pages/UsuariosPage'
@@ -25,6 +26,7 @@ import { NotFoundPage } from './pages/NotFoundPage'
 import { ErrorPage } from './pages/ErrorPage'
 import { TrialExpiradoPage } from './pages/TrialExpiradoPage'
 import { PagamentoPendentePage } from './pages/PagamentoPendentePage'
+import { EquipeEscritorioPage } from './pages/EquipeEscritorioPage'
 import { PerfilPage } from './pages/PerfilPage'
 import { AssinaturaPage } from './pages/site/AssinaturaPage'
 import { CookieConsent } from './components/CookieConsent'
@@ -58,9 +60,11 @@ export default function App() {
                   <Route path="/processos" element={<ProcessosPage />} />
                   <Route path="/documentos" element={<DocumentosPage />} />
                   <Route path="/prazos" element={<PrazosPage />} />
+                  <Route path="/atividades" element={<ActivitiesPage />} />
                   <Route path="/financeiro" element={<FinanceiroPage />} />
                   <Route path="/cobranca" element={<CobrancaPage />} />
                   <Route path="/usuarios" element={<UsuariosPage />} />
+                  <Route path="/equipe" element={<EquipeEscritorioPage />} />
                   <Route path="/clientes" element={<ClientesPage />} />
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/ia" element={<IAPage />} />

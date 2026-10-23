@@ -1,13 +1,14 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X } from 'lucide-react'
+import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList, UserRoundCog } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logotipo_kealex.png'
 import { ProfileAvatar } from './ProfileAvatar'
 
 const officeLinks = [
   { to: '/processos', label: 'Processos & Fases', icon: Briefcase },
+  { to: '/atividades', label: 'Minhas Atividades', icon: ClipboardList },
   { to: '/intimacoes', label: 'Intimações & DJE', icon: Bell, badge: 'Novo' },
   { to: '/prazos', label: 'Calendário de Prazos', icon: Calendar },
   { to: '/audiencias', label: 'Audiências', icon: Gavel, badge: 'Novo' },
@@ -18,10 +19,14 @@ const officeLinks = [
 ]
 const clientLinks = [
   { to: '/processos', label: 'Meus Processos', icon: Briefcase },
+  { to: '/atividades', label: 'Minhas Atividades', icon: ClipboardList },
   { to: '/prazos', label: 'Prazos', icon: Calendar },
   { to: '/financeiro', label: 'Financeiro', icon: DollarSign },
   { to: '/documentos', label: 'Documentos', icon: FileText },
   { to: '/lgpd', label: 'LGPD & Privacidade', icon: Shield },
+]
+const escritorioLinks = [
+  { to: '/equipe', label: 'Equipe de Advogados', icon: UserRoundCog },
 ]
 
 interface Props { collapsed: boolean; mobileOpen: boolean; onClose: () => void; onToggle: () => void }
@@ -45,8 +50,9 @@ export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
   const { user } = useAuth()
   const isAdmin = user?.role === 'admin'
   const isClient = user?.role === 'cliente'
+  const isEscritorio = user?.role === 'escritorio' || user?.modalidade === 'escritorio'
   const isCollapsed = collapsed && !mobileOpen
-  const links = isClient ? clientLinks : officeLinks
+  const links = isEscritorio ? escritorioLinks : isClient ? clientLinks : officeLinks
   const nav = (items: typeof officeLinks) => items.map(({ to, label, icon, badge }) => <NavItem key={to} to={to} label={label} icon={icon} badge={badge} collapsed={isCollapsed} onNavigate={onClose} />)
 
   return (
@@ -67,10 +73,10 @@ export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
           {!isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Inteligência</p>}
           <NavItem to="/ia" label="Kealex AI Hub" icon={Sparkles} badge="IA" collapsed={isCollapsed} onNavigate={onClose} />
         </nav>
-        <div className="kea-sidebar-user" title={isCollapsed ? user?.nome : undefined}>
+        {!isEscritorio && <div className="kea-sidebar-user" title={isCollapsed ? user?.nome : undefined}>
           <ProfileAvatar user={user} className="kea-sidebar-avatar" iconSize={17} />
           {!isCollapsed && <div className="kea-sidebar-user-info"><strong>{user?.nome}</strong><span>{user?.role === 'admin' ? 'Administrador' : user?.role}</span></div>}
-        </div>
+        </div>}
       </aside>
     </>
   )

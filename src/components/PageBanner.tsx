@@ -16,7 +16,7 @@ export function PageBanner({ section = 'Escritório', title, description, action
         <h1 id="page-banner-title">{title}</h1>
         <p>{description}</p>
       </div>
-      {action}
+      {action && <div className="kea-process-hero-action">{action}</div>}
     </section>
   )
 }

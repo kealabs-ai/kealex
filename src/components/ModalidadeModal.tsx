@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { Building2, User, CheckCircle2, Loader2 } from 'lucide-react'
 import { Modal } from './Modal'
 import { escritoriosApi } from '../api/escritorios'
@@ -21,21 +21,15 @@ export function ModalidadeModal({ open, onClose, onContinueToPayment }: Props) {
   const [selected, setSelected] = useState<'autonomo' | 'escritorio'>(
     user?.modalidade === 'escritorio' ? 'escritorio' : 'autonomo'
   )
-  const [escritorioId, setEscritorioId] = useState(user?.escritorioId ?? '')
+  const [codigoEscritorio, setCodigoEscritorio] = useState('')
   const [escritorio, setEscritorio] = useState({
     nome: '', cnpj: '', endereco: '', telefone: '', email: user?.email ?? '',
-  })
-
-  const { data: escritorios = [] } = useQuery({
-    queryKey: ['escritorios'],
-    queryFn: escritoriosApi.list,
-    enabled: open && !isTrial,
   })
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error('Sessão inválida. Entre novamente.')
-      let targetOfficeId: string | null = selected === 'escritorio' ? escritorioId : null
+      let targetOfficeId: string | null = null
 
       if (selected === 'escritorio' && isTrial) {
         const createdOffice = await escritoriosApi.create({
@@ -48,10 +42,15 @@ export function ModalidadeModal({ open, onClose, onContinueToPayment }: Props) {
         targetOfficeId = createdOffice.id
       }
 
-      await api.post('/v1/lex/usuarios/modalidade', {
-        usuarioId: user.id,
-        escritorioId: targetOfficeId,
-      })
+      if (selected === 'escritorio' && !isTrial) {
+        const response = await api.post<{ escritorioId: string }>('/v1/lex/escritorios/associar-codigo', { codigo: codigoEscritorio.trim() })
+        targetOfficeId = response.data.escritorioId
+      } else {
+        await api.post('/v1/lex/usuarios/modalidade', {
+          usuarioId: user.id,
+          escritorioId: targetOfficeId,
+        })
+      }
       return targetOfficeId
     },
     onSuccess: (targetOfficeId) => {
@@ -69,7 +68,7 @@ export function ModalidadeModal({ open, onClose, onContinueToPayment }: Props) {
   })
 
   const canSave = selected === 'autonomo'
-    || (selected === 'escritorio' && (isTrial ? Boolean(escritorio.nome.trim()) : Boolean(escritorioId)))
+    || (selected === 'escritorio' && (isTrial ? Boolean(escritorio.nome.trim()) : Boolean(codigoEscritorio.trim())))
 
   if (!open) return null
 
@@ -105,16 +104,12 @@ export function ModalidadeModal({ open, onClose, onContinueToPayment }: Props) {
 
         {selected === 'escritorio' && !isTrial && (
           <div className="pt-1">
-            <label className="block text-xs font-semibold text-slate-700 mb-1.5">Selecione o escritório</label>
-            {escritorios.length === 0 ? <p className="text-xs text-slate-400 p-3 bg-slate-50 rounded-lg">Nenhum escritório cadastrado. Peça ao administrador para criar um.</p> : (
-              <select value={escritorioId} onChange={(e) => setEscritorioId(e.target.value)} className={inputClass}>
-                <option value="">Escolha um escritório...</option>
-                {escritorios.map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-              </select>
-            )}
+            <label className="block text-xs font-semibold text-slate-700">Código do escritório
+              <input value={codigoEscritorio} onChange={(e) => setCodigoEscritorio(e.target.value.toUpperCase())} className={inputClass} placeholder="Ex.: KX-4F8Q2M" maxLength={16} autoComplete="off" />
+            </label>
+            <p className="mt-1 text-xs text-slate-500">Peça o código ao escritório. Se não houver vagas, entre em contato com a equipe para concluir a associação manualmente.</p>
           </div>
         )}
-
         <div className="flex gap-2 pt-2 border-t border-slate-100">
           <button type="button" onClick={onClose} className="flex-1 py-2.5 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50">Cancelar</button>
           <button type="button" disabled={!canSave || mutation.isPending} onClick={() => mutation.mutate()} className="flex-1 py-2.5 text-sm font-semibold text-white bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 rounded-xl flex items-center justify-center gap-2">

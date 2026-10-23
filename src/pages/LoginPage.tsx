@@ -12,7 +12,7 @@ import { useToast } from '../components/Toast'
 import { Modal } from '../components/Modal'
 import { TrialModal } from '../components/site/TrialModal'
 import logo from '../assets/logotipo_kealex.png'
-import background from '../assets/bg_login_kealex_new.png'
+import background from '../assets/kealex_background_2560x1440.png'
 
 const schema = z.object({
   email: z.string().min(1, 'Informe seu e-mail').email('E-mail inválido'),
@@ -24,7 +24,7 @@ export function LoginPage() {
   const { user, login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-  const from = (location.state as any)?.from?.pathname ?? '/processos'
+  const from = (location.state as any)?.from?.pathname
   const { register, handleSubmit, getValues, formState: { errors } } = useForm<FormData>({ resolver: zodResolver(schema) })
   const { error: toastError } = useToast()
   const [showPassword, setShowPassword] = useState(false)
@@ -57,7 +57,7 @@ export function LoginPage() {
       }
       const blockedPaidPlan = data.plano !== 'trial'
         && (data.tenantAtivo === false || Boolean(data.subscriptionStatus && data.subscriptionStatus.toLowerCase() !== 'active'))
-      navigate(trialExpired || blockedPaidPlan ? '/trial-expirado' : (from === '/entrar' ? '/processos' : from), { replace: true })
+      navigate(trialExpired || blockedPaidPlan ? '/trial-expirado' : (from ?? (data.role === 'escritorio' ? '/equipe' : '/processos')), { replace: true })
     },
     onError: (error: any) => {
       const isTimeout = error.code === 'ECONNABORTED' || error.response?.status === 504
@@ -65,7 +65,7 @@ export function LoginPage() {
     },
   })
 
-  if (user) return <Navigate to="/processos" replace />
+  if (user) return <Navigate to={user.role === 'escritorio' ? '/equipe' : '/processos'} replace />
 
   return (
     <main className="login-page" style={{ backgroundImage: `url("${background}")` }}>

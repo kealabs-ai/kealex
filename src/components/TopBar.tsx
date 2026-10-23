@@ -40,6 +40,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
   const [showExpirationNotice, setShowExpirationNotice] = useState(false)
   const { user, logout } = useAuth()
   const { isTrial, daysLeft } = useTrial()
+  const isEscritorioContext = user?.role === 'escritorio' || user?.modalidade === 'escritorio'
 
   const { data: billingStatus } = useQuery({
     queryKey: ['billing-status'],
@@ -183,7 +184,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
             <div className="flex items-center gap-4">
               {rightContent ?? actions}
 
-              {activePlan && (
+              {activePlan && !isEscritorioContext && (
                 <div className="hidden lg:flex items-center gap-2.5 border-l border-[#E2E8F0] dark:border-white/10 pl-4" aria-label="Plano e próxima renovação">
                   <span className="rounded-lg bg-[#087E96]/10 dark:bg-[#087E96]/20 px-2.5 py-1 text-xs font-semibold text-[#087E96] dark:text-[#20B987]">
                     {activePlan.nome}
@@ -195,14 +196,14 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
                 </div>
               )}
 
-              {user && user.role !== 'admin' && (
+              {user && user.role !== 'admin' && !isEscritorioContext && (
                 <button
                   onClick={() => setShowModalidade(true)}
-                  title={user.modalidade === 'escritorio' ? 'Associado a escritorio' : 'Modo autonomo'}
+                  title={user.role === 'juridico' ? 'Departamento Jurídico' : user.modalidade === 'escritorio' ? 'Associado a escritorio' : 'Modo autonomo'}
                   className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-[#087E96] dark:hover:text-[#20B987] border border-slate-200 dark:border-slate-700 hover:border-[#087E96]/50 px-3 py-1.5 rounded-lg transition-all"
                 >
-                  {user.modalidade === 'escritorio' ? <Building2 size={12} /> : <User size={12} />}
-                  {user.modalidade === 'escritorio' ? 'Escritorio' : 'Autonomo'}
+                  {user.role === 'juridico' || user.modalidade === 'escritorio' ? <Building2 size={12} /> : <User size={12} />}
+                  {user.role === 'juridico' ? 'Jurídico' : user.modalidade === 'escritorio' ? 'Escritorio' : 'Autonomo'}
                 </button>
               )}
 
@@ -221,11 +222,13 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
                     onClick={() => setShowUserMenu(!showUserMenu)}
                     className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   >
-                    <div className="text-right hidden sm:block">
+                    {!isEscritorioContext && <div className="text-right hidden sm:block">
                       <p className="text-sm font-semibold text-slate-900 dark:text-white">{user?.nome}</p>
                       <p className="text-xs text-slate-500 dark:text-slate-400">{user?.role === 'admin' ? 'Administrador' : user?.role}</p>
-                    </div>
-                    <ProfileAvatar user={user} className="h-10 w-10 rounded-xl text-sm" iconSize={19} />
+                    </div>}
+                    {isEscritorioContext
+                      ? <span className="grid h-10 w-10 place-items-center rounded-xl bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300"><UserRound size={19} /></span>
+                      : <ProfileAvatar user={user} className="h-10 w-10 rounded-xl text-sm" iconSize={19} />}
                     <ChevronDown size={16} className="text-slate-400 dark:text-slate-500" />
                   </button>
 
