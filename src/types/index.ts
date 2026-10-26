@@ -59,6 +59,7 @@ export interface Audiencia extends BaseEntity {
   local: string
   juiz?: string
   partes?: string
+  observacoes?: string
   roteiro?: string
   status: StatusAudiencia
 }

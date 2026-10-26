@@ -22,6 +22,7 @@ const destinations = [
   { to: '/cobranca', label: 'Gestão de Cobrança', keywords: 'cobrança' },
   { to: '/documentos', label: 'Modelos e Peças', keywords: 'documentos peças' },
   { to: '/clientes', label: 'Clientes & CRM', keywords: 'clientes crm' },
+  { to: '/integracao-orgaos', label: 'Integração com Órgãos', keywords: 'integração órgãos tribunais justiça consultas' },
   { to: '/ia', label: 'Kealex AI Hub', keywords: 'inteligência ia' },
   { to: '/admin', label: 'Configurações', keywords: 'admin configurações', admin: true },
 ]

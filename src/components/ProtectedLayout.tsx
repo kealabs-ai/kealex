@@ -20,6 +20,7 @@ const roleRequired: Record<string, Role[]> = {
   '/prazos':     ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
   '/processos':  ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
   '/documentos': ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
+  '/integracao-orgaos': ['admin', 'advogado', 'juridico', 'escritorio'],
 }
 
 export function ProtectedLayout() {
