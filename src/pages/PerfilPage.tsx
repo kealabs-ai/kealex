@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Building2, CalendarDays, Camera, CreditCard, History, LoaderCircle, Mail, Save, ShieldCheck, UserRound } from 'lucide-react'
+import { Building2, CalendarDays, Camera, ChevronLeft, ChevronRight, CreditCard, History, KeyRound, LoaderCircle, Mail, Pencil, Plus, Save, Search, ShieldCheck, Trash2, UserRound } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { TopBar } from '../components/TopBar'
 import { AssinaturaModal } from '../components/AssinaturaModal'
@@ -17,6 +17,12 @@ export function PerfilPage() {
   const { success: toastSuccess, error: toastError } = useToast()
   const [nome, setNome] = useState(user?.nome ?? '')
   const [email, setEmail] = useState(user?.email ?? '')
+  const [orgao, setOrgao] = useState('Tribunais Superiores')
+  const [chavePublica, setChavePublica] = useState('')
+  const [publicKeySearch, setPublicKeySearch] = useState('')
+  const [publicKeyPage, setPublicKeyPage] = useState(1)
+  const [editingPublicKeyId, setEditingPublicKeyId] = useState<string | null>(null)
+  const [publicKeyModalOpen, setPublicKeyModalOpen] = useState(false)
   const [tenantForm, setTenantForm] = useState<BillingProfile | null>(null)
   const [planModalOpen, setPlanModalOpen] = useState(false)
   const [releaseNotesOpen, setReleaseNotesOpen] = useState(false)
@@ -32,6 +38,11 @@ export function PerfilPage() {
     queryFn: assinaturaApi.billingProfile,
     enabled: Boolean(user),
     staleTime: 5 * 60 * 1000,
+  })
+  const { data: publicKeys = [], isLoading: loadingPublicKeys } = useQuery({
+    queryKey: ['public-keys', user?.id],
+    queryFn: usuariosApi.listarChavesPublicas,
+    enabled: Boolean(user),
   })
 
   useEffect(() => {
@@ -66,6 +77,43 @@ export function PerfilPage() {
       toastError(err.response?.data?.detail ?? 'Não foi possível atualizar os dados do tenant.')
     },
   })
+
+  const publicKeyMutation = useMutation({
+    mutationFn: () => {
+      const data = { orgao, chavePublica: chavePublica.trim() }
+      return editingPublicKeyId
+        ? usuariosApi.atualizarChavePublica(editingPublicKeyId, data)
+        : usuariosApi.salvarChavePublica(data)
+    },
+    onSuccess: (saved) => {
+      queryClient.invalidateQueries({ queryKey: ['public-keys', user?.id] })
+      setPublicKeyModalOpen(false)
+      setChavePublica('')
+      setEditingPublicKeyId(null)
+      toastSuccess(`Chave pública de ${saved.orgao} ${editingPublicKeyId ? 'atualizada' : 'adicionada'}.`)
+    },
+    onError: (err: any) => {
+      toastError(err.response?.data?.detail ?? 'Não foi possível salvar a chave pública.')
+    },
+  })
+
+  const removePublicKeyMutation = useMutation({
+    mutationFn: usuariosApi.removerChavePublica,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['public-keys', user?.id] })
+      toastSuccess('Chave pública removida.')
+    },
+    onError: (err: any) => {
+      toastError(err.response?.data?.detail ?? 'Não foi possível remover a chave pública.')
+    },
+  })
+
+  function openPublicKeyModal(item?: (typeof publicKeys)[number]) {
+    setEditingPublicKeyId(item?.id ?? null)
+    setOrgao(item?.orgao ?? 'Tribunais Superiores')
+    setChavePublica(item?.chavePublica ?? '')
+    setPublicKeyModalOpen(true)
+  }
 
   function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -158,6 +206,17 @@ export function PerfilPage() {
           : null
       })()
     : null
+  const normalizedPublicKeySearch = publicKeySearch.trim().toLocaleLowerCase('pt-BR')
+  const filteredPublicKeys = publicKeys.filter((item) =>
+    `${item.orgao} ${item.chavePublica}`.toLocaleLowerCase('pt-BR').includes(normalizedPublicKeySearch),
+  )
+  const publicKeysPerPage = 5
+  const publicKeyPageCount = Math.max(1, Math.ceil(filteredPublicKeys.length / publicKeysPerPage))
+  const currentPublicKeyPage = Math.min(publicKeyPage, publicKeyPageCount)
+  const visiblePublicKeys = filteredPublicKeys.slice(
+    (currentPublicKeyPage - 1) * publicKeysPerPage,
+    currentPublicKeyPage * publicKeysPerPage,
+  )
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
@@ -214,6 +273,101 @@ export function PerfilPage() {
                 </button>
               ))}
             </div>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.03 }}
+            className="rounded-2xl bg-white p-6 shadow-sm dark:bg-[#111827] sm:p-8"
+          >
+            <div className="mb-6 flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#087E96]/10 text-[#087E96] dark:bg-[#087E96]/20 dark:text-[#20B987]">
+                <KeyRound size={19} />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-[#1E293B] dark:text-white">Chaves públicas de integração</h2>
+                <p className="mt-1 text-sm text-[#64748B] dark:text-slate-400">Cadastre a chave pública que será utilizada nas integrações com cada órgão.</p>
+              </div>
+            </div>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <label className="relative block w-full sm:max-w-md">
+                <Search size={16} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
+                <input
+                  type="search"
+                  value={publicKeySearch}
+                  onChange={(event) => { setPublicKeySearch(event.target.value); setPublicKeyPage(1) }}
+                  placeholder="Buscar por órgão ou chave pública"
+                  aria-label="Buscar chaves públicas por órgão ou chave"
+                  className="w-full rounded-xl border border-[#E2E8F0] bg-white py-2.5 pl-10 pr-4 text-sm text-[#1E293B] outline-none transition focus:border-[#087E96] focus:ring-2 focus:ring-[#087E96]/20 dark:border-white/10 dark:bg-slate-900 dark:text-slate-200"
+                />
+              </label>
+              <button type="button" onClick={() => openPublicKeyModal()} className="inline-flex items-center gap-2 rounded-xl bg-[#102B46] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0B2035] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#087E96]/25">
+                <Plus size={16} /> Adicionar chave
+              </button>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-[#E2E8F0] dark:border-white/10">
+              <table className="w-full min-w-[640px] text-left text-sm">
+                <thead className="bg-[#F5F8FC] text-xs uppercase tracking-wide text-[#64748B] dark:bg-slate-900 dark:text-slate-400">
+                  <tr>
+                    <th scope="col" className="px-4 py-3 font-semibold">Órgão</th>
+                    <th scope="col" className="px-4 py-3 font-semibold">Chave Pública</th>
+                    <th scope="col" className="px-4 py-3 text-right font-semibold">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E2E8F0] dark:divide-white/10">
+                  {loadingPublicKeys ? (
+                    <tr><td colSpan={3} className="px-4 py-8 text-center text-[#64748B] dark:text-slate-400">Carregando chaves cadastradas…</td></tr>
+                  ) : publicKeys.length === 0 ? (
+                    <tr><td colSpan={3} className="px-4 py-8 text-center text-[#64748B] dark:text-slate-400">Nenhuma chave pública cadastrada.</td></tr>
+                  ) : filteredPublicKeys.length === 0 ? (
+                    <tr><td colSpan={3} className="px-4 py-8 text-center text-[#64748B] dark:text-slate-400">Nenhuma chave corresponde à busca.</td></tr>
+                  ) : visiblePublicKeys.map((item) => (
+                    <tr key={item.id} className="bg-white dark:bg-[#111827]">
+                      <td className="px-4 py-3 font-semibold text-[#1E293B] dark:text-slate-200">{item.orgao}</td>
+                      <td className="max-w-xl break-all px-4 py-3 font-mono text-xs text-[#64748B] dark:text-slate-400">{item.chavePublica}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end gap-2">
+                          <button type="button" onClick={() => openPublicKeyModal(item)} aria-label={`Editar chave de ${item.orgao}`} className="rounded-lg p-2 text-[#087E96] transition-colors hover:bg-[#087E96]/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E96]/40">
+                            <Pencil size={16} />
+                          </button>
+                          <button type="button" onClick={() => { if (window.confirm(`Remover a chave pública de ${item.orgao}?`)) removePublicKeyMutation.mutate(item.id) }} disabled={removePublicKeyMutation.isPending} aria-label={`Remover chave de ${item.orgao}`} className="rounded-lg p-2 text-rose-600 transition-colors hover:bg-rose-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-50 dark:hover:bg-rose-950/30">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {!loadingPublicKeys && filteredPublicKeys.length > 0 && (
+              <div className="mt-4 flex flex-col gap-3 text-sm text-[#64748B] dark:text-slate-400 sm:flex-row sm:items-center sm:justify-between">
+                <p aria-live="polite">
+                  Exibindo {(currentPublicKeyPage - 1) * publicKeysPerPage + 1}–{Math.min(currentPublicKeyPage * publicKeysPerPage, filteredPublicKeys.length)} de {filteredPublicKeys.length} {filteredPublicKeys.length === 1 ? 'chave' : 'chaves'}
+                </p>
+                <nav aria-label="Paginação das chaves públicas" className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPublicKeyPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPublicKeyPage === 1}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-3 py-2 font-medium text-[#1E293B] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    <ChevronLeft size={16} /> Anterior
+                  </button>
+                  <span className="min-w-20 text-center" aria-current="page">{currentPublicKeyPage} / {publicKeyPageCount}</span>
+                  <button
+                    type="button"
+                    onClick={() => setPublicKeyPage((page) => Math.min(publicKeyPageCount, page + 1))}
+                    disabled={currentPublicKeyPage >= publicKeyPageCount}
+                    className="inline-flex items-center gap-1 rounded-lg border border-[#E2E8F0] px-3 py-2 font-medium text-[#1E293B] transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/10 dark:text-slate-200 dark:hover:bg-slate-800"
+                  >
+                    Próxima <ChevronRight size={16} />
+                  </button>
+                </nav>
+              </div>
+            )}
           </motion.section>
 
           <motion.section
@@ -297,8 +451,7 @@ export function PerfilPage() {
 
             {loadingTenantProfile ? (
               <div className="flex items-center gap-2 py-2 text-sm text-[#64748B] dark:text-slate-400" role="status">
-                <LoaderCircle size={16} className="animate-spin" /> Carregando dados do tenant…
-              </div>
+                <LoaderCircle size={16} className="animate-spin" /> Carregando dados do tenant…</div>
             ) : tenantProfileError ? (
               <p className="text-sm text-[#64748B] dark:text-slate-400" role="alert">Não foi possível carregar os dados cadastrais do tenant.</p>
             ) : tenantForm ? (
@@ -411,6 +564,41 @@ export function PerfilPage() {
           </motion.section>
         </div>
       </div>
+      {publicKeyModalOpen && (
+        <Modal
+          title={editingPublicKeyId ? 'Editar chave pública' : 'Adicionar chave pública'}
+          subtitle="Informe o órgão e a chave usada na integração."
+          onClose={() => setPublicKeyModalOpen(false)}
+          size="md"
+        >
+          <form onSubmit={(event) => {
+            event.preventDefault()
+            if (publicKeys.some((item) => item.orgao === orgao && item.id !== editingPublicKeyId)) {
+              toastError('Já existe uma chave cadastrada para este órgão.')
+              return
+            }
+            if (chavePublica.trim()) publicKeyMutation.mutate()
+          }} className="space-y-4 p-5">
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-[#1E293B] dark:text-slate-200">Órgão</span>
+              <select value={orgao} onChange={(event) => setOrgao(event.target.value)} required className="w-full rounded-xl bg-[#F5F8FC] px-4 py-3 text-sm font-medium text-[#1E293B] outline-none focus:ring-2 focus:ring-[#087E96]/30">
+                {['Tribunais Superiores', 'Justiça Federal', 'Justiça Estadual', 'Justiça do Trabalho', 'Justiça Eleitoral', 'Justiça Militar'].map((item) => <option key={item}>{item}</option>)}
+              </select>
+            </label>
+            <label className="block">
+              <span className="mb-2 block text-sm font-semibold text-[#1E293B] dark:text-slate-200">Chave Pública</span>
+              <textarea value={chavePublica} onChange={(event) => setChavePublica(event.target.value)} rows={5} required maxLength={10000} placeholder="Cole a chave pública do órgão" className="w-full resize-y rounded-xl bg-[#F5F8FC] px-4 py-3 font-mono text-sm text-[#1E293B] outline-none placeholder:font-sans placeholder:text-slate-400 focus:ring-2 focus:ring-[#087E96]/30" />
+            </label>
+            <div className="flex justify-end gap-3 border-t border-[#E2E8F0] pt-4 dark:border-white/10">
+              <button type="button" onClick={() => setPublicKeyModalOpen(false)} className="rounded-xl border border-[#CBD5E1] px-4 py-2.5 text-sm font-semibold text-[#475569] hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700">Cancelar</button>
+              <button type="submit" disabled={!chavePublica.trim() || publicKeyMutation.isPending} className="inline-flex items-center gap-2 rounded-xl bg-[#102B46] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0B2035] disabled:cursor-not-allowed disabled:opacity-50">
+                {publicKeyMutation.isPending ? <LoaderCircle size={16} className="animate-spin" /> : <Save size={16} />}
+                {editingPublicKeyId ? 'Salvar edição' : 'Adicionar chave'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
       <AssinaturaModal open={planModalOpen} onClose={() => setPlanModalOpen(false)} />
       {releaseNotesOpen && (
         <Modal

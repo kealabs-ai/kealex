@@ -33,4 +33,28 @@ export const usuariosApi = {
   // Remove associação com escritório (modalidade autônomo)
   desassociarEscritorio: (userId: string) =>
     api.post<Usuario>('/v1/lex/usuarios/update', { id: userId, clearEscritorio: true }).then((r) => r.data),
+
+  listarChavesPublicas: () =>
+    api.get<ChavePublicaIntegracao[]>('/v1/lex/usuarios/chaves-publicas').then((r) => r.data),
+
+  consultarProcessoDataJud: (data: { tribunal: string; numeroProcesso: string }) =>
+    api.post('/v1/lex/usuarios/consultas/datajud', data).then((r) => r.data),
+
+  salvarChavePublica: (data: { orgao: string; chavePublica: string }) =>
+    api.post<ChavePublicaIntegracao>('/v1/lex/usuarios/chaves-publicas', data).then((r) => r.data),
+
+  atualizarChavePublica: (id: string, data: { orgao: string; chavePublica: string }) =>
+    api.post<ChavePublicaIntegracao>(`/v1/lex/usuarios/chaves-publicas/${id}`, data).then((r) => r.data),
+
+  removerChavePublica: (id: string) =>
+    api.delete<{ ok: boolean }>(`/v1/lex/usuarios/chaves-publicas/${id}`).then((r) => r.data),
+}
+
+export type ChavePublicaIntegracao = {
+  id: string
+  userId: string
+  orgao: string
+  chavePublica: string
+  createdAt: string
+  updatedAt: string
 }

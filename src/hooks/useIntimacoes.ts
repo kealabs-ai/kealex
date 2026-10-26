@@ -50,7 +50,7 @@ export function useAudiencias() {
   return useQuery({
     queryKey: ['audiencias'],
     queryFn: async () => {
-      const { data } = await api.get('/audiencias')
+      const { data } = await api.get<Audiencia[]>('/k1/lex/audiencias')
       return data as Audiencia[]
     },
   })
@@ -60,7 +60,7 @@ export function useCreateAudiencia() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: Omit<Audiencia, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const { data: res } = await api.post('/audiencias', data)
+      const { data: res } = await api.post('/k1/lex/audiencias', data)
       return res
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['audiencias'] }),
@@ -71,7 +71,7 @@ export function useUpdateAudiencia() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Audiencia> }) => {
-      const { data: res } = await api.patch(`/audiencias/${id}`, data)
+      const { data: res } = await api.post('/k1/lex/audiencias/update', { id, ...data })
       return res
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['audiencias'] }),
@@ -82,7 +82,7 @@ export function useDeleteAudiencia() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/audiencias/${id}`)
+      await api.post('/k1/lex/audiencias/delete', { id })
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['audiencias'] }),
   })

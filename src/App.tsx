@@ -28,6 +28,8 @@ import { TrialExpiradoPage } from './pages/TrialExpiradoPage'
 import { PagamentoPendentePage } from './pages/PagamentoPendentePage'
 import { EquipeEscritorioPage } from './pages/EquipeEscritorioPage'
 import { PerfilPage } from './pages/PerfilPage'
+import { IntegracaoOrgaosPage } from './pages/IntegracaoOrgaosPage'
+import { ConsultaJusticaEleitoralPage, ConsultaJusticaEstadualPage, ConsultaJusticaFederalPage, ConsultaJusticaMilitarPage, ConsultaJusticaTrabalhoPage, ConsultaTribunaisSuperioresPage } from './pages/ConsultaTribunaisSuperioresPage'
 import { AssinaturaPage } from './pages/site/AssinaturaPage'
 import { CookieConsent } from './components/CookieConsent'
 
@@ -71,6 +73,13 @@ export default function App() {
                   <Route path="/intimacoes" element={<IntimacoesPage />} />
                   <Route path="/audiencias" element={<AudienciasPage />} />
                   <Route path="/perfil" element={<PerfilPage />} />
+                  <Route path="/integracao-orgaos" element={<IntegracaoOrgaosPage />} />
+                  <Route path="/integracao-orgaos/tribunais-superiores" element={<ConsultaTribunaisSuperioresPage />} />
+                  <Route path="/integracao-orgaos/justica-estadual" element={<ConsultaJusticaEstadualPage />} />
+                  <Route path="/integracao-orgaos/justica-federal" element={<ConsultaJusticaFederalPage />} />
+                  <Route path="/integracao-orgaos/justica-trabalho" element={<ConsultaJusticaTrabalhoPage />} />
+                  <Route path="/integracao-orgaos/justica-eleitoral" element={<ConsultaJusticaEleitoralPage />} />
+                  <Route path="/integracao-orgaos/justica-militar" element={<ConsultaJusticaMilitarPage />} />
                 </Route>
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
