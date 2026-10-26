@@ -19,6 +19,7 @@ interface TopbarProps {
   actions?: React.ReactNode
   rightContent?: React.ReactNode
   hideModuleBar?: boolean
+  hideUserMenu?: boolean
 }
 
 function trialBannerClass(daysLeft: number): string {
@@ -33,7 +34,7 @@ function trialBannerText(daysLeft: number): string {
   return 'Trial gratuito ativo - '
 }
 
-export function TopBar({ title, subtitle, icon, actions, rightContent, hideModuleBar = false }: TopbarProps) {
+export function TopBar({ title, subtitle, icon, actions, rightContent, hideModuleBar = false, hideUserMenu = false }: TopbarProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showModalidade, setShowModalidade] = useState(false)
   const [showAssinatura, setShowAssinatura] = useState(false)
@@ -217,7 +218,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
                 </Link>
               )}
 
-              {!rightContent && !isEscritorioRole && (
+              {!hideUserMenu && !rightContent && !isEscritorioRole && (
                 <div className="relative">
                   <button
                     onClick={() => setShowUserMenu(!showUserMenu)}

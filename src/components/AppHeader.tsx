@@ -139,7 +139,7 @@ export function AppHeader({ onMenuClick }: Props) {
       <div className="kea-header-spacer" />
       <div className="flex items-center gap-2 pr-2">
         <div className="hidden items-center gap-2 sm:flex">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">V. 1.1.0</span>
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">V. 1.2.0</span>
           {isEscritorioContext && contractedPlan && <span className="rounded-lg bg-[#087E96]/10 px-2.5 py-1 text-xs font-semibold text-[#087E96] dark:bg-[#20B987]/15 dark:text-[#20B987]">Plano {contractedPlan.nome}</span>}
         </div>
         {user?.role === 'advogado' && user.escritorioId && <button
@@ -181,7 +181,7 @@ export function AppHeader({ onMenuClick }: Props) {
       {releaseNotesOpen && (
         <Modal
           title="Notas da versão"
-          subtitle="Kealex — V. 1.1.0 · 22/10/2026"
+          subtitle="Kealex — V. 1.2.0 · 26/10/2026"
           onClose={() => setReleaseNotesOpen(false)}
           size="md"
         >
@@ -197,6 +197,9 @@ export function AppHeader({ onMenuClick }: Props) {
               <li>Administração, perfil do usuário e recursos de inteligência artificial.</li>
               <li>Timeline processual integrada à seção “Fase atual”, com avanço de fase conforme as permissões do usuário.</li>
               <li>Páginas públicas de apresentação, assinatura, termos de uso e privacidade.</li>
+              <li>As consultas dos ramos da Justiça usam o banner padronizado, com título e descrição específicos.</li>
+              <li>No cadastro de processo, o número CNJ identifica o tribunal e busca dados públicos do processo no DataJud.</li>
+              <li>Quando localizado, o processo preenche os campos vazios de classe, vara, tribunal e descrição; campos já editados são preservados.</li>
             </ul>
           </div>
         </Modal>

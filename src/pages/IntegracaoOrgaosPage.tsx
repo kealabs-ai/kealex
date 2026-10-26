@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { ArrowRight, Building2, CircleAlert, Gavel, Landmark, MapPin, Search, Scale, Shield, Vote } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Topbar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 
 const areas = [
   {
@@ -139,15 +140,14 @@ function LocalizadorProcesso() {
 
 export function IntegracaoOrgaosPage() {
   return <div className="flex h-screen flex-col bg-gray-50">
-    <Topbar icon={Landmark} title="Integração com Órgãos" subtitle="Acesse consultas organizadas por ramo do Poder Judiciário." />
+    <Topbar hideModuleBar hideUserMenu title="" />
     <main className="flex-1 overflow-y-auto p-6 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="relative overflow-hidden rounded-2xl border border-[#087E96]/15 border-l-4 border-l-[#F96313] bg-gradient-to-r from-[#F2F8FA] via-white to-[#EAF5F6] p-5 shadow-sm dark:from-[#F2F8FA] dark:via-white dark:to-[#EAF5F6]">
-          <h2 className="text-base font-bold text-[#102B46] dark:text-[#102B46]">Consultas por ramo da Justiça</h2>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-700 dark:text-slate-700">
-            Selecione uma categoria para localizar o órgão responsável pela consulta processual. A disponibilidade de cada consulta depende dos serviços oferecidos pelo respectivo tribunal.
-          </p>
-        </section>
+        <PageBanner
+          section="Integrações"
+          title="Integração com Órgãos"
+          description="Acesse consultas organizadas por ramo do Poder Judiciário."
+        />
 
         <LocalizadorProcesso />
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Categorias de consulta">
