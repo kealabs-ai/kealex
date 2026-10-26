@@ -266,9 +266,9 @@ function ConsultaDataJudPage({ ramo }: { ramo: ConsultaRamo }) {
           </section>
 
           {errorMessage && (
-            <div role="alert" className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
-              <CircleAlert size={18} className="mt-0.5 shrink-0" />
-              <p>{errorMessage}</p>
+            <div role="alert" className="flex items-start gap-3 rounded-xl border border-[#F96313]/25 bg-[#FFF7ED] px-4 py-3 text-sm text-[#102B46] dark:border-[#F96313]/25 dark:bg-[#FFF7ED] dark:text-[#102B46]">
+              <CircleAlert size={18} className="mt-0.5 shrink-0 text-[#F96313]" />
+              <p className="font-medium leading-6">{errorMessage}</p>
             </div>
           )}
 
