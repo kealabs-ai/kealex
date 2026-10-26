@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, Briefcase, Search, FileText, Download, CircleCheck, Archive, CircleX, FolderOpen } from 'lucide-react'
@@ -14,12 +14,41 @@ import { PageBanner } from '../components/PageBanner'
 import { useAuth } from '../context/AuthContext'
 import { useToast } from '../components/Toast'
 import { gerarGuiaTJMG } from '../utils/guiaGenerator'
+import { usuariosApi } from '../api/usuarios'
 import type { Processo, StatusProcesso } from '../types'
 
 type FormData = {
   numero: string; titulo: string; descricao: string
   clienteId: string; vara: string; tribunal: string
   status?: StatusProcesso
+}
+
+const CODIGOS_TRIBUNAIS = [
+  'ac', 'al', 'am', 'ap', 'ba', 'ce', 'dft', 'es', 'go', 'ma', 'mg', 'ms', 'mt',
+  'pa', 'pb', 'pe', 'pi', 'pr', 'rj', 'rn', 'ro', 'rr', 'rs', 'sc', 'se', 'sp', 'to',
+]
+
+function identificarTribunal(numero: string): string | null {
+  const n = numero.replace(/\D/g, '')
+  if (n.length !== 20) return null
+  const ramo = n[13]
+  const codigo = Number(n.slice(14, 16))
+  if (ramo === '3' && codigo === 0) return 'stj'
+  if (ramo === '4' && codigo >= 1 && codigo <= 6) return `trf${codigo}`
+  if (ramo === '5') return codigo === 0 ? 'tst' : codigo <= 24 ? `trt${codigo}` : null
+  if (ramo === '6') {
+    if (codigo === 0) return 'tse'
+    return CODIGOS_TRIBUNAIS[codigo - 1] ? `tre-${CODIGOS_TRIBUNAIS[codigo - 1]}` : null
+  }
+  if (ramo === '7') {
+    if (codigo === 0) return 'stm'
+    return ({ 13: 'tjmmg', 21: 'tjmrs', 26: 'tjmsp' } as Record<number, string>)[codigo] ?? null
+  }
+  if (ramo === '8' && codigo >= 1 && codigo <= 27) {
+    const sigla = CODIGOS_TRIBUNAIS[codigo - 1]
+    return sigla === 'dft' ? 'tjdft' : `tj${sigla}`
+  }
+  return null
 }
 
 export function ProcessosPage() {
@@ -43,14 +72,55 @@ export function ProcessosPage() {
   const [clienteFilter, setClienteFilter] = useState('todos')
   const [customFases, setCustomFases] = useState<string[]>([])
   const [novaFase, setNovaFase] = useState('')
-  const { register, handleSubmit, reset } = useForm<FormData>()
+  const [consultaStatus, setConsultaStatus] = useState('')
+  const lastLookup = useRef('')
+  const { register, handleSubmit, reset, watch, setValue, getValues } = useForm<FormData>()
+  const numeroProcesso = watch('numero')
   const { register: registerGuia, handleSubmit: handleSubmitGuia, reset: resetGuia } = useForm<{
     tipo: string; valor: string; vencimento: string; descricao: string
   }>()
 
-  const openCreate = () => { reset({}); setEditing(null); setCustomFases([]); setNovaFase(''); setOpen(true) }
+  const openCreate = () => { reset({}); lastLookup.current = ''; setConsultaStatus(''); setEditing(null); setCustomFases([]); setNovaFase(''); setOpen(true) }
   const openEdit = (p: Processo) => { reset({ numero: p.numero, titulo: p.titulo, descricao: p.descricao, clienteId: p.clienteId, vara: p.vara, tribunal: p.tribunal, status: p.status }); setEditing(p); setOpen(true) }
   const close = () => setOpen(false)
+
+  useEffect(() => {
+    if (!open || editing) return
+    const numero = (numeroProcesso ?? '').replace(/\D/g, '')
+    if (numero.length !== 20 || lastLookup.current === numero) return
+    const tribunal = identificarTribunal(numero)
+    if (!tribunal) {
+      setConsultaStatus('Não foi possível identificar automaticamente o tribunal deste número. Você pode preencher os dados manualmente.')
+      return
+    }
+    const timer = window.setTimeout(async () => {
+      lastLookup.current = numero
+      setConsultaStatus('Consultando dados do processo…')
+      try {
+        const response = await usuariosApi.consultarProcessoDataJud({ tribunal, numeroProcesso: numero }) as any
+        if (String(getValues('numero') ?? '').replace(/\D/g, '') !== numero) return
+        const processo = response?.hits?.hits?.[0]?._source
+        if (!processo) {
+          setConsultaStatus('Nenhum processo encontrado para esse número. Você pode preencher os dados manualmente.')
+          return
+        }
+        const assuntos = Array.isArray(processo.assuntos) ? processo.assuntos.map((a: any) => a.nome).filter(Boolean) : []
+        const descricao = [assuntos.length ? `Assuntos: ${assuntos.join(', ')}` : '', processo.dataAjuizamento ? `Data de ajuizamento: ${new Date(processo.dataAjuizamento).toLocaleDateString('pt-BR')}` : ''].filter(Boolean).join('\n')
+        const preencheSeVazio = (campo: keyof FormData, valor?: string) => {
+          if (valor && !String(getValues(campo) ?? '').trim()) setValue(campo, valor as never, { shouldDirty: false })
+        }
+        preencheSeVazio('titulo', processo.classe?.nome)
+        preencheSeVazio('vara', processo.orgaoJulgador?.nome)
+        preencheSeVazio('tribunal', processo.tribunal)
+        preencheSeVazio('descricao', descricao)
+        setConsultaStatus('Dados encontrados no DataJud. Confira e complete o cadastro do processo.')
+      } catch (error: any) {
+        const mensagem = error?.response?.data?.detail ?? error?.response?.data?.message
+        setConsultaStatus(typeof mensagem === 'string' ? mensagem : 'Não foi possível consultar o DataJud. Confira a chave pública no Perfil e preencha os dados manualmente.')
+      }
+    }, 500)
+    return () => window.clearTimeout(timer)
+  }, [numeroProcesso, open, editing, setValue, getValues])
 
   const openGuia = (p: Processo) => {
     setSelectedProcesso(p)
@@ -258,6 +328,7 @@ export function ProcessosPage() {
               <Input label="Número" {...register('numero')} placeholder="0001234-56.2024" />
               <Input label="Título" {...register('titulo')} placeholder="Ex: Ação Civil" />
             </div>
+            {!editing && <p className="text-xs text-slate-500 dark:text-slate-400" role="status" aria-live="polite">Informe o número CNJ completo para buscar automaticamente os dados públicos do processo.{consultaStatus && <> {consultaStatus}</>}</p>}
             <div className="grid grid-cols-2 gap-3">
               <Input label="Vara" {...register('vara')} placeholder="1ª Vara Cível" />
               <Input label="Tribunal" {...register('tribunal')} placeholder="TJSP" />

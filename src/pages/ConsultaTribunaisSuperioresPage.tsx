@@ -1,8 +1,9 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ArrowLeft, CalendarDays, CircleAlert, ExternalLink, Gavel, Landmark, LoaderCircle, Search, ShieldCheck } from 'lucide-react'
+import { ArrowLeft, CalendarDays, CircleAlert, ExternalLink, Gavel, LoaderCircle, Search, ShieldCheck } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { TopBar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import { useAuth } from '../context/AuthContext'
 import { usuariosApi } from '../api/usuarios'
 
@@ -217,12 +218,18 @@ function ConsultaDataJudPage({ ramo }: { ramo: ConsultaRamo }) {
 
   return (
     <div className="flex h-screen flex-col bg-slate-50 dark:bg-slate-950">
-      <TopBar icon={Landmark} title={pageTitle} subtitle="Consulta processual integrada ao DataJud · CNJ" />
+      <TopBar title="" hideModuleBar hideUserMenu />
       <main className="flex-1 overflow-y-auto p-5 sm:p-8">
         <div className="mx-auto max-w-6xl space-y-6">
           <Link to="/integracao-orgaos" className="inline-flex items-center gap-2 text-sm font-semibold text-[#087E96] transition hover:text-[#065F73] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#087E96]/40">
             <ArrowLeft size={16} /> Voltar para Integração com Órgãos
           </Link>
+
+          <PageBanner
+            section="Integrações"
+            title={pageTitle}
+            description={config.description}
+          />
 
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-700 dark:bg-slate-900 sm:p-7">
             <div className="mb-5 flex items-start gap-3">

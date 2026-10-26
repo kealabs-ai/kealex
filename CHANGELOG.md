@@ -2,6 +2,14 @@
 
 Este arquivo registra as alterações de cada versão do Kealex Frontend. As versões seguem o padrão SemVer (`MAJOR.MINOR.PATCH`).
 
+## V. 1.2.0 — 26/10/2026
+
+### Consultas DataJud e processos
+
+- As telas de consulta dos ramos da Justiça usam o banner padrão do sistema, com título e descrição específicos de cada ramo.
+- O modal **Novo Processo** identifica o tribunal pelo número CNJ completo e consulta os dados públicos no DataJud pelo backend.
+- Quando o DataJud encontra o processo, classe, vara, tribunal e informações de assunto/data podem preencher os campos vazios do cadastro; os valores digitados pelo usuário são preservados.
+- Falhas de consulta e processos não localizados exibem orientações, mantendo disponível o preenchimento manual.
 ## V. 1.1.0 — 22/10/2026
 
 ### Associação entre advogados e escritórios
