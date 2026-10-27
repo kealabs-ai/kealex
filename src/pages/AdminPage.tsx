@@ -16,8 +16,9 @@ import { Button, Input, Select, Textarea } from '../components/UI'
 import type { Role, Usuario } from '../types'
 import { useEscritorios } from '../hooks/useEscritorios'
 import { EscritoriosTab } from '../components/EscritoriosTab'
+import { McpConfigPanel, NotebookLlmConfigPanel } from '../components/IntegrationConfigPanels'
 
-type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'escritorios' | 'seguranca' | 'notificacoes'
+type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'escritorios' | 'seguranca' | 'notificacoes' | 'mcp' | 'notebook-llm'
 type ConfigOption = { tab: Tab; title: string; description: string; icon: LucideIcon; accent: string }
 
 const configOptions: ConfigOption[] = [
@@ -31,7 +32,8 @@ const configOptions: ConfigOption[] = [
   { tab: 'escritorios', title: 'Escritório', description: 'Consulte os escritórios e ajuste os limites de usuários associados.', icon: Building2, accent: 'from-teal-500 to-emerald-600' },
   { tab: 'seguranca', title: 'Segurança', description: 'Ajuste recursos e políticas de segurança da plataforma.', icon: Shield, accent: 'from-rose-500 to-red-600' },
   { tab: 'notificacoes', title: 'Notificações', description: 'Configure canais e preferências de comunicação do sistema.', icon: Bell, accent: 'from-blue-500 to-indigo-600' },
-]
+  { tab: 'mcp', title: 'MCP', description: 'Cadastre servidores e ferramentas compatíveis com Model Context Protocol.', icon: Server, accent: 'from-emerald-500 to-teal-600' },
+  { tab: 'notebook-llm', title: 'Notebook LLM', description: 'Configure fontes e acesso ao serviço de Notebook LLM.', icon: Database, accent: 'from-blue-500 to-indigo-600' },]
 type FormUsuario = { nome: string; email: string; senha?: string; role: Role; ativo: boolean; escritorioId?: string }
 type UsuariosTabState = { editing: Usuario | null; viewing: Usuario | null; confirmDelete: Usuario | null; open: boolean }
 
@@ -111,6 +113,8 @@ export function AdminPage() {
           {activeTab === 'escritorios' && <EscritoriosTab />}
           {activeTab === 'seguranca' && <SegurancaTab />}
           {activeTab === 'notificacoes' && <NotificacoesTab />}
+          {activeTab === 'mcp' && <McpConfigPanel />}
+          {activeTab === 'notebook-llm' && <NotebookLlmConfigPanel />}
         </motion.div>
       </div>
     </div>
