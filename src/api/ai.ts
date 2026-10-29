@@ -1,7 +1,7 @@
-import OpenAI from 'openai'
 import { logger } from '../utils/logger'
+import { api } from './client'
 
-export type AIProvider = 'cerebras' | 'groq'
+export type AIProvider = 'cerebras' | 'groq' | 'openai' | 'google' | 'claude' | 'deepseek'
 
 export const CEREBRAS_MODELS = [
   'llama-3.3-70b',
@@ -54,47 +54,20 @@ export interface AIConfig {
 
 export async function sendMessage(
   messages: ChatMessage[],
-  config: AIConfig,
-  onChunk: (chunk: string) => void
+  onChunk: (chunk: string) => void,
+  agentId?: string,
 ): Promise<void> {
-  const baseURL = config.provider === 'groq'
-    ? 'https://api.groq.com/openai/v1'
-    : 'https://api.cerebras.ai/v1'
-
-  logger.info('AI request:', config.provider, config.modelo, messages.length, 'msgs') // provider/model only — no user content logged
-
-  const client = new OpenAI({
-    apiKey: config.apiKey,
-    baseURL,
-    dangerouslyAllowBrowser: true,
-  })
-
-  const systemPrompt = config.systemPrompt || SYSTEM_PROMPT
-
+  logger.info('AI request:', messages.length, 'msgs') // no keys, provider secrets, or user content logged
   try {
-    const maxTokens = 2048
-    const inputLimit = 32_000
-    const trimmedMessages = messages.map((m) => ({
-      role: m.role,
-      content: m.content.slice(0, inputLimit),
-    }))
-
-    const stream = await client.chat.completions.create({
-      model: config.modelo,
-      stream: true,
-      max_tokens: maxTokens,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...trimmedMessages,
-      ],
-    })
-
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content ?? ''
-      if (delta) onChunk(delta)
-    }
+    const { data } = await api.post<{ content: string }>('/k1/lex/configuracoes/ia/chat', {
+      messages: messages.slice(-50).map(({ role, content }) => ({ role, content: content.slice(0, 32000) })),
+      ...(agentId ? { agente_id: agentId } : {}),
+    }, { timeout: 130000 })
+    onChunk(data.content || '')
   } catch (error: any) {
-    logger.error('AI request failed', error)
+    const status = error?.response?.status
+    const detail = error?.response?.data?.detail
+    logger.error('AI request failed', `${status ? `HTTP ${status}: ` : ''}${typeof detail === 'string' ? detail : error?.message || 'erro desconhecido'}`)
     throw error
   }
 }

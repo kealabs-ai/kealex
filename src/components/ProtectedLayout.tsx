@@ -13,6 +13,7 @@ const roleRequired: Record<string, Role[]> = {
   '/equipe':     ['escritorio'],
   '/clientes':   ['admin', 'advogado', 'juridico', 'escritorio'],
   '/admin':      ['admin'],
+  '/analise-documentos': ['advogado'],
   '/cobranca':   ['admin', 'advogado', 'juridico', 'escritorio'],
   '/intimacoes': ['admin', 'advogado', 'juridico', 'escritorio'],
   '/audiencias': ['admin', 'advogado', 'juridico', 'escritorio'],

@@ -551,7 +551,7 @@ export function PerfilPage() {
               </div>
               <div>
                 <h2 className="text-lg font-bold text-[#1E293B] dark:text-white">Versão do Kealex</h2>
-                <p className="mt-1 text-sm text-[#64748B] dark:text-slate-400">Versão atual: V. 1.0.0</p>
+                <p className="mt-1 text-sm text-[#64748B] dark:text-slate-400">Versão atual: V. 1.3.0</p>
               </div>
             </div>
             <button
@@ -603,13 +603,16 @@ export function PerfilPage() {
       {releaseNotesOpen && (
         <Modal
           title="Notas da versão"
-          subtitle="Kealex — V. 1.0.0 · 20/10/2026"
+          subtitle="Kealex — V. 1.3.0 · 29/10/2026"
           onClose={() => setReleaseNotesOpen(false)}
           size="md"
         >
           <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-            <p className="font-semibold text-slate-900 dark:text-white">Primeira versão estável do Kealex.</p>
+            <p className="font-semibold text-slate-900 dark:text-white">Novos recursos de IA e melhorias no chat.</p>
             <ul className="list-disc space-y-2 pl-5">
+              <li>Usuários podem cadastrar e gerenciar chaves pessoais de IA, separadas por provedor e modelo; os segredos ficam criptografados no backend.</li>
+              <li>Agentes aceitam modelos de OpenAI, Anthropic, Google, Groq, Cerebras e DeepSeek, com validação de compatibilidade e atualização da lista pela chave informada.</li>
+              <li>O chat usa o modelo configurado no agente e apresenta uma mensagem específica quando o acesso ao Groq é bloqueado pelo Cloudflare.</li>
               <li>Áreas de processos, clientes, documentos, prazos e atividades.</li>
               <li>Gestão financeira, cobranças, usuários, audiências e intimações.</li>
               <li>Administração, perfil do usuário e recursos de inteligência artificial.</li>

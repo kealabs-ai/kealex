@@ -139,7 +139,7 @@ export function AppHeader({ onMenuClick }: Props) {
       <div className="kea-header-spacer" />
       <div className="flex items-center gap-2 pr-2">
         <div className="hidden items-center gap-2 sm:flex">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">V. 1.2.0</span>
+          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">V. 1.3.0</span>
           {isEscritorioContext && contractedPlan && <span className="rounded-lg bg-[#087E96]/10 px-2.5 py-1 text-xs font-semibold text-[#087E96] dark:bg-[#20B987]/15 dark:text-[#20B987]">Plano {contractedPlan.nome}</span>}
         </div>
         {user?.role === 'advogado' && user.escritorioId && <button
@@ -181,13 +181,16 @@ export function AppHeader({ onMenuClick }: Props) {
       {releaseNotesOpen && (
         <Modal
           title="Notas da versão"
-          subtitle="Kealex — V. 1.2.0 · 26/10/2026"
+          subtitle="Kealex — V. 1.3.0 · 29/10/2026"
           onClose={() => setReleaseNotesOpen(false)}
           size="md"
         >
           <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
-            <p className="font-semibold text-slate-900 dark:text-white">Atualizações da plataforma Kealex.</p>
+            <p className="font-semibold text-slate-900 dark:text-white">Novos recursos de IA e melhorias no chat.</p>
             <ul className="list-disc space-y-2 pl-5">
+              <li>Usuários podem cadastrar e gerenciar chaves pessoais de IA, separadas por provedor e modelo; os segredos ficam criptografados no backend.</li>
+              <li>Agentes aceitam modelos de OpenAI, Anthropic, Google, Groq, Cerebras e DeepSeek, com validação de compatibilidade e atualização da lista pela chave informada.</li>
+              <li>O chat usa o modelo configurado no agente e apresenta uma mensagem específica quando o acesso ao Groq é bloqueado pelo Cloudflare.</li>
               <li>Advogados podem se associar a um escritório com código; o backend valida a capacidade de vagas.</li>
               <li>A topbar mostra o escritório associado e abre seus dados de cadastro e contato.</li>
               <li>Advogados associados mantêm o acesso às telas de advogado; a role Escritório também acessa os módulos de trabalho e equipe.</li>

@@ -1,7 +1,7 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList, UserRoundCog, Landmark } from 'lucide-react'
+import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList, UserRoundCog, Landmark, FileSearch, KeyRound } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logotipo_kealex.png'
 import { ProfileAvatar } from './ProfileAvatar'
@@ -72,7 +72,9 @@ export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
           {!isClient && isAdmin && !isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Administração</p>}
           {isAdmin && <NavItem to="/admin" label="Configurações" icon={Settings} collapsed={isCollapsed} onNavigate={onClose} />}
           {!isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Inteligência</p>}
+          <NavItem to="/configuracoes/ia" label="Minhas chaves de IA" icon={KeyRound} collapsed={isCollapsed} onNavigate={onClose} />
           <NavItem to="/ia" label="Kealex AI Hub" icon={Sparkles} badge="IA" collapsed={isCollapsed} onNavigate={onClose} />
+          {user?.role === 'advogado' && <NavItem to="/analise-documentos" label="Análise de Documentos" icon={FileSearch} collapsed={isCollapsed} onNavigate={onClose} />}
         </nav>
         {user?.role !== 'escritorio' && <div className="kea-sidebar-user" title={isCollapsed ? user?.nome : undefined}>
           <ProfileAvatar user={user} className="kea-sidebar-avatar" iconSize={17} />
