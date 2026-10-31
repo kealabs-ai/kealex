@@ -1,11 +1,12 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Sparkles, RotateCcw, Copy, Check, Bot, Lightbulb, ChevronRight, AlertCircle, Download, Edit3 } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '../api/ai'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { useAuth } from '../context/AuthContext'
-import { useAgentesPublicos } from '../hooks/useAgentes'
+import { useAgentesPublicos, useMeusAgentes } from '../hooks/useAgentes'
+import { useAIPolicy } from '../hooks/useAIPolicy'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
 import { configuracoesApi } from '../api/configuracoes'
 import { gerarDocumentoWordDoChat } from '../utils/documentGenerator'
@@ -40,6 +41,12 @@ export function IAPage() {
   const { user } = useAuth()
   const { data: configPadrao, isLoading: configLoading, error: configError } = useConfigIaAtiva()
   const { data: agentesPublicos = [], isLoading: agentesLoading } = useAgentesPublicos()
+  const { data: meusAgentes = [] } = useMeusAgentes()
+  const { data: aiPolicy } = useAIPolicy()
+  const agentesDisponiveis = useMemo(() => [...agentesPublicos, ...meusAgentes].filter((agent) => {
+    const allowed = aiPolicy?.allowed_models ?? []
+    return agent.ativo && (!allowed.length || allowed.includes(agent.modelo) || allowed.includes(`${agent.provider}:${agent.modelo}`))
+  }), [agentesPublicos, meusAgentes, aiPolicy?.allowed_models])
   const { data: minhasChaves = [], isLoading: minhasChavesLoading } = useQuery({ queryKey: ['minhas-chaves-ia'], queryFn: configuracoesApi.getMyIaKeys })
 
   const [agenteAtivo, setAgenteAtivo] = useState<AgenteIA | null>(null)
@@ -146,12 +153,12 @@ export function IAPage() {
           <h1>Kealex AI Hub</h1>
           <div className="kea-ai-heading-actions">
               {messages.length > 0 && <button type="button" className="kea-ai-new-chat" onClick={clearChat}><RotateCcw size={14} /> Nova conversa</button>}
-              {agentesPublicos.length > 0 && (
+              {agentesDisponiveis.length > 0 && (
                 <label className="kea-ai-agent-select">
                   <Bot size={15} />
-                  <select value={agenteAtivo?.id ?? ''} onChange={(event) => setAgenteAtivo(agentesPublicos.find((agente) => agente.id === event.target.value) ?? null)} aria-label="Selecionar agente de IA">
+                  <select value={agenteAtivo?.id ?? ''} onChange={(event) => setAgenteAtivo(agentesDisponiveis.find((agente) => agente.id === event.target.value) ?? null)} aria-label="Selecionar agente de IA">
                     <option value="">Agente padrão</option>
-                    {agentesPublicos.filter((agente) => agente.ativo).map((agente) => <option key={agente.id} value={agente.id}>{agente.nome} · {agente.modelo}</option>)}
+                    {agentesDisponiveis.map((agente) => <option key={agente.id} value={agente.id}>{agente.nome} · {agente.modelo}</option>)}
                   </select>
                 </label>
               )}

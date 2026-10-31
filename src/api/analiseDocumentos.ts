@@ -40,6 +40,6 @@ export const analiseDocumentosApi = {
   },
   removeDocumento: (conversaId: string, documentoId: string) =>
     api.delete<{ ok: boolean }>(`${base}/conversas/${conversaId}/documentos/${documentoId}`).then((response) => response.data),
-  send: (conversaId: string, content: string) =>
-    api.post<AnaliseMensagem>(`${base}/conversas/${conversaId}/mensagens`, { content }).then((response) => response.data),
+  send: (conversaId: string, content: string, agenteId?: string) =>
+    api.post<AnaliseMensagem>(`${base}/conversas/${conversaId}/mensagens`, { content, agente_id: agenteId || null }).then((response) => response.data),
 }

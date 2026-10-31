@@ -20,6 +20,7 @@ import { UsuariosPage } from './pages/UsuariosPage'
 import { ClientesPage } from './pages/ClientesPage'
 import { IAPage } from './pages/IAPage'
 import { MinhaIAPage } from './pages/MinhaIAPage'
+import { MeusAgentsPage } from './pages/MeusAgentsPage'
 import { AnaliseDocumentosPage } from './pages/AnaliseDocumentosPage'
 import { AdminPage } from './pages/AdminPage'
 import { IntimacoesPage } from './pages/IntimacoesPage'
@@ -73,6 +74,7 @@ export default function App() {
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/ia" element={<IAPage />} />
                   <Route path="/configuracoes/ia" element={<MinhaIAPage />} />
+                  <Route path="/meus-agents" element={<MeusAgentsPage />} />
                   <Route path="/analise-documentos" element={<AnaliseDocumentosPage />} />
                   <Route path="/intimacoes" element={<IntimacoesPage />} />
                   <Route path="/audiencias" element={<AudienciasPage />} />

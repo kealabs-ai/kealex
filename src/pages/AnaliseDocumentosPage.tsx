@@ -6,6 +6,7 @@ import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { Button } from '../components/UI'
 import { useToast } from '../components/Toast'
 import { analiseDocumentosApi, type AnaliseConversa } from '../api/analiseDocumentos'
+import { useAgentesPublicos, useMeusAgentes } from '../hooks/useAgentes'
 
 const ACCEPTED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md']
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -35,6 +36,7 @@ export function AnaliseDocumentosPage() {
   const queryClient = useQueryClient()
   const { error: toastError, success } = useToast()
   const [conversationId, setConversationId] = useState('')
+  const [agentId, setAgentId] = useState('')
   const [input, setInput] = useState('')
   const [uploading, setUploading] = useState(false)
   const [sending, setSending] = useState(false)
@@ -58,6 +60,9 @@ export function AnaliseDocumentosPage() {
   })
   const conversations = conversationsQuery.data ?? []
   const conversation = conversationQuery.data
+  const { data: publicAgents = [] } = useAgentesPublicos()
+  const { data: myAgents = [] } = useMeusAgentes()
+  const selectableAgents = [...publicAgents, ...myAgents].filter((agent) => agent.ativo)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
@@ -145,7 +150,7 @@ export function AnaliseDocumentosPage() {
     setRetryPrompt(text)
     setInput('')
     try {
-      await analiseDocumentosApi.send(id, text)
+      await analiseDocumentosApi.send(id, text, agentId || undefined)
       await queryClient.invalidateQueries({ queryKey: ['analise-documentos', 'conversa', id] })
       await queryClient.invalidateQueries({ queryKey: ['analise-documentos', 'conversas'] })
     } catch (error) {
@@ -210,6 +215,7 @@ export function AnaliseDocumentosPage() {
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">Converse com o Kealex AI sobre os arquivos anexados.</p>
           </div>
           <div className="kea-ai-heading-actions">
+            {selectableAgents.length > 0 && <label className="kea-ai-agent-select"><span className="sr-only">Agente</span><select value={agentId} onChange={(event) => setAgentId(event.target.value)} aria-label="Selecionar agente para análise"><option value="">Agente padrão</option>{selectableAgents.map((agent) => <option key={agent.id} value={agent.id}>{agent.nome} · {agent.modelo}</option>)}</select></label>}
             <button type="button" className="kea-ai-new-chat" onClick={newAnalysis} disabled={creating}>
               {creating ? <LoaderCircle size={14} className="animate-spin" /> : <RotateCcw size={14} />}
               Nova análise

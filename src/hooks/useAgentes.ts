@@ -17,6 +17,28 @@ export function useAgentesPublicos() {
   })
 }
 
+export function useMeusAgentes() {
+  return useQuery({ queryKey: [...AGENTES_KEY, 'meus'], queryFn: agentesApi.listMine })
+}
+
+export function useCreateMeuAgente() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: agentesApi.createMine, onSuccess: () => qc.invalidateQueries({ queryKey: AGENTES_KEY }) })
+}
+
+export function useUpdateMeuAgente() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => agentesApi.updateMine(id, data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: AGENTES_KEY }),
+  })
+}
+
+export function useDeleteMeuAgente() {
+  const qc = useQueryClient()
+  return useMutation({ mutationFn: agentesApi.deleteMine, onSuccess: () => qc.invalidateQueries({ queryKey: AGENTES_KEY }) })
+}
+
 export function useAgente(id: string) {
   return useQuery({ 
     queryKey: [...AGENTES_KEY, id], 

@@ -9,6 +9,7 @@ import { useConfigDatabase, useSaveConfigDatabase, useDatabaseEnv } from '../hoo
 import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario } from '../hooks/useUsuarios'
 import { IATab } from '../components/IATab'
 import { AgentesTab } from '../components/AgentesTab'
+import { AIPoliciesTab } from '../components/AIPoliciesTab'
 import { AgentesDebugPanel } from '../components/AgentesDebugPanel'
 import { Modal } from '../components/Modal'
 import { StatCard, DataCard, SkeletonRow } from '../components/Cards'
@@ -18,7 +19,7 @@ import { useEscritorios } from '../hooks/useEscritorios'
 import { EscritoriosTab } from '../components/EscritoriosTab'
 import { McpConfigPanel, NotebookLlmConfigPanel } from '../components/IntegrationConfigPanels'
 
-type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'debug' | 'usuarios' | 'escritorios' | 'seguranca' | 'notificacoes' | 'mcp' | 'notebook-llm'
+type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'politicas-ia' | 'debug' | 'usuarios' | 'escritorios' | 'seguranca' | 'notificacoes' | 'mcp' | 'notebook-llm'
 type ConfigOption = { tab: Tab; title: string; description: string; icon: LucideIcon; accent: string }
 
 const configOptions: ConfigOption[] = [
@@ -27,6 +28,7 @@ const configOptions: ConfigOption[] = [
   { tab: 'database', title: 'Banco de Dados', description: 'Conexões, ambiente e configurações relacionadas ao banco de dados.', icon: Database, accent: 'from-violet-500 to-indigo-600' },
   { tab: 'ia', title: 'Configurações de IA', description: 'Provedores, modelos e parâmetros dos recursos de inteligência artificial.', icon: Bot, accent: 'from-fuchsia-500 to-purple-600' },
   { tab: 'agentes', title: 'Agentes IA', description: 'Gerencie os agentes e suas especializações disponíveis na plataforma.', icon: Bot, accent: 'from-indigo-500 to-violet-600' },
+  { tab: 'politicas-ia', title: 'Permissões de acesso', description: 'Organize os módulos e recursos de IA liberados por plano e personalize exceções para usuários.', icon: Bot, accent: 'from-violet-500 to-fuchsia-600' },
   { tab: 'debug', title: 'Debug API', description: 'Inspecione integrações e ferramentas de diagnóstico da API.', icon: Activity, accent: 'from-emerald-500 to-teal-600' },
   { tab: 'usuarios', title: 'Usuários', description: 'Consulte, cadastre e gerencie os acessos dos usuários do sistema.', icon: Users, accent: 'from-orange-500 to-amber-600' },
   { tab: 'escritorios', title: 'Escritório', description: 'Consulte os escritórios e ajuste os limites de usuários associados.', icon: Building2, accent: 'from-teal-500 to-emerald-600' },
@@ -105,6 +107,7 @@ export function AdminPage() {
           )}
           {activeTab === 'ia' && <IATab />}
           {activeTab === 'agentes' && <AgentesTab />}
+          {activeTab === 'politicas-ia' && <AIPoliciesTab />}
           {activeTab === 'debug' && <AgentesDebugPanel />}
           {activeTab === 'geral' && <GeralTab />}
           {activeTab === 'cdn' && <CdnTab />}
