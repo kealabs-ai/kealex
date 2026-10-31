@@ -1,11 +1,14 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Sparkles, RotateCcw, Copy, Check, Bot, Lightbulb, ChevronRight, AlertCircle, Download, Edit3 } from 'lucide-react'
-import { sendMessage, type ChatMessage, type AIConfig } from '../api/ai'
+import { sendMessage, type ChatMessage } from '../api/ai'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { useAuth } from '../context/AuthContext'
-import { useAgentesPublicos } from '../hooks/useAgentes'
+import { useAgentesPublicos, useMeusAgentes } from '../hooks/useAgentes'
+import { useAIPolicy } from '../hooks/useAIPolicy'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
+import { configuracoesApi } from '../api/configuracoes'
 import { gerarDocumentoWordDoChat } from '../utils/documentGenerator'
 import { TopBar } from '../components/TopBar'
 import type { AgenteIA } from '../types'
@@ -30,11 +33,21 @@ const QUICK_ACTIONS = [
 ]
 
 function genId() { return Math.random().toString(36).slice(2) }
+function providerLabel(provider?: string) {
+  return ({ cerebras: 'Cerebras', groq: 'Groq', openai: 'OpenAI (GPT)', google: 'Google (Gemini)', claude: 'Claude', deepseek: 'DeepSeek' } as Record<string, string>)[provider || ''] || 'provedor de IA'
+}
 
 export function IAPage() {
   const { user } = useAuth()
   const { data: configPadrao, isLoading: configLoading, error: configError } = useConfigIaAtiva()
   const { data: agentesPublicos = [], isLoading: agentesLoading } = useAgentesPublicos()
+  const { data: meusAgentes = [] } = useMeusAgentes()
+  const { data: aiPolicy } = useAIPolicy()
+  const agentesDisponiveis = useMemo(() => [...agentesPublicos, ...meusAgentes].filter((agent) => {
+    const allowed = aiPolicy?.allowed_models ?? []
+    return agent.ativo && (!allowed.length || allowed.includes(agent.modelo) || allowed.includes(`${agent.provider}:${agent.modelo}`))
+  }), [agentesPublicos, meusAgentes, aiPolicy?.allowed_models])
+  const { data: minhasChaves = [], isLoading: minhasChavesLoading } = useQuery({ queryKey: ['minhas-chaves-ia'], queryFn: configuracoesApi.getMyIaKeys })
 
   const [agenteAtivo, setAgenteAtivo] = useState<AgenteIA | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -46,9 +59,12 @@ export function IAPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const abortRef = useRef<boolean>(false)
 
-  const config = agenteAtivo || configPadrao
+  const chavePessoalAtiva = minhasChaves.find((item) => item.is_active)
+  const config = agenteAtivo || (chavePessoalAtiva ? { provider: chavePessoalAtiva.provider, modelo: chavePessoalAtiva.model, max_tokens: 8192, ativo: true, configured: true, api_key: undefined } : configPadrao)
   const apiKey = config?.api_key
-  const hasConfig = !!(config && apiKey && config.ativo)
+  const hasConfig = !!(agenteAtivo
+    ? agenteAtivo.ativo && Boolean((agenteAtivo as AgenteIA & { configured?: boolean }).configured || apiKey)
+    : chavePessoalAtiva || (config && ((('configured' in config) && config.configured) || apiKey) && config.ativo))
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -77,30 +93,29 @@ export function IAPage() {
     setStreaming(true)
     abortRef.current = false
 
-    const aiConfig: AIConfig = {
-      provider: config!.provider as any,
-      apiKey: apiKey!,
-      modelo: config!.modelo,
-      systemPrompt: config!.system_prompt || undefined,
-    }
-
     try {
-      await sendMessage([...messages, userMsg], aiConfig, (chunk) => {
+      await sendMessage([...messages, userMsg], (chunk) => {
         if (abortRef.current) return
         setMessages((prev) =>
           prev.map((m) => m.id === assistantId ? { ...m, content: m.content + chunk } : m)
         )
-      })
+      }, agenteAtivo?.id)
     } catch (err: any) {
-      const msg = err?.message?.includes('API key') || err?.message?.includes('401')
-        ? `Chave da API ${config?.provider === 'groq' ? 'Groq' : 'Cerebras'} inválida. Verifique as configurações.`
-        : 'Erro ao conectar com a IA. Verifique sua configuração.'
+      const detail = err?.response?.data?.detail
+      const status = err?.response?.status
+      const msg = err?.message?.includes('API key') || status === 401 || err?.message?.includes('401')
+        ? `Chave da API ${providerLabel(config?.provider)} inválida. Verifique as configurações.`
+        : status === 404 && detail === 'Not Found'
+          ? 'A rota de chat não foi encontrada no servidor. Atualize o serviço de configurações de IA.'
+          : typeof detail === 'string' && detail.trim()
+            ? detail
+            : 'Erro ao conectar com a IA. Verifique sua configuração.'
       setError(msg)
       setMessages((prev) => prev.filter((m) => m.id !== assistantId))
     } finally {
       setStreaming(false)
     }
-  }, [input, messages, streaming, hasConfig, config, apiKey])
+  }, [input, messages, streaming, hasConfig, config, apiKey, agenteAtivo, chavePessoalAtiva])
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() }
@@ -138,12 +153,12 @@ export function IAPage() {
           <h1>Kealex AI Hub</h1>
           <div className="kea-ai-heading-actions">
               {messages.length > 0 && <button type="button" className="kea-ai-new-chat" onClick={clearChat}><RotateCcw size={14} /> Nova conversa</button>}
-              {agentesPublicos.length > 0 && (
+              {agentesDisponiveis.length > 0 && (
                 <label className="kea-ai-agent-select">
                   <Bot size={15} />
-                  <select value={agenteAtivo?.id ?? ''} onChange={(event) => setAgenteAtivo(agentesPublicos.find((agente) => agente.id === event.target.value) ?? null)} aria-label="Selecionar agente de IA">
+                  <select value={agenteAtivo?.id ?? ''} onChange={(event) => setAgenteAtivo(agentesDisponiveis.find((agente) => agente.id === event.target.value) ?? null)} aria-label="Selecionar agente de IA">
                     <option value="">Agente padrão</option>
-                    {agentesPublicos.filter((agente) => agente.ativo).map((agente) => <option key={agente.id} value={agente.id}>{agente.nome} · {agente.modelo}</option>)}
+                    {agentesDisponiveis.map((agente) => <option key={agente.id} value={agente.id}>{agente.nome} · {agente.modelo}</option>)}
                   </select>
                 </label>
               )}
@@ -173,7 +188,7 @@ export function IAPage() {
                   </p>
                 </div>
 
-                {!hasConfig && !configLoading && !agentesLoading && (
+                {!hasConfig && !configLoading && !agentesLoading && !minhasChavesLoading && (
                   <motion.div
                     className="flex items-start gap-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-500/20 rounded-2xl p-4 mb-6"
                     initial={{ opacity: 0 }}
@@ -200,10 +215,10 @@ export function IAPage() {
                     <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mt-1.5" />
                     <div>
                       <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
-                        {agenteAtivo ? `Usando: ${agenteAtivo.nome}` : `Conectado ao ${config.provider === 'groq' ? 'Groq' : 'Cerebras'}`}
+                        {agenteAtivo ? `Usando: ${agenteAtivo.nome}` : `Conectado ao ${providerLabel(config?.provider)}`}
                       </p>
                       <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-0.5">
-                        Modelo: {config.modelo} • Max Tokens: {config.max_tokens}
+                        Modelo: {config?.modelo} • Max Tokens: {config?.max_tokens}
                       </p>
                     </div>
                   </motion.div>

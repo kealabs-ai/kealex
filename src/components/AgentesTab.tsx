@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Plus, Edit2, Trash2, Eye, EyeOff, Bot, Globe, Lock, CheckCircle, RefreshCw } from 'lucide-react'
 import { DataCard } from './Cards'
@@ -6,8 +6,8 @@ import { Button, Input, Textarea, Select } from './UI'
 import { Modal } from './Modal'
 import { useAgentes, useCreateAgente, useUpdateAgente, useDeleteAgente } from '../hooks/useAgentes'
 import { useModelosDisponiveis } from '../hooks/useConfiguracoes'
-import axios from 'axios'
 import type { AgenteIA, AIProvider } from '../types'
+import { isModelCompatibleWithProvider } from '../utils/aiModels'
 
 export function AgentesTab() {
   const { data: agentes = [], isLoading } = useAgentes()
@@ -102,7 +102,7 @@ export function AgentesTab() {
                       )}
                       <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
                         <span className={agente.provider === 'groq' ? 'text-orange-600 font-medium' : 'text-indigo-600 font-medium'}>
-                          {agente.provider === 'groq' ? 'Groq' : 'Cerebras'}
+                          {{ groq: 'Groq', cerebras: 'Cerebras', openai: 'OpenAI', claude: 'Anthropic', google: 'Google', deepseek: 'DeepSeek' }[agente.provider] || agente.provider}
                         </span>
                         <span>•</span>
                         <span>{agente.modelo}</span>
@@ -186,75 +186,122 @@ function AgenteModal({
 }) {
   const fallbackCerebras = ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b']
   const fallbackGroq = ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+  const fallbacks: Record<AIProvider, string[]> = {
+    cerebras: fallbackCerebras,
+    groq: fallbackGroq,
+    openai: ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'],
+    claude: ['claude-sonnet-5', 'claude-opus-5', 'claude-sonnet-4-6'],
+    google: ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash'],
+    deepseek: ['deepseek-chat', 'deepseek-reasoner'],
+  }
 
   const { data: modelosDisponiveis } = useModelosDisponiveis()
   const [showAdvanced, setShowAdvanced] = useState(false)
-  const [groqModels, setGroqModels] = useState<string[]>(
-    // inicia com o modelo atual para não aparecer vazio antes do carregamento
-    agente?.provider === 'groq' && agente?.modelo ? [agente.modelo] : []
-  )
-  const [loadingGroq, setLoadingGroq] = useState(false)
+  const [modelsByProvider, setModelsByProvider] = useState<Partial<Record<AIProvider, string[]>>>({})
+  const [loadingModels, setLoadingModels] = useState(false)
   const [form, setForm] = useState({
     nome: agente?.nome || '',
     descricao: agente?.descricao || '',
     provider: (agente?.provider || 'cerebras') as AIProvider,
     api_key: agente?.api_key || '',
-    modelo: agente?.modelo || 'llama-3.3-70b',
+    modelo: agente?.modelo || (agente?.provider ? fallbacks[agente.provider][0] : fallbackCerebras[0]),
     max_tokens: agente?.max_tokens || 8192,
     system_prompt: agente?.system_prompt || '',
     ativo: agente?.ativo ?? true,
     publico: agente?.publico ?? true,
   })
 
-  const loadGroqModels = async (apiKey: string) => {
-    if (!apiKey || apiKey.length < 20) return
-    setLoadingGroq(true)
+  const loadModels = async (provider: AIProvider, apiKey: string) => {
+    const normalizedKey = apiKey.trim()
+    if (!normalizedKey) { window.alert('Informe a API Key do provedor selecionado para atualizar os modelos.'); return }
+    const validKey = provider === 'cerebras' ? normalizedKey.startsWith('csk-')
+      : provider === 'groq' ? normalizedKey.startsWith('gsk-') || normalizedKey.startsWith('gsk_')
+      : provider === 'claude' ? normalizedKey.startsWith('sk-ant-')
+      : provider === 'google' ? normalizedKey.startsWith('AIza')
+      : normalizedKey.startsWith('sk-') && (provider !== 'openai' || !normalizedKey.startsWith('sk-ant-'))
+    if (!validKey) { window.alert(`A chave informada não parece ser válida para ${provider}.`); return }
+
+    setLoadingModels(true)
     try {
-      const res = await axios.get('https://api.groq.com/openai/v1/models', {
-        headers: { Authorization: `Bearer ${apiKey}` }
-      })
-      const models = res.data.data
-        .filter((m: any) => {
-          const id = m.id.toLowerCase()
-          return !id.includes('whisper') && !id.includes('guard') && !id.includes('tts') && !id.includes('vision')
-        })
-        .map((m: any) => m.id)
-        .sort()
-      setGroqModels(models.length > 0
-        ? (models.includes(form.modelo) ? models : [form.modelo, ...models])
-        : fallbackGroq
-      )
-    } catch {
-      setGroqModels(fallbackGroq)
+      let url: string
+      let headers: Record<string, string>
+      if (provider === 'google') {
+        url = 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000'
+        headers = { 'x-goog-api-key': normalizedKey }
+      } else if (provider === 'claude') {
+        url = 'https://api.anthropic.com/v1/models?limit=100'
+        headers = { 'x-api-key': normalizedKey, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' }
+      } else {
+        const base = provider === 'groq' ? 'https://api.groq.com/openai/v1' : provider === 'cerebras' ? 'https://api.cerebras.ai/v1' : provider === 'deepseek' ? 'https://api.deepseek.com' : 'https://api.openai.com/v1'
+        url = `${base}/models`
+        headers = { Authorization: `Bearer ${normalizedKey}` }
+      }
+
+      const response = await fetch(url, { headers })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error?.message || result.message || `O provedor respondeu com status ${response.status}.`)
+
+      let ids: string[]
+      if (provider === 'google') {
+        ids = (result.models || []).filter((item: any) => item.supportedGenerationMethods?.includes('generateContent') && /gemini/i.test(item.name || ''))
+          .map((item: any) => String(item.baseModelId || item.name.replace(/^models\//, '')))
+          .filter((id: string) => !/(embedding|image|audio|tts|live|robotics)/i.test(id))
+      } else if (provider === 'claude') {
+        ids = (result.data || []).map((item: any) => String(item.id || '')).filter((id: string) => /claude/i.test(id))
+      } else {
+        ids = (result.data || []).map((item: any) => String(item.id || '')).filter(Boolean)
+        if (provider === 'openai') ids = ids.filter((id) => /^(gpt-|o[134]-)/i.test(id))
+        if (provider === 'groq') ids = ids.filter((id) => !/(whisper|guard|tts|vision)/i.test(id))
+        if (provider === 'deepseek') ids = ids.filter((id) => /^deepseek-/i.test(id))
+      }
+      ids = Array.from(new Set(ids)).sort()
+      if (!ids.length) throw new Error('O provedor não retornou modelos compatíveis com chat.')
+      setModelsByProvider((current) => ({ ...current, [provider]: ids }))
+      setForm((current) => ({ ...current, modelo: current.provider === provider && ids.includes(current.modelo) ? current.modelo : ids[0] }))
+    } catch (error: any) {
+      window.alert(error.message || `Não foi possível consultar modelos de ${provider}.`)
     } finally {
-      setLoadingGroq(false)
+      setLoadingModels(false)
     }
   }
-
-  useEffect(() => {
-    if (form.provider === 'groq' && form.api_key) loadGroqModels(form.api_key)
-  }, [])
 
   const modelosPorProvider = {
     cerebras: modelosDisponiveis?.cerebras
       ? (modelosDisponiveis.cerebras.includes(form.modelo) ? modelosDisponiveis.cerebras : [form.modelo, ...modelosDisponiveis.cerebras])
       : fallbackCerebras,
-    groq: groqModels.length > 0 ? groqModels : (modelosDisponiveis?.groq || fallbackGroq),
+    groq: modelosDisponiveis?.groq || fallbackGroq,
+    openai: modelosDisponiveis?.openai || fallbacks.openai,
+    claude: modelosDisponiveis?.claude || fallbacks.claude,
+    google: modelosDisponiveis?.google || fallbacks.google,
+    deepseek: modelosDisponiveis?.deepseek || fallbacks.deepseek,
   }
 
   const handleProviderChange = (newProvider: AIProvider) => {
-    const defaultModelo = newProvider === 'groq' ? fallbackGroq[0] : fallbackCerebras[0]
-    setForm({ ...form, provider: newProvider, modelo: defaultModelo })
-    if (newProvider === 'groq' && form.api_key) loadGroqModels(form.api_key)
+    const defaultModelo = fallbacks[newProvider][0]
+    setForm({ ...form, provider: newProvider, modelo: defaultModelo, api_key: '' })
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.nome || !form.api_key) return
+    if (!isModelCompatibleWithProvider(form.provider, form.modelo)) {
+      window.alert(`O modelo ${form.modelo} não corresponde ao fabricante ${form.provider}.`)
+      return
+    }
+    const key = form.api_key.trim()
+    const validKey = form.provider === 'cerebras' ? key.startsWith('csk-')
+      : form.provider === 'groq' ? key.startsWith('gsk-') || key.startsWith('gsk_')
+      : form.provider === 'claude' ? key.startsWith('sk-ant-')
+      : form.provider === 'google' ? key.startsWith('AIza')
+      : key.startsWith('sk-') && (form.provider !== 'openai' || !key.startsWith('sk-ant-'))
+    if (!validKey) {
+      window.alert(`A chave informada não corresponde ao provedor ${form.provider}.`)
+      return
+    }
     onSave(form)
   }
 
-  const models = modelosPorProvider[form.provider]
+  const models = modelsByProvider[form.provider]?.length ? modelsByProvider[form.provider]! : modelosPorProvider[form.provider]
 
   return (
     <Modal onClose={onClose} title={agente ? 'Editar Agente' : 'Novo Agente'}>
@@ -283,22 +330,19 @@ function AgenteModal({
           >
             <option value="cerebras">Cerebras</option>
             <option value="groq">Groq</option>
+            <option value="openai">OpenAI</option>
+            <option value="claude">Anthropic</option>
+            <option value="google">Google</option>
+            <option value="deepseek">DeepSeek</option>
           </Select>
 
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">Modelo</label>
-              {form.provider === 'groq' && form.api_key && (
-                <button
-                  type="button"
-                  onClick={() => loadGroqModels(form.api_key)}
-                  disabled={loadingGroq}
-                  className="flex items-center gap-1 text-xs text-orange-600 hover:text-orange-700 disabled:opacity-50"
-                >
-                  <RefreshCw size={11} className={loadingGroq ? 'animate-spin' : ''} />
-                  {loadingGroq ? 'Carregando...' : 'Atualizar'}
-                </button>
-              )}
+              <button type="button" onClick={() => loadModels(form.provider, form.api_key)} disabled={!form.api_key.trim() || loadingModels} className="flex items-center gap-1 text-xs text-indigo-600 hover:text-indigo-700 disabled:opacity-50">
+                <RefreshCw size={11} className={loadingModels ? 'animate-spin' : ''} />
+                {loadingModels ? 'Buscando...' : 'Atualizar com esta chave'}
+              </button>
             </div>
             <select
               value={form.modelo}
@@ -317,7 +361,8 @@ function AgenteModal({
           type="password"
           value={form.api_key}
           onChange={(e) => setForm({ ...form, api_key: e.target.value })}
-          placeholder={form.provider === 'groq' ? 'gsk-...' : 'csk-...'}
+          autoComplete="new-password"
+          placeholder={({ groq: 'gsk-...', cerebras: 'csk-...', openai: 'sk-...', claude: 'sk-ant-...', google: 'AIza...', deepseek: 'sk-...' } as Record<AIProvider, string>)[form.provider]}
           required
         />
 

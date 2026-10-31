@@ -263,6 +263,10 @@
 .kea-ai-agent-select select { width: min(190px, 18vw); min-width: 95px; border: 0; outline: 0; background: transparent; color: var(--kealex-text); font: inherit; }
 .kea-ai-model-chip { border-color: #cdeee7; background: #effbf8; color: #087e70; }
 .kea-ai-workspace { min-height: 0; border: 1px solid var(--kealex-border); border-radius: 14px; background: var(--kealex-surface); box-shadow: var(--kealex-shadow-card); }
+.kea-document-analysis-content { display: flex; flex-direction: column; gap: 12px; }
+.kea-document-analysis-history { border-right: 1px solid var(--kealex-border); background: var(--kealex-surface); }
+.kea-document-analysis-page .chat-input-bar { border-color: var(--kealex-border); }
+.kea-document-analysis-page .chat-input-box { width: 100%; max-width: 100%; }
 .dark .kea-ai-new-chat, .dark .kea-ai-agent-select { border-color: #33465c; background: rgba(16,34,56,.94); color: #d2e2f4; }
 .dark .kea-ai-page-heading h1 { color: #e8f0fa; }
 .dark .kea-ai-new-chat:hover { border-color: #2760a2; background: #122e4e; color: #8bbaff; }
@@ -290,6 +294,8 @@
   .kea-ai-agent-select select { width: min(145px, 36vw); }
   .kea-ai-model-chip { display: none; }
   .kea-ai-workspace { border-radius: 11px; }
+  .kea-document-analysis-content { gap: 10px; }
+  .kea-document-analysis-history { height: 138px; flex: 0 0 138px; border-right: 0; border-bottom: 1px solid var(--kealex-border); }
   .kea-process-hero-copy > p:last-child { font-size: 12px; }
   .kea-process-stats { gap: 9px; }
   .kea-process-stat { min-height: 112px; gap: 9px; padding: 13px 11px 20px; }

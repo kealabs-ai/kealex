@@ -7,12 +7,14 @@ import { AppHeader } from './AppHeader'
 import { useTrial } from '../hooks/useTrial'
 import { assinaturaApi } from '../api/assinatura'
 import type { Role } from '../types'
+import { useAIPolicy } from '../hooks/useAIPolicy'
 
 const roleRequired: Record<string, Role[]> = {
   '/usuarios':   ['admin'],
   '/equipe':     ['escritorio'],
   '/clientes':   ['admin', 'advogado', 'juridico', 'escritorio'],
   '/admin':      ['admin'],
+  '/analise-documentos': ['advogado'],
   '/cobranca':   ['admin', 'advogado', 'juridico', 'escritorio'],
   '/intimacoes': ['admin', 'advogado', 'juridico', 'escritorio'],
   '/audiencias': ['admin', 'advogado', 'juridico', 'escritorio'],
@@ -22,9 +24,14 @@ const roleRequired: Record<string, Role[]> = {
   '/documentos': ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
   '/integracao-orgaos': ['admin', 'advogado', 'juridico', 'escritorio'],
 }
+const planControlledMenus = [
+  '/processos', '/documentos', '/prazos', '/atividades', '/financeiro', '/cobranca', '/usuarios', '/equipe',
+  '/clientes', '/intimacoes', '/audiencias', '/integracao-orgaos', '/ia', '/analise-documentos', '/meus-agents', '/configuracoes/ia',
+]
 
 export function ProtectedLayout() {
   const { user, role } = useAuth()
+  const { data: aiPolicy } = useAIPolicy()
   const location = useLocation()
   const trial = useTrial()
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem('kealex-sidebar-collapsed') === 'true')
@@ -54,6 +61,9 @@ export function ProtectedLayout() {
   if (required && role && !required.includes(role)) {
     return <Navigate to="/processos" replace />
   }
+  if (location.pathname === '/meus-agents' && role !== 'advogado') return <Navigate to="/processos" replace />
+  const planMenuPath = planControlledMenus.includes(location.pathname) ? location.pathname : null
+  if (planMenuPath && aiPolicy && !aiPolicy.allowed_menus.includes(planMenuPath)) return <Navigate to="/processos" replace />
 
   const toggleSidebar = () => {
     setCollapsed((value) => {

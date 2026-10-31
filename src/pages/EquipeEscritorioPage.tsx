@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
-import { Check, Copy, Link2, Pencil, ToggleLeft, ToggleRight, Users } from 'lucide-react'
+import { Check, Copy, Link2, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useUsuarios, useUpdateUsuario } from '../hooks/useUsuarios'
 import { useEscritorios } from '../hooks/useEscritorios'
 import { useAuth } from '../context/AuthContext'
@@ -8,6 +8,7 @@ import { Modal } from '../components/Modal'
 import { Badge } from '../components/Badge'
 import { Button, Input } from '../components/UI'
 import { Topbar } from '../components/TopBar'
+import { PageBanner } from '../components/PageBanner'
 import type { Usuario } from '../types'
 
 type FormData = { nome: string; email: string; senha?: string; oab?: string }
@@ -45,8 +46,13 @@ export function EquipeEscritorioPage() {
 
   return <div className="flex h-screen flex-col bg-gray-50">
     {isError && <p className="mx-6 mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-700" role="alert">{(usuariosError as any)?.response?.data?.detail ?? 'A conta precisa ter permissao e vinculo com um escritorio para carregar a equipe.'}</p>}
-    <Topbar icon={Users} title="Equipe de Advogados" subtitle={`${active}/${escritorio?.limiteAdvogados ?? 3} advogados ativos no escritório`} actions={<Button icon={<Link2 size={15} />} onClick={() => setAssociationOpen(true)}>Associe Advogados</Button>} />
+    <Topbar title="" hideModuleBar />
     <div className="flex-1 space-y-5 overflow-y-auto p-6 md:p-8">
+      <PageBanner
+        title="Equipe de Advogados"
+        description={`${active}/${escritorio?.limiteAdvogados ?? 3} advogados ativos no escritório`}
+        action={<Button icon={<Link2 size={15} />} onClick={() => setAssociationOpen(true)}>Associe Advogados</Button>}
+      />
       <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600 shadow-sm">
         <strong className="text-slate-900">Acesso da equipe</strong>
         <p className="mt-1">Cada advogado entra com seu próprio e-mail e senha e visualiza apenas os processos e clientes vinculados à própria conta. O limite padrão deste escritório é de 3 advogados ativos.</p>

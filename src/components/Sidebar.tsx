@@ -1,10 +1,11 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList, UserRoundCog, Landmark } from 'lucide-react'
+import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList, UserRoundCog, Landmark, FileSearch, KeyRound, Bot } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logotipo_kealex.png'
 import { ProfileAvatar } from './ProfileAvatar'
+import { useAIPolicy } from '../hooks/useAIPolicy'
 
 const officeLinks = [
   { to: '/processos', label: 'Processos & Fases', icon: Briefcase },
@@ -49,12 +50,14 @@ function NavItem({ to, label, icon: Icon, badge, collapsed, onNavigate }: { to: 
 
 export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
   const { user } = useAuth()
+  const { data: aiPolicy } = useAIPolicy()
   const isAdmin = user?.role === 'admin'
   const isClient = user?.role === 'cliente'
   const isEscritorio = user?.role === 'escritorio'
   const isCollapsed = collapsed && !mobileOpen
   const links = isEscritorio ? escritorioLinks : isClient ? clientLinks : officeLinks
-  const nav = (items: typeof officeLinks) => items.map(({ to, label, icon, badge }) => <NavItem key={to} to={to} label={label} icon={icon} badge={badge} collapsed={isCollapsed} onNavigate={onClose} />)
+  const nav = (items: typeof officeLinks) => items.filter(({ to }) => !aiPolicy || aiPolicy.allowed_menus.includes(to)).map(({ to, label, icon, badge }) => <NavItem key={to} to={to} label={label} icon={icon} badge={badge} collapsed={isCollapsed} onNavigate={onClose} />)
+  const aiMenuAllowed = (path: string) => !aiPolicy || aiPolicy.allowed_menus.includes(path)
 
   return (
     <>
@@ -72,7 +75,10 @@ export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
           {!isClient && isAdmin && !isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Administração</p>}
           {isAdmin && <NavItem to="/admin" label="Configurações" icon={Settings} collapsed={isCollapsed} onNavigate={onClose} />}
           {!isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Inteligência</p>}
-          <NavItem to="/ia" label="Kealex AI Hub" icon={Sparkles} badge="IA" collapsed={isCollapsed} onNavigate={onClose} />
+          {aiMenuAllowed('/configuracoes/ia') && <NavItem to="/configuracoes/ia" label="Minhas chaves de IA" icon={KeyRound} collapsed={isCollapsed} onNavigate={onClose} />}
+          {aiMenuAllowed('/ia') && <NavItem to="/ia" label="Kealex AI Hub" icon={Sparkles} badge="IA" collapsed={isCollapsed} onNavigate={onClose} />}
+          {user?.role === 'advogado' && aiMenuAllowed('/meus-agents') && <NavItem to="/meus-agents" label="Meus Agents" icon={Bot} collapsed={isCollapsed} onNavigate={onClose} />}
+          {user?.role === 'advogado' && aiMenuAllowed('/analise-documentos') && <NavItem to="/analise-documentos" label="Análise de Documentos" icon={FileSearch} collapsed={isCollapsed} onNavigate={onClose} />}
         </nav>
         {user?.role !== 'escritorio' && <div className="kea-sidebar-user" title={isCollapsed ? user?.nome : undefined}>
           <ProfileAvatar user={user} className="kea-sidebar-avatar" iconSize={17} />

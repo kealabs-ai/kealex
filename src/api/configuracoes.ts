@@ -59,6 +59,7 @@ export interface CfgIa {
   max_tokens: number
   system_prompt?: string
   ativo: boolean
+  configured?: boolean
   updated_at: string
 }
 
@@ -117,6 +118,38 @@ export interface CfgNotificacoes {
 export interface ModelosDisponiveis {
   cerebras: string[]
   groq: string[]
+  openai: string[]
+  google: string[]
+  claude: string[]
+  deepseek: string[]
+}
+
+export type IaProvider = keyof ModelosDisponiveis
+export interface IaProviderConfig {
+  tenant_id: string
+  user_id: string
+  provider: IaProvider
+  api_key?: string
+  endpoint_url?: string
+  modelo: string
+  max_tokens: number
+  system_prompt?: string
+  ativo: boolean
+  configured?: boolean
+}
+export interface IaProvidersConfig {
+  active_provider: IaProvider
+  providers: Partial<Record<IaProvider, IaProviderConfig>>
+}
+
+export interface UserIaApiKey {
+  id: string
+  provider: IaProvider
+  model: string
+  api_key_masked: string
+  is_active: boolean
+  created_at: string
+  updated_at: string
 }
 
 export interface DatabaseEnv {
@@ -144,10 +177,21 @@ export const configuracoesApi = {
 
   // IA
   getIa: () => api.get<CfgIa>('/k1/lex/configuracoes/ia').then((r) => r.data).catch(() => null),
+  getIaProviders: () => api.get<IaProvidersConfig>('/k1/lex/configuracoes/ia/provedores').then((r) => r.data),
+  getMyIaKeys: () => api.get<UserIaApiKey[]>('/k1/lex/configuracoes/ia/minhas-chaves').then((r) => r.data),
+  createMyIaKey: (data: { provider: IaProvider; model: string; api_key: string; is_active: boolean }) => api.post<UserIaApiKey>('/k1/lex/configuracoes/ia/minhas-chaves', data).then((r) => r.data),
+  updateMyIaKey: (id: string, data: Partial<{ provider: IaProvider; model: string; api_key: string; is_active: boolean }>) => api.put<UserIaApiKey>(`/k1/lex/configuracoes/ia/minhas-chaves/${id}`, data).then((r) => r.data),
+  deleteMyIaKey: (id: string) => api.delete(`/k1/lex/configuracoes/ia/minhas-chaves/${id}`).then((r) => r.data),
+  saveIaProvider: (provider: IaProvider, data: Partial<IaProviderConfig>) => api.post<IaProviderConfig>(`/k1/lex/configuracoes/ia/provedores/${provider}`, data).then((r) => r.data),
+  activateIaProvider: (provider: IaProvider) => api.post<CfgIa>(`/k1/lex/configuracoes/ia/provedor-ativo/${provider}`).then((r) => r.data),
   getIaAtiva: () => api.get<CfgIa>('/k1/lex/configuracoes/ia/ativa').then((r) => r.data).catch(() => null),
   getModelosDisponiveis: () => api.get<ModelosDisponiveis>('/k1/lex/configuracoes/ia/modelos').then((r) => r.data).catch(() => ({
     cerebras: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'],
-    groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant']
+    groq: ['llama-3.3-70b-versatile', 'llama-3.1-70b-versatile', 'llama-3.1-8b-instant'],
+    openai: ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'],
+    google: ['gemini-3.8-flash', 'gemini-3.7-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'],
+    claude: ['claude-opus-5', 'claude-sonnet-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-sonnet-4-6', 'claude-haiku-4-5-20251001'],
+    deepseek: ['deepseek-chat', 'deepseek-reasoner'],
   })),
   saveIa: (data: Partial<CfgIa>) => api.post<CfgIa>('/k1/lex/configuracoes/ia', data).then((r) => r.data),
 

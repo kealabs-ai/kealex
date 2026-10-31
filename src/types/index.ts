@@ -178,7 +178,7 @@ export interface AuthUser {
   avatarId?: string
 }
 
-export type AIProvider = 'cerebras' | 'groq'
+export type AIProvider = 'cerebras' | 'groq' | 'openai' | 'claude' | 'google' | 'deepseek'
 
 export interface AgenteIA extends BaseEntity {
   tenantId: string
