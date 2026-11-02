@@ -6,11 +6,9 @@ import type { Processo } from '../types'
 export const PROCESSOS_KEY = ['processos']
 
 export function useProcessos() {
-  return useQuery({ 
-    queryKey: PROCESSOS_KEY, 
+  return useQuery({
+    queryKey: PROCESSOS_KEY,
     queryFn: () => processosApi.list(),
-    staleTime: 0,
-    gcTime: 0
   })
 }
 
