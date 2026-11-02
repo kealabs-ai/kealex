@@ -57,7 +57,7 @@ export function AIPoliciesTab() {
   const { data: effectivePolicy, isError: effectivePolicyError, error: effectivePolicyLoadError } = useAIPolicy()
   const savePlan = useSaveAIPlanPolicy()
   const saveUserPolicy = useSaveAIUserPolicy()
-  const { data: users = [], isError: usersError } = useUsuarios()
+  const { data: users = [], isLoading: usersLoading, isError: usersError, error: usersLoadError } = useUsuarios()
   const { success, error: toastError } = useToast()
   const [requestedPlanKey, setRequestedPlanKey] = useState<string | null>(null)
   const [editedPlan, setEditedPlan] = useState<{ key: string; policy: AIPolicy } | null>(null)
@@ -277,8 +277,12 @@ export function AIPoliciesTab() {
             inclusive quando o plano mudar.
           </p>
         </div>
-        {usersError ? (
-          <p className="text-sm text-red-600">Não foi possível carregar a lista de usuários.</p>
+        {usersLoading ? (
+          <p className="text-sm text-slate-500">Carregando a lista de usuários...</p>
+        ) : usersError ? (
+          <p className="text-sm text-red-600">
+            Não foi possível carregar a lista de usuários: {getErrorMessage(usersLoadError)}
+          </p>
         ) : effectivePolicyError ? (
           <p className="text-sm text-red-600">
             Não foi possível identificar o plano atual para calcular as permissões herdadas: {getErrorMessage(effectivePolicyLoadError)}

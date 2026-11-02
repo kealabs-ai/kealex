@@ -3,7 +3,7 @@ import type { Usuario, Role } from '../types'
 
 export const usuariosApi = {
   list: (role?: Role) =>
-    api.get<Usuario[]>('/v1/lex/usuarios', { params: role ? { role } : {} }).then((r) => r.data),
+    api.get<Usuario[]>('/k1/lex/usuarios', { params: role ? { role } : {} }).then((r) => r.data),
 
   get: (id: string) =>
     api.post<Usuario>('/v1/lex/usuarios/get', { id }).then((r) => r.data),
