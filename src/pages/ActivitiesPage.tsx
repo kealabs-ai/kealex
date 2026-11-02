@@ -1,7 +1,8 @@
-import { useMemo, useState, type FormEvent, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type FormEvent, type CSSProperties } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import axios from 'axios'
-import { CalendarDays, Check, ClipboardList, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
-import { useActivities, useActivityColumns, useCreateActivity, useCreateActivityColumn, useDeleteActivity, useDeleteActivityColumn, useUpdateActivity, useUpdateActivityColumn } from '../hooks/useActivities'
+import { ArrowDown, ArrowUp, CalendarDays, Check, ClipboardList, Clock3, GripVertical, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
+import { useActivities, useActivityColumns, useCreateActivity, useCreateActivityColumn, useDeleteActivity, useDeleteActivityColumn, useUpdateActivity, useUpdateActivityColumn, ACTIVITY_COLUMNS_KEY } from '../hooks/useActivities'
 import type { ActivityColumnPayload, ActivityPayload } from '../api/activities'
 import { PageBanner } from '../components/PageBanner'
 import { TopBar } from '../components/TopBar'
@@ -9,6 +10,7 @@ import { Button } from '../components/UI'
 import { Modal } from '../components/Modal'
 import { useToast } from '../components/Toast'
 import type { Activity, ActivityColumn, ActivityPriority, ActivityStatus } from '../types'
+import { useAuth } from '../context/AuthContext'
 
 const DEFAULT_COLUMNS: ActivityColumn[] = [
   { id: 'todo', title: 'A Fazer', color: '#087E96', position: 0, createdAt: '', updatedAt: '' },
@@ -37,6 +39,21 @@ function dateLabel(value: string | null) {
   return `${day}/${month}/${year}`
 }
 
+function columnDurationLabel(statusEnteredAt: string | null | undefined, now: number) {
+  if (!statusEnteredAt) return 'Tempo não registrado'
+  const enteredAt = new Date(statusEnteredAt)
+  if (Number.isNaN(enteredAt.getTime())) return 'Tempo não registrado'
+  const days = Math.floor(Math.max(0, now - enteredAt.getTime()) / 86_400_000)
+  if (days === 0) return 'Menos de 1 dia na coluna'
+  return `${days} ${days === 1 ? 'dia' : 'dias'} na coluna`
+}
+
+function columnEntryDateLabel(statusEnteredAt: string | null | undefined) {
+  if (!statusEnteredAt) return 'O tempo nesta coluna será registrado após a próxima movimentação.'
+  const enteredAt = new Date(statusEnteredAt)
+  return Number.isNaN(enteredAt.getTime()) ? 'Data de entrada na coluna inválida.' : `Entrou na coluna em ${enteredAt.toLocaleString()}`
+}
+
 function isOverdue(activity: Activity) {
   if (!activity.dueDate || activity.status === 'done') return false
   const today = new Date()
@@ -50,6 +67,16 @@ function resolveColumnId(status: string, columns: ActivityColumn[]) {
 
   // Recover IDs truncated by older databases where activities.status was VARCHAR(20).
   return columns.find((column) => column.id.length > status.length && column.id.startsWith(status))?.id ?? status
+}
+
+function reorderColumnList(columns: ActivityColumn[], draggedId: string, targetId: string) {
+  const fromIndex = columns.findIndex((column) => column.id === draggedId)
+  const toIndex = columns.findIndex((column) => column.id === targetId)
+  if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return columns
+  const reordered = [...columns]
+  const [draggedColumn] = reordered.splice(fromIndex, 1)
+  reordered.splice(toIndex, 0, draggedColumn)
+  return reordered
 }
 
 function activityErrorMessage(error: unknown, fallback: string) {
@@ -73,6 +100,7 @@ function ActivityCard({
   onStatusChange,
   columns,
   color,
+  now,
 }: {
   activity: Activity
   onEdit: (activity: Activity) => void
@@ -80,6 +108,7 @@ function ActivityCard({
   onStatusChange: (activity: Activity, status: ActivityStatus) => void
   columns: ActivityColumn[]
   color: string
+  now: number
 }) {
   const overdue = isOverdue(activity)
   return (
@@ -101,6 +130,10 @@ function ActivityCard({
       <div className={`mt-4 flex items-center gap-1.5 text-xs ${overdue ? 'text-red-600 dark:text-red-300' : 'text-slate-500 dark:text-slate-400'}`}>
         <CalendarDays size={14} aria-hidden="true" />
         <span>{overdue ? 'Atrasada · ' : ''}{dateLabel(activity.dueDate)}</span>
+      </div>
+      <div className="mt-2 flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400" title={columnEntryDateLabel(activity.statusEnteredAt)}>
+        <Clock3 size={14} aria-hidden="true" />
+        <span>{columnDurationLabel(activity.statusEnteredAt, now)}</span>
       </div>
       <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3 dark:border-slate-700">
         <label className="sr-only" htmlFor={`activity-status-${activity.id}`}>Mover {activity.title} para outra coluna</label>
@@ -124,6 +157,8 @@ function ActivityCard({
 export function ActivitiesPage() {
   const { data, isLoading, isError, error: loadError, refetch } = useActivities()
   const { data: columnData, isLoading: columnsLoading, isError: columnsError, refetch: refetchColumns } = useActivityColumns()
+  const queryClient = useQueryClient()
+  const { user } = useAuth()
   const createActivity = useCreateActivity()
   const createColumn = useCreateActivityColumn()
   const updateActivity = useUpdateActivity()
@@ -131,20 +166,45 @@ export function ActivitiesPage() {
   const deleteActivity = useDeleteActivity()
   const deleteColumn = useDeleteActivityColumn()
   const { success, error: toastError } = useToast()
+  const columnOrderStorageKey = `kealex-activity-column-order-${user?.id ?? 'default'}`
   const [formOpen, setFormOpen] = useState(false)
   const [columnFormOpen, setColumnFormOpen] = useState(false)
   const [editingColumn, setEditingColumn] = useState<ActivityColumn | null>(null)
+  const [columnOrder, setColumnOrder] = useState<ActivityColumn[]>([])
+  const [draggedColumnId, setDraggedColumnId] = useState<string | null>(null)
   const [columnDeleteTarget, setColumnDeleteTarget] = useState<ActivityColumn | null>(null)
   const [columnForm, setColumnForm] = useState<ActivityColumnPayload>({ title: '', color: COLUMN_COLORS[0] })
   const [editing, setEditing] = useState<Activity | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Activity | null>(null)
   const [form, setForm] = useState<ActivityPayload>(EMPTY_FORM)
   const [dragOver, setDragOver] = useState<ActivityStatus | null>(null)
-  const activities = Array.isArray(data) ? data : []
-  const columns = Array.isArray(columnData) && columnData.length > 0 ? columnData : DEFAULT_COLUMNS
+  const [now, setNow] = useState(() => Date.now())
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [])
+  const activities = useMemo(() => Array.isArray(data) ? data : [], [data])
+  const columns = useMemo(() => {
+    const serverColumns = Array.isArray(columnData) && columnData.length > 0
+      ? [...columnData].sort((left, right) => left.position - right.position)
+      : DEFAULT_COLUMNS
+    try {
+      const savedOrder = localStorage.getItem(columnOrderStorageKey)
+      if (!savedOrder) return serverColumns
+      const savedIds: unknown = JSON.parse(savedOrder)
+      if (!Array.isArray(savedIds) || !savedIds.every((id): id is string => typeof id === 'string')) return serverColumns
+      const columnsById = new Map(serverColumns.map((column) => [column.id, column]))
+      const orderedIds = [...new Set(savedIds)].filter((id) => columnsById.has(id))
+      orderedIds.push(...serverColumns.map((column) => column.id).filter((id) => !orderedIds.includes(id)))
+      return orderedIds.map((id, position) => ({ ...columnsById.get(id)!, position }))
+    } catch {
+      return serverColumns
+    }
+  }, [columnData, columnOrderStorageKey])
   const grouped = useMemo(() => Object.fromEntries(
     columns.map((column) => [column.id, activities.filter((activity) => resolveColumnId(activity.status, columns) === column.id)])
   ) as Record<ActivityStatus, Activity[]>, [activities, columns])
+  const canSaveColumnOrder = Boolean(columnData?.length) && columnOrder.some((column, index) => columns[index]?.id !== column.id)
 
   const openCreate = () => {
     setEditing(null)
@@ -154,8 +214,40 @@ export function ActivitiesPage() {
 
   const openColumnForm = (column?: ActivityColumn) => {
     setEditingColumn(column ?? null)
+    setColumnOrder(columns)
     setColumnForm(column ? { title: column.title, color: column.color } : { title: '', color: COLUMN_COLORS[0] })
     setColumnFormOpen(true)
+  }
+
+  const closeColumnForm = () => {
+    if (createColumn.isPending || updateColumn.isPending) return
+    setColumnFormOpen(false)
+    setEditingColumn(null)
+  }
+
+  const moveColumn = (columnId: string, offset: number) => {
+    setColumnOrder((current) => {
+      const currentIndex = current.findIndex((column) => column.id === columnId)
+      const targetIndex = currentIndex + offset
+      if (currentIndex < 0 || targetIndex < 0 || targetIndex >= current.length) return current
+      return reorderColumnList(current, columnId, current[targetIndex].id)
+    })
+  }
+
+  const saveColumnOrder = () => {
+    const hasChanged = columnOrder.some((column, index) => columns[index]?.id !== column.id)
+    if (!hasChanged) return
+    try {
+      localStorage.setItem(columnOrderStorageKey, JSON.stringify(columnOrder.map((column) => column.id)))
+      queryClient.setQueryData<ActivityColumn[]>(ACTIVITY_COLUMNS_KEY, (current) => {
+        if (!current) return current
+        const positions = new Map(columnOrder.map((column, position) => [column.id, position]))
+        return current.map((column) => ({ ...column, position: positions.get(column.id) ?? column.position }))
+      })
+      success('Ordem das colunas atualizada.')
+    } catch {
+      toastError('Não foi possível salvar a ordem das colunas neste navegador.')
+    }
   }
 
   const submitColumn = (event: FormEvent<HTMLFormElement>) => {
@@ -248,7 +340,7 @@ export function ActivitiesPage() {
           section="Meu Espaço"
           title="Minhas Atividades"
           description="Organize suas tarefas e acompanhe cada etapa do trabalho."
-          action={<div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" icon={<Plus size={16}/>} onClick={() => openColumnForm()}>Nova Coluna</Button><Button type="button" icon={<Plus size={16}/>} onClick={openCreate}>Nova Atividade</Button></div>}
+          action={<div className="flex flex-wrap gap-2"><Button type="button" variant="secondary" className="kea-new-column-button" icon={<Plus size={16}/>} onClick={() => openColumnForm()} disabled={columnsLoading || columnsError}>Nova Coluna</Button><Button type="button" icon={<Plus size={16}/>} onClick={openCreate}>Nova Atividade</Button></div>}
         />
 
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -301,7 +393,7 @@ export function ActivitiesPage() {
                   {isLoading ? (
                     <div className="space-y-3" aria-label="Carregando atividades">{[0, 1].map((item) => <div key={item} className="h-32 animate-pulse rounded-xl bg-slate-200/70 dark:bg-slate-700/70" />)}</div>
                   ) : grouped[column.id]?.length ? (
-                    grouped[column.id].map((activity) => <ActivityCard key={activity.id} activity={activity} onEdit={openEdit} onDelete={setDeleteTarget} onStatusChange={moveActivity} columns={columns} color={column.color}/>)
+                    grouped[column.id].map((activity) => <ActivityCard key={activity.id} activity={activity} onEdit={openEdit} onDelete={setDeleteTarget} onStatusChange={moveActivity} columns={columns} color={column.color} now={now}/>)
                   ) : (
                     <div className="kea-activity-empty"><Check size={16}/><span>Nenhuma atividade nesta coluna</span></div>
                   )}
@@ -338,8 +430,46 @@ export function ActivitiesPage() {
         </form>
       </Modal>}
 
-      {columnFormOpen && <Modal title={editingColumn ? 'Editar coluna' : 'Nova coluna'} subtitle="Personalize o nome e a cor exibidos no quadro." onClose={() => setColumnFormOpen(false)} size="sm">
+      {columnFormOpen && <Modal title={editingColumn ? 'Editar coluna' : 'Nova coluna'} subtitle="Personalize o nome e a cor exibidos no quadro." onClose={closeColumnForm} size="md">
         <form onSubmit={submitColumn} className="space-y-4">
+          {!editingColumn && <section aria-label="Ordenar colunas" className="rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Colunas existentes</h3>
+                <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">Arraste para alterar a ordem no quadro. A preferência fica salva neste navegador.</p>
+              </div>
+              <Button type="button" variant="secondary" onClick={saveColumnOrder} disabled={!canSaveColumnOrder}>Salvar ordem</Button>
+            </div>
+            <ol className="mt-3 space-y-2">
+              {columnOrder.map((column, index) => (
+                <li
+                  key={column.id}
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.setData('text/activity-column-id', column.id)
+                    event.dataTransfer.effectAllowed = 'move'
+                    setDraggedColumnId(column.id)
+                  }}
+                  onDragOver={(event) => event.preventDefault()}
+                  onDrop={(event) => {
+                    event.preventDefault()
+                    const draggedId = event.dataTransfer.getData('text/activity-column-id') || draggedColumnId
+                    if (draggedId) setColumnOrder((current) => reorderColumnList(current, draggedId, column.id))
+                    setDraggedColumnId(null)
+                  }}
+                  onDragEnd={() => setDraggedColumnId(null)}
+                  className={`flex items-center gap-2 rounded-lg border px-2 py-2 ${draggedColumnId === column.id ? 'border-[#087E96] bg-[#087E96]/5 opacity-60' : 'border-slate-200 dark:border-slate-700'}`}
+                >
+                  <GripVertical size={17} className="shrink-0 cursor-grab text-slate-400 active:cursor-grabbing" aria-hidden="true" />
+                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: column.color }} aria-hidden="true" />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{column.title}</span>
+                  <span className="text-xs text-slate-400" aria-label={`Posição ${index + 1}`}>{index + 1}</span>
+                  <button type="button" className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-700" onClick={() => moveColumn(column.id, -1)} disabled={index === 0} aria-label={`Mover ${column.title} para cima`}><ArrowUp size={14}/></button>
+                  <button type="button" className="rounded p-1 text-slate-500 hover:bg-slate-100 disabled:opacity-40 dark:hover:bg-slate-700" onClick={() => moveColumn(column.id, 1)} disabled={index === columnOrder.length - 1} aria-label={`Mover ${column.title} para baixo`}><ArrowDown size={14}/></button>
+                </li>
+              ))}
+            </ol>
+          </section>}
           <label className="block text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">Nome da coluna
             <input className="kea-ui-input mt-1.5 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-white" value={columnForm.title} onChange={(event) => setColumnForm((current) => ({ ...current, title: event.target.value }))} maxLength={80} required autoFocus />
           </label>
@@ -351,7 +481,7 @@ export function ActivitiesPage() {
             </div>
           </div>
           <div className="flex justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-700">
-            <Button type="button" variant="secondary" onClick={() => setColumnFormOpen(false)}>Cancelar</Button>
+            <Button type="button" variant="secondary" onClick={closeColumnForm}>Cancelar</Button>
             <Button type="submit" loading={createColumn.isPending || updateColumn.isPending} disabled={!columnForm.title.trim() || createColumn.isPending || updateColumn.isPending}>{editingColumn ? 'Salvar coluna' : 'Criar coluna'}</Button>
           </div>
         </form>

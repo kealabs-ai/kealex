@@ -1049,8 +1049,12 @@ input.kea-ui-input:not([type="checkbox"]):not([type="radio"]):not([type="range"]
 .kea-app-shell button[class*="from-indigo-"]:hover,
 .kea-app-shell button[class*="from-violet-"]:hover,
 .kea-app-shell button[class*="from-purple-"]:hover { background: #064fc4 !important; }
-.kea-activity-board { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); align-items: start; gap: 16px; }
-.kea-activity-column { min-height: 380px; padding: 14px; border: 1px solid color-mix(in srgb, var(--activity-accent) 24%, var(--kealex-border)); border-radius: 16px; background: color-mix(in srgb, var(--activity-accent) 3%, var(--kealex-surface)); transition: border-color .18s, background-color .18s, box-shadow .18s; }
+.kea-activity-board { display: flex; width: 100%; min-width: 0; align-items: flex-start; gap: 16px; overflow-x: auto; overflow-y: hidden; padding-bottom: 12px; overscroll-behavior-x: contain; scroll-snap-type: x proximity; scrollbar-color: #94a3b8 transparent; scrollbar-width: thin; }
+.kea-activity-board::-webkit-scrollbar { height: 8px; }
+.kea-activity-board::-webkit-scrollbar-thumb { border-radius: 999px; background: #94a3b8; }
+.kea-activity-board::-webkit-scrollbar-track { background: transparent; }
+.kea-activities-page .kea-new-column-button:hover:not(:disabled) { border-color: #087e96 !important; background: #087e96 !important; color: #fff !important; }
+.kea-activity-column { flex: 0 0 min(320px, 85vw); min-width: 0; min-height: 380px; padding: 14px; border: 1px solid color-mix(in srgb, var(--activity-accent) 24%, var(--kealex-border)); border-radius: 16px; background: color-mix(in srgb, var(--activity-accent) 3%, var(--kealex-surface)); scroll-snap-align: start; transition: border-color .18s, background-color .18s, box-shadow .18s; }
 .kea-activity-column.is-todo { --activity-accent: #075de8; }
 .kea-activity-column.is-in-progress { --activity-accent: #d97706; }
 .kea-activity-column.is-done { --activity-accent: #059669; }
