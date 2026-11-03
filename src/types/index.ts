@@ -111,6 +111,7 @@ export interface Activity extends BaseEntity {
   title: string
   description: string
   status: ActivityStatus
+  statusEnteredAt?: string | null
   priority: ActivityPriority
   dueDate: string | null
 }
