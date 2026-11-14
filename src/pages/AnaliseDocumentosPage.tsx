@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState, type ChangeEvent, type DragEvent, type FormEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { AlertCircle, Check, Copy, FileText, LoaderCircle, MessageSquareText, Paperclip, Plus, Send, ShieldCheck, Trash2, UploadCloud, X, RotateCcw } from 'lucide-react'
+import { AlertCircle, Check, Copy, ExternalLink, FileText, LoaderCircle, MessageSquareText, Paperclip, Plus, Send, ShieldCheck, Trash2, UploadCloud, X, RotateCcw } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { TopBar } from '../components/TopBar'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
 import { Button } from '../components/UI'
 import { useToast } from '../components/Toast'
 import { analiseDocumentosApi, type AnaliseConversa } from '../api/analiseDocumentos'
 import { useAgentesPublicos, useMeusAgentes } from '../hooks/useAgentes'
+import { useAuth } from '../context/AuthContext'
 
 const ACCEPTED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md']
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -35,6 +37,7 @@ function fileExtension(fileName: string) {
 export function AnaliseDocumentosPage() {
   const queryClient = useQueryClient()
   const { error: toastError, success } = useToast()
+  const { user } = useAuth()
   const [conversationId, setConversationId] = useState('')
   const [agentId, setAgentId] = useState('')
   const [input, setInput] = useState('')
@@ -57,6 +60,11 @@ export function AnaliseDocumentosPage() {
     queryKey: ['analise-documentos', 'conversa', conversationId],
     queryFn: () => analiseDocumentosApi.get(conversationId),
     enabled: Boolean(conversationId),
+  })
+  const driveConfigQuery = useQuery({
+    queryKey: ['google-drive-config', user?.id],
+    queryFn: analiseDocumentosApi.getGoogleDriveConfig,
+    enabled: Boolean(user),
   })
   const conversations = conversationsQuery.data ?? []
   const conversation = conversationQuery.data
@@ -256,7 +264,12 @@ export function AnaliseDocumentosPage() {
                   <Button variant="secondary" icon={uploading ? <LoaderCircle size={15} className="animate-spin" /> : <Paperclip size={15} />} onClick={() => fileInputRef.current?.click()} disabled={uploading}>{uploading ? 'Processando…' : 'Selecionar arquivos'}</Button>
                   <input ref={fileInputRef} type="file" multiple accept=".pdf,.doc,.docx,.txt,.md,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/markdown" className="hidden" onChange={onFileChange} />
                 </div>
-                {conversation?.documentos.length ? <div className="mt-3 flex flex-wrap gap-2">{conversation.documentos.map((document) => <span key={document.id} className="inline-flex max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"><FileText size={14} className="shrink-0 text-[#087E96]" /><span className="truncate">{document.nome}</span><span className="shrink-0 text-slate-400">{formatBytes(document.tamanhoBytes)}{document.paginas ? ` · ${document.paginas} pág.` : ''}</span><button type="button" onClick={() => void removeDocument(document.id)} disabled={uploading || sending} className="rounded p-0.5 text-slate-400 hover:text-rose-600" aria-label={`Remover ${document.nome}`}><X size={14} /></button></span>)}</div> : null}
+                {!driveConfigQuery.isLoading && !driveConfigQuery.data?.configurado && (
+                  <p className="mt-3 text-xs text-amber-700 dark:text-amber-300">
+                    Configure o Google Drive no <Link to="/perfil" className="font-semibold underline">seu Perfil</Link> para enviar documentos.
+                  </p>
+                )}
+                {conversation?.documentos.length ? <div className="mt-3 flex flex-wrap gap-2">{conversation.documentos.map((document) => <span key={document.id} className="inline-flex max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"><FileText size={14} className="shrink-0 text-[#087E96]" /><span className="truncate">{document.nome}</span><span className="shrink-0 text-slate-400">{formatBytes(document.tamanhoBytes)}{document.paginas ? ` · ${document.paginas} pág.` : ''}</span>{document.driveUrl && <a href={document.driveUrl} target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1 font-semibold text-[#087E96] hover:underline" aria-label={`Abrir ${document.nome} no Google Drive`}>Drive <ExternalLink size={12} /></a>}<button type="button" onClick={() => void removeDocument(document.id)} disabled={uploading || sending} className="rounded p-0.5 text-slate-400 hover:text-rose-600" aria-label={`Remover ${document.nome}`}><X size={14} /></button></span>)}</div> : null}
               </div>
             </div>
 
