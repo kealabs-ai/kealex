@@ -62,14 +62,14 @@ export function PerfilPage() {
   const startGoogleDriveOAuthMutation = useMutation({
     mutationFn: analiseDocumentosApi.startGoogleDriveOAuth,
     onSuccess: ({ authorizationUrl }) => window.location.assign(authorizationUrl),
-    onError: (err: any) => toastError(err.response?.data?.detail ?? 'NÃ£o foi possÃ­vel iniciar a conexÃ£o com o Google.'),
+    onError: (err: any) => toastError(err.response?.data?.detail ?? 'Não foi possível iniciar a conexão com o Google.'),
   })
   const startGoogleDriveUploadOAuthMutation = useMutation({
     mutationFn: analiseDocumentosApi.startGoogleDriveUploadOAuth,
     onSuccess: ({ authorizationUrl }) => window.location.assign(authorizationUrl),
     onError: (err: any) => {
       sessionStorage.removeItem('google_drive_upload_oauth_credentials')
-      toastError(err.response?.data?.detail ?? 'NÃ£o foi possÃ­vel iniciar a autorizaÃ§Ã£o para gerar as credenciais.')
+      toastError(err.response?.data?.detail ?? 'Não foi possível iniciar a autorização para gerar as credenciais.')
     },
   })
   const completeGoogleDriveUploadOAuthMutation = useMutation({
@@ -78,11 +78,11 @@ export function PerfilPage() {
       sessionStorage.removeItem('google_drive_upload_oauth_credentials')
       setDriveOAuthCredentials({ clientId: credentials.client_id, clientSecret: credentials.client_secret, refreshToken: credentials.refresh_token })
       setDriveSettingsEditing(true)
-      toastSuccess('Token gerado. Revise as credenciais e salve a configuraÃ§Ã£o do Google Drive.')
+      toastSuccess('Token gerado. Revise as credenciais e salve a configuração do Google Drive.')
     },
     onError: (err: any) => {
       sessionStorage.removeItem('google_drive_upload_oauth_credentials')
-      toastError(err.response?.data?.detail ?? 'NÃ£o foi possÃ­vel gerar o token do Google Drive.')
+      toastError(err.response?.data?.detail ?? 'Não foi possível gerar o token do Google Drive.')
     },
   })
   const completeGoogleDriveOAuthMutation = useMutation({
@@ -94,7 +94,7 @@ export function PerfilPage() {
       })
       toastSuccess(connection.email ? `Google Drive conectado: ${connection.email}` : 'Google Drive conectado com sucesso.')
     },
-    onError: (err: any) => toastError(err.response?.data?.detail ?? 'NÃ£o foi possÃ­vel concluir a conexÃ£o com o Google Drive.'),
+    onError: (err: any) => toastError(err.response?.data?.detail ?? 'Não foi possível concluir a conexão com o Google Drive.'),
   })
 
   useEffect(() => {
@@ -108,16 +108,16 @@ export function PerfilPage() {
       if (oauthType === 'upload') {
         try {
           const credentials = JSON.parse(sessionStorage.getItem('google_drive_upload_oauth_credentials') ?? '{}')
-          if (!credentials.client_id || !credentials.client_secret) throw new Error('Credenciais OAuth ausentes nesta sessÃ£o.')
+          if (!credentials.client_id || !credentials.client_secret) throw new Error('Credenciais OAuth ausentes nesta sessão.')
           completeGoogleDriveUploadOAuthMutation.mutate({ code, state, client_id: credentials.client_id, client_secret: credentials.client_secret })
         } catch (error) {
           sessionStorage.removeItem('google_drive_upload_oauth_credentials')
-          toastError(error instanceof Error ? error.message : 'NÃ£o foi possÃ­vel recuperar as credenciais OAuth desta sessÃ£o.')
+          toastError(error instanceof Error ? error.message : 'Não foi possível recuperar as credenciais OAuth desta sessão.')
         }
       } else completeGoogleDriveOAuthMutation.mutate({ code, state })
     } else {
       sessionStorage.removeItem('google_drive_upload_oauth_credentials')
-      toastError('NÃ£o foi possÃ­vel conectar ao Google Drive. Tente novamente.')
+      toastError('Não foi possível conectar ao Google Drive. Tente novamente.')
     }
     params.delete('google_drive_oauth_code')
     params.delete('google_drive_oauth_state')
@@ -617,15 +617,15 @@ export function PerfilPage() {
             <Modal title="Como gerar as credenciais do Google Drive" subtitle="Gere uma credencial OAuth para habilitar o envio de arquivos." size="lg" onClose={() => setDriveTokenHelpOpen(false)}>
               <div className="max-h-[70vh] space-y-5 overflow-y-auto pr-1 text-sm text-slate-700 dark:text-slate-300">
                 <section>
-                  <h3 className="font-semibold text-slate-900 dark:text-white">OpÃ§Ã£o 1: OAuth 2.0 (refresh token)</h3>
+                  <h3 className="font-semibold text-slate-900 dark:text-white">Opção 1: OAuth 2.0 (refresh token)</h3>
                   <ol className="mt-2 list-decimal space-y-2 pl-5">
-                    <li>No Google Cloud Console, crie ou selecione um projeto e habilite a Google Drive API. Configure também a tela de consentimento OAuth.</li>
-                    <li>Crie um ID do cliente OAuth do tipo <strong>Aplicativo da Web</strong>. Cadastre este URI em “URIs de redirecionamento autorizados”: <code>https://srv1023256.hstgr.cloud/api/v1/integrations/google/callback</code>.</li>
+                    <li>No Google Cloud Console, crie ou selecione um projeto, habilite a Google Drive API e configure a tela de consentimento OAuth. Se o app estiver em modo de teste, inclua sua conta em <strong>Usuários de teste</strong>.</li>
+                    <li>Crie um ID do cliente OAuth do tipo <strong>Aplicativo da Web</strong>. Em <strong>URIs de redirecionamento autorizados</strong>, cadastre exatamente <code>https://srv1023256.hstgr.cloud/api/v1/integrations/google/callback</code>, sem adicionar ou remover barras. O URI precisa corresponder ao parâmetro <code>redirect_uri</code> enviado na solicitação OAuth.</li>
                     <li>Copie o <code>client_id</code> e o <code>client_secret</code> para os campos da tabela no perfil.</li>
                     <li>Clique em <strong>Gerar token com Google</strong> e autorize a conta que terá acesso ao Drive. O Kealex preencherá o refresh token; depois, salve a configuração.</li>
                   </ol>
                 </section>
-                <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">O Client ID e o Client Secret são informados por cada usuário e enviados somente durante a autorização. A URL de callback é compartilhada pela aplicação e precisa estar cadastrada no cliente OAuth do Google.</p>
+                <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-200">Se o Google mostrar “Acesso bloqueado” ou “solicitação inválida”, confira se o Client ID e o Client Secret pertencem ao mesmo cliente OAuth e se o URI de redirecionamento cadastrado corresponde exatamente ao da solicitação. Com o app em modo de teste, a conta autorizada também precisa estar na lista de usuários de teste.</p>
               </div>
             </Modal>
           )}

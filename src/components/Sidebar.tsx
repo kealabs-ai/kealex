@@ -1,7 +1,7 @@
 import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
-import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList, UserRoundCog, Landmark, FileSearch, KeyRound, Bot } from 'lucide-react'
+import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList, UserRoundCog, Landmark, FileSearch, KeyRound, Bot, Store } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import logo from '../assets/logotipo_kealex.png'
 import { ProfileAvatar } from './ProfileAvatar'
@@ -35,7 +35,7 @@ interface Props { collapsed: boolean; mobileOpen: boolean; onClose: () => void; 
 
 function NavItem({ to, label, icon: Icon, badge, collapsed, onNavigate }: { to: string; label: string; icon: LucideIcon; badge?: string; collapsed: boolean; onNavigate: () => void }) {
   const location = useLocation()
-  const active = location.pathname === to || (to === '/admin' && location.pathname === '/admin')
+  const active = location.pathname === to || (to === '/kea-store' && location.pathname.startsWith('/kea-store/')) || (to === '/admin' && location.pathname === '/admin')
   return (
     <motion.div initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}>
       <NavLink to={to} onClick={onNavigate} title={collapsed ? label : undefined} aria-label={label} aria-current={active ? 'page' : undefined} className={`kea-nav-item${active ? ' is-active' : ''}`}>
@@ -72,6 +72,10 @@ export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
         <nav className="kea-sidebar-nav">
           {!isCollapsed && <p className="kea-nav-section">{isClient ? 'Minha área' : 'Escritório'}</p>}
           {nav(links)}
+          {!isClient && <>
+            {!isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Ecossistema</p>}
+            <NavItem to="/kea-store" label="Kea Store" icon={Store} collapsed={isCollapsed} onNavigate={onClose} />
+          </>}
           {!isClient && isAdmin && !isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Administração</p>}
           {isAdmin && <NavItem to="/admin" label="Configurações" icon={Settings} collapsed={isCollapsed} onNavigate={onClose} />}
           {!isCollapsed && <p className="kea-nav-section kea-nav-section-separated">Inteligência</p>}

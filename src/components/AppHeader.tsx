@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Building2, ChevronDown, History, Loader2, LogOut, Menu, Moon, Search, Sun, UserRound, X } from 'lucide-react'
+import { Building2, ChevronDown, Coins, History, Loader2, LogOut, Menu, Moon, Search, Store, Sun, UserRound, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
-import { assinaturaApi, PLANOS_CONFIG } from '../api/assinatura'
 import { api } from '../api/client'
 import { escritoriosApi } from '../api/escritorios'
 import type { Escritorio } from '../api/escritorios'
 import { ProfileAvatar } from './ProfileAvatar'
 import { Modal } from './Modal'
 import { useToast } from './Toast'
+import { keaCreditsApi, KEA_CREDITS_QUERY_KEY } from '../api/keaCredits'
 
 const destinations = [
   { to: '/processos', label: 'Processos & Fases', keywords: 'processo casos' },
@@ -23,6 +23,7 @@ const destinations = [
   { to: '/documentos', label: 'Modelos e Peças', keywords: 'documentos peças' },
   { to: '/clientes', label: 'Clientes & CRM', keywords: 'clientes crm' },
   { to: '/integracao-orgaos', label: 'Integração com Órgãos', keywords: 'integração órgãos tribunais justiça consultas' },
+  { to: '/kea-store', label: 'Kea Store', keywords: 'kea store integrations credits automation certificates' },
   { to: '/ia', label: 'Kealex AI Hub', keywords: 'inteligência ia' },
   { to: '/admin', label: 'Configurações', keywords: 'admin configurações', admin: true },
 ]
@@ -32,15 +33,13 @@ interface Props { onMenuClick: () => void }
 export function AppHeader({ onMenuClick }: Props) {
   const { user, updateUser, logout } = useAuth()
   const isEscritorioContext = user?.role === 'escritorio'
-  const { data: billingStatus } = useQuery({
-    queryKey: ['billing-status'],
-    queryFn: assinaturaApi.billingStatus,
-    enabled: Boolean(user && user.role !== 'admin'),
-    staleTime: 30_000,
+  const { data: keaCreditsWallet, isLoading: keaCreditsLoading } = useQuery({
+    queryKey: KEA_CREDITS_QUERY_KEY,
+    queryFn: keaCreditsApi.wallet,
+    enabled: Boolean(user && user.role !== 'cliente'),
+    staleTime: 5_000,
+    refetchInterval: 30_000,
   })
-  const contractedPlan = billingStatus?.status === 'active'
-    ? PLANOS_CONFIG.find((plan) => plan.id === billingStatus.plano)
-    : undefined
   const { data: associatedOffice, isError: officeInfoError, isLoading: officeInfoLoading } = useQuery({
     queryKey: ['escritorio-associado', user?.escritorioId],
     queryFn: () => escritoriosApi.get(user!.escritorioId!),
@@ -73,7 +72,7 @@ export function AppHeader({ onMenuClick }: Props) {
   })
   const inputRef = useRef<HTMLInputElement>(null)
   const visibleDestinations = useMemo(() => {
-    const available = destinations.filter((item) => (!item.admin || user?.role === 'admin') && (user?.role !== 'cliente' || !['/intimacoes', '/cobranca', '/clientes', '/admin'].includes(item.to)))
+    const available = destinations.filter((item) => (!item.admin || user?.role === 'admin') && (user?.role !== 'cliente' || !['/intimacoes', '/cobranca', '/clientes', '/admin', '/kea-store'].includes(item.to)))
     const normalized = query.trim().toLocaleLowerCase('pt-BR')
     return (normalized ? available.filter((item) => `${item.label} ${item.keywords}`.toLocaleLowerCase('pt-BR').includes(normalized)) : available).slice(0, 6)
   }, [query, user?.role])
@@ -137,31 +136,26 @@ export function AppHeader({ onMenuClick }: Props) {
         )}
       </div>
       <div className="kea-header-spacer" />
+      {user?.role !== 'cliente' && <Link
+        to="/kea-store"
+        title="Consultar saldo de KeaCredits e recarregar"
+        aria-label={`${keaCreditsLoading ? 'Carregando saldo' : `${keaCreditsWallet?.saldoKeaCredits ?? 'Saldo indisponível'} KeaCredits`}; abrir Kea Store`}
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#00C2A8]/30 bg-[#00C2A8]/5 px-2.5 py-1.5 text-xs font-semibold text-[#087E96] transition-colors hover:bg-[#00C2A8]/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#087E96]/20 dark:border-[#20B987]/40 dark:bg-[#20B987]/5 dark:text-[#20B987] dark:hover:bg-[#20B987]/10"
+      >
+        <Coins size={14} aria-hidden="true" />
+        <span className="hidden md:inline">KeaCredits</span>
+        <span>{keaCreditsWallet ? keaCreditsWallet.saldoKeaCredits.toLocaleString('pt-BR') : '—'}</span>
+      </Link>}
+      {user?.role !== 'cliente' && <Link
+        to="/kea-store"
+        title="Kea Store"
+        aria-label="Abrir Kea Store"
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-[#00C2A8]/30 bg-[#00C2A8]/5 text-[#087E96] transition-colors hover:bg-[#00C2A8]/10 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#087E96]/20 dark:border-[#20B987]/40 dark:bg-[#20B987]/5 dark:text-[#20B987] dark:hover:bg-[#20B987]/10"
+      >
+        <Store size={17} aria-hidden="true" />
+      </Link>}
       <div className="flex items-center gap-2 pr-2">
-        <div className="hidden items-center gap-2 sm:flex">
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">V. 1.3.0</span>
-          {isEscritorioContext && contractedPlan && <span className="rounded-lg bg-[#087E96]/10 px-2.5 py-1 text-xs font-semibold text-[#087E96] dark:bg-[#20B987]/15 dark:text-[#20B987]">Plano {contractedPlan.nome}</span>}
-        </div>
-        {user?.role === 'advogado' && user.escritorioId && <button
-          type="button"
-          onClick={() => setAssociatedOfficeDetailsOpen(true)}
-          className="inline-flex max-w-64 items-center gap-1.5 truncate rounded-lg border border-[#087E96]/30 px-2.5 py-1.5 text-xs font-semibold text-[#087E96] transition-colors hover:bg-[#087E96]/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#087E96]/20 dark:border-[#20B987]/40 dark:text-[#20B987] dark:hover:bg-[#20B987]/10"
-          title={associatedOffice?.nome ? `Associado a: ${associatedOffice.nome}` : 'Ver informações do escritório associado'}
-        ><Building2 size={14} className="shrink-0" /><span className="shrink-0">Associado a:</span><span className="truncate">{associatedOffice?.nome ?? user.escritorioNome ?? (officeInfoLoading ? 'Carregando...' : 'Escritório associado')}</span></button>}
-        {user?.role === 'advogado' && !user.escritorioId && <button
-          type="button"
-          onClick={() => setAssociateOfficeOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-[#087E96] px-2.5 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#066b80] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#087E96]/20"
-        ><Building2 size={14} /><span className="hidden sm:inline">Associar Escritório</span><span className="sm:hidden">Associar</span></button>}
-        <button
-          type="button"
-          onClick={() => setReleaseNotesOpen(true)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-[#087E96]/30 px-2.5 py-1.5 text-xs font-semibold text-[#087E96] transition-colors hover:bg-[#087E96]/5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#087E96]/20 dark:border-[#20B987]/40 dark:text-[#20B987] dark:hover:bg-[#20B987]/10"
-        >
-          <History size={14} />
-          <span className="hidden md:inline">Notas da versão</span>
-          <span className="md:hidden">Notas</span>
-        </button>
+        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">V. 1.3.0</span>
       </div>
       <button type="button" className="kea-header-icon" onClick={toggle} aria-label={isDark ? 'Ativar tema claro' : 'Ativar tema escuro'} title={isDark ? 'Tema claro' : 'Tema escuro'}>
         {isDark ? <Sun size={19} /> : <Moon size={19} />}
@@ -175,7 +169,10 @@ export function AppHeader({ onMenuClick }: Props) {
         {userMenuOpen && <div className="kea-header-user-menu" role="menu">
           <div className="kea-header-user-summary"><strong>{user?.nome}</strong><span>{user?.email}</span></div>
           <Link to="/perfil" role="menuitem" onClick={() => setUserMenuOpen(false)}><UserRound size={16} />Edição do perfil</Link>
-          <button type="button" role="menuitem" onClick={handleLogout}><LogOut size={16} />Sair</button>
+          {user?.role === 'advogado' && user.escritorioId && <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); setAssociatedOfficeDetailsOpen(true) }}><Building2 size={16} /><span className="min-w-0 truncate">Associado a: {associatedOffice?.nome ?? user.escritorioNome ?? (officeInfoLoading ? 'Carregando...' : 'Escritório associado')}</span></button>}
+          {user?.role === 'advogado' && !user.escritorioId && <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); setAssociateOfficeOpen(true) }}><Building2 size={16} /><span>Associar escritório</span></button>}
+          <button type="button" role="menuitem" onClick={() => { setUserMenuOpen(false); setReleaseNotesOpen(true) }}><History size={16} /><span>Notas da versão</span></button>
+          <button type="button" role="menuitem" className="kea-header-logout" onClick={handleLogout}><LogOut size={16} />Sair</button>
         </div>}
       </div>
       {releaseNotesOpen && (
@@ -192,7 +189,7 @@ export function AppHeader({ onMenuClick }: Props) {
               <li>Agentes aceitam modelos de OpenAI, Anthropic, Google, Groq, Cerebras e DeepSeek, com validação de compatibilidade e atualização da lista pela chave informada.</li>
               <li>O chat usa o modelo configurado no agente e apresenta uma mensagem específica quando o acesso ao Groq é bloqueado pelo Cloudflare.</li>
               <li>Advogados podem se associar a um escritório com código; o backend valida a capacidade de vagas.</li>
-              <li>A topbar mostra o escritório associado e abre seus dados de cadastro e contato.</li>
+              <li>O menu do perfil mostra o escritório associado e abre seus dados de cadastro e contato.</li>
               <li>Advogados associados mantêm o acesso às telas de advogado; a role Escritório também acessa os módulos de trabalho e equipe.</li>
               <li>Escritórios podem compartilhar o código de associação pela área de equipe.</li>
               <li>Áreas de processos, clientes, documentos, prazos e atividades.</li>
