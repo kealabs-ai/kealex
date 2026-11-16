@@ -118,7 +118,8 @@
 .kea-header-user-summary span { overflow: hidden; color: var(--kealex-text-muted); font-size: 11px; text-overflow: ellipsis; }
 .kea-header-user-menu a, .kea-header-user-menu button { display: flex; width: 100%; min-height: 40px; align-items: center; gap: 9px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--kealex-text); text-align: left; text-decoration: none; font: inherit; font-size: 13px; }
 .kea-header-user-menu a:hover, .kea-header-user-menu button:hover { background: var(--kealex-background); }
-.kea-header-user-menu button { color: #d92d20; }
+.kea-header-user-menu button { color: var(--kealex-text); cursor: pointer; }
+.kea-header-user-menu button.kea-header-logout { color: #d92d20; }
 .kea-mobile-menu { display: none; }
 .kea-search-results { position: absolute; z-index: 55; top: calc(100% + 8px); right: 0; left: 0; overflow: hidden; padding: 6px; border: 1px solid var(--kealex-border); border-radius: 12px; background: var(--kealex-surface); box-shadow: 0 14px 34px rgba(6,30,60,.16); }
 .kea-search-results button { display: flex; width: 100%; min-height: 40px; align-items: center; gap: 10px; padding: 0 10px; border: 0; border-radius: 8px; background: transparent; color: var(--kealex-text); text-align: left; font: inherit; font-size: 13px; }

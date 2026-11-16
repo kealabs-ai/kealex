@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { AuthProvider } from './context/AuthContext'
@@ -32,6 +32,8 @@ import { PagamentoPendentePage } from './pages/PagamentoPendentePage'
 import { EquipeEscritorioPage } from './pages/EquipeEscritorioPage'
 import { PerfilPage } from './pages/PerfilPage'
 import { IntegracaoOrgaosPage } from './pages/IntegracaoOrgaosPage'
+import { KeaStorePage } from './pages/KeaStorePage'
+import { CertificatesPage } from './pages/CertificatesPage'
 import { ConsultaJusticaEleitoralPage, ConsultaJusticaEstadualPage, ConsultaJusticaFederalPage, ConsultaJusticaMilitarPage, ConsultaJusticaTrabalhoPage, ConsultaTribunaisSuperioresPage } from './pages/ConsultaTribunaisSuperioresPage'
 import { AssinaturaPage } from './pages/site/AssinaturaPage'
 import { CookieConsent } from './components/CookieConsent'
@@ -39,6 +41,11 @@ import { CookieConsent } from './components/CookieConsent'
 const queryClient = new QueryClient({
   defaultOptions: { queries: { staleTime: 1000 * 30, retry: 1 } },
 })
+
+function CertificateRouteRedirect() {
+  const { provider } = useParams<{ provider: string }>()
+  return <Navigate to={provider ? `/kea-store/certidoes/${provider}` : '/kea-store/certidoes'} replace />
+}
 
 export default function App() {
   return (
@@ -80,6 +87,11 @@ export default function App() {
                   <Route path="/audiencias" element={<AudienciasPage />} />
                   <Route path="/perfil" element={<PerfilPage />} />
                   <Route path="/integracao-orgaos" element={<IntegracaoOrgaosPage />} />
+                  <Route path="/kea-store" element={<KeaStorePage />} />
+                  <Route path="/kea-store/certidoes" element={<CertificatesPage />} />
+                  <Route path="/kea-store/certidoes/:provider" element={<CertificatesPage />} />
+                  <Route path="/certidoes" element={<Navigate to="/kea-store" replace />} />
+                  <Route path="/certidoes/:provider" element={<CertificateRouteRedirect />} />
                   <Route path="/integracao-orgaos/tribunais-superiores" element={<ConsultaTribunaisSuperioresPage />} />
                   <Route path="/integracao-orgaos/justica-estadual" element={<ConsultaJusticaEstadualPage />} />
                   <Route path="/integracao-orgaos/justica-federal" element={<ConsultaJusticaFederalPage />} />

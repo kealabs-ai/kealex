@@ -23,6 +23,7 @@ const roleRequired: Record<string, Role[]> = {
   '/processos':  ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
   '/documentos': ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
   '/integracao-orgaos': ['admin', 'advogado', 'juridico', 'escritorio'],
+  '/kea-store': ['admin', 'advogado', 'juridico', 'escritorio'],
 }
 const planControlledMenus = [
   '/processos', '/documentos', '/prazos', '/atividades', '/financeiro', '/cobranca', '/usuarios', '/equipe',
@@ -57,7 +58,8 @@ export function ProtectedLayout() {
   // pending: mantém o usuário na plataforma — o banner no TopBar trata o caso
   if (isExpired) return <Navigate to="/trial-expirado" replace />
 
-  const required = roleRequired[location.pathname]
+  const requiredPath = location.pathname.startsWith('/kea-store/') ? '/kea-store' : location.pathname.startsWith('/certidoes/') ? '/certidoes' : location.pathname
+  const required = roleRequired[requiredPath]
   if (required && role && !required.includes(role)) {
     return <Navigate to="/processos" replace />
   }
