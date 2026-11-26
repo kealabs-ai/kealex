@@ -9,13 +9,14 @@ interface ModalProps {
   onClose: () => void
   children: ReactNode
   size?: 'sm' | 'md' | 'lg'
+  closeOnBackdrop?: boolean
 }
 
 const sizes = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl' }
 
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])'
 
-export function Modal({ title, subtitle, onClose, children, size = 'md' }: ModalProps) {
+export function Modal({ title, subtitle, onClose, children, size = 'md', closeOnBackdrop = true }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
   onCloseRef.current = onClose
@@ -33,6 +34,8 @@ export function Modal({ title, subtitle, onClose, children, size = 'md' }: Modal
     initialFocus?.focus()
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const dialogs = document.querySelectorAll('[role="dialog"]')
+      if (dialogs[dialogs.length - 1] !== el?.closest('[role="dialog"]')) return
       if (e.key === 'Escape') { onCloseRef.current(); return }
       if (e.key !== 'Tab') return
       if (focusable.length === 0) return
@@ -55,7 +58,7 @@ export function Modal({ title, subtitle, onClose, children, size = 'md' }: Modal
   return (
     <AnimatePresence>
       <motion.div
-        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -65,20 +68,20 @@ export function Modal({ title, subtitle, onClose, children, size = 'md' }: Modal
       >
         <motion.div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-          onClick={onClose}
+          onClick={closeOnBackdrop ? onClose : undefined}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
         />
         <motion.div
           ref={dialogRef}
-          className={`relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full ${sizes[size]} overflow-hidden`}
+          className={`relative flex max-h-[calc(100dvh-1rem)] w-full flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-800 sm:max-h-[calc(100dvh-2rem)] ${sizes[size]}`}
           initial={{ opacity: 0, scale: 0.95, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 20 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         >
           <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500" />
-          <div className="flex items-start justify-between px-6 pt-5 pb-4">
+          <div className="flex shrink-0 items-start justify-between px-4 pb-4 pt-5 sm:px-6">
             <div>
               <h2 id={titleId.current} className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
               {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
@@ -91,7 +94,7 @@ export function Modal({ title, subtitle, onClose, children, size = 'md' }: Modal
               <X size={18} />
             </button>
           </div>
-          <div className="px-6 pb-6">{children}</div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-5 sm:px-6 sm:pb-6">{children}</div>
         </motion.div>
       </motion.div>
     </AnimatePresence>

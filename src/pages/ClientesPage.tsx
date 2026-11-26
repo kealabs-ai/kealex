@@ -1,42 +1,53 @@
 import { useState } from 'react'
-import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, UserCheck, Search, Phone, Mail, AlertTriangle } from 'lucide-react'
 import { useClientes, useCreateCliente, useUpdateCliente, useDeleteCliente } from '../hooks/useClientes'
 import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
-import { Button, Input, Textarea } from '../components/UI'
+import { Button } from '../components/UI'
+import { ClienteFormModal, type ClienteFormData } from '../components/ClienteFormModal'
 import { TopBar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
+import { useToast } from '../components/Toast'
 import type { Cliente } from '../types'
-
-type FormData = {
-  nome: string; email: string; telefone?: string
-  cpfCnpj?: string; endereco?: string; observacoes?: string
-}
 
 export function ClientesPage() {
   const { data: clientes, isLoading, error } = useClientes()
   const create = useCreateCliente()
   const update = useUpdateCliente()
   const remove = useDeleteCliente()
+  const { error: showError } = useToast()
   const [editing, setEditing] = useState<Cliente | null>(null)
   const [confirmDelete, setConfirmDelete] = useState<Cliente | null>(null)
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState('')
-  const { register, handleSubmit, reset } = useForm<FormData>()
 
   if (error) console.error('Erro ao carregar clientes')
 
   // Garantir que seja array
   const clientesList = Array.isArray(clientes) ? clientes : []
 
-  const openCreate = () => { reset({}); setEditing(null); setOpen(true) }
-  const openEdit = (c: Cliente) => { reset(c); setEditing(c); setOpen(true) }
+  const openCreate = () => { setEditing(null); setOpen(true) }
+  const openEdit = (c: Cliente) => { setEditing(c); setOpen(true) }
   const close = () => setOpen(false)
-  const onSubmit = (data: FormData) => {
-    if (editing) update.mutate({ id: editing.id, data }, { onSuccess: close })
-    else create.mutate(data as any, { onSuccess: close })
+  const onSubmit = (data: ClienteFormData) => {
+    const clean = (value: string | null | undefined) => (value ?? '').trim()
+    const clientData: ClienteFormData = {
+      nome: clean(data.nome), email: clean(data.email), telefone: clean(data.telefone),
+      cpfCnpj: clean(data.cpfCnpj), cep: clean(data.cep), endereco: clean(data.endereco),
+      cidade: clean(data.cidade), estado: clean(data.estado).toUpperCase(),
+      observacoes: clean(data.observacoes), rg: clean(data.rg), orgaoExpedidor: clean(data.orgaoExpedidor),
+      nacionalidade: clean(data.nacionalidade), estadoCivil: clean(data.estadoCivil), profissao: clean(data.profissao),
+      dataNascimento: clean(data.dataNascimento), razaoSocial: clean(data.razaoSocial), nomeFantasia: clean(data.nomeFantasia),
+      inscricaoEstadual: clean(data.inscricaoEstadual), inscricaoMunicipal: clean(data.inscricaoMunicipal),
+      representanteLegal: clean(data.representanteLegal), whatsapp: clean(data.whatsapp),
+    }
+    const options = { onSuccess: close, onError: (error: unknown) => {
+      const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail
+      showError(typeof detail === 'string' ? detail : 'Não foi possível salvar as informações do cliente.')
+    } }
+    if (editing) update.mutate({ id: editing.id, data: clientData }, options)
+    else create.mutate(clientData, options)
   }
 
   const filtered = clientesList.filter((c) =>
@@ -151,30 +162,13 @@ export function ClientesPage() {
         </Modal>
       )}
 
-      {open && (
-        <Modal
-          title={editing ? 'Editar Cliente' : 'Novo Cliente'}
-          subtitle={editing ? `Editando: ${editing.nome}` : 'Cadastre um novo cliente'}
-          onClose={close}
-        >
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Nome" {...register('nome')} placeholder="Nome completo" />
-              <Input label="Email" {...register('email')} type="email" placeholder="email@exemplo.com" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <Input label="Telefone" {...register('telefone')} placeholder="(11) 99999-9999" />
-              <Input label="CPF / CNPJ" {...register('cpfCnpj')} placeholder="000.000.000-00" />
-            </div>
-            <Input label="Endereço" {...register('endereco')} placeholder="Rua, número, cidade..." />
-            <Textarea label="Observações" {...register('observacoes')} rows={3} placeholder="Informações adicionais..." />
-            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100">
-              <Button variant="secondary" type="button" onClick={close}>Cancelar</Button>
-              <Button type="submit" loading={create.isPending || update.isPending}>Salvar</Button>
-            </div>
-          </form>
-        </Modal>
-      )}
-    </div>
+      {open && <ClienteFormModal
+        title={editing ? 'Editar Cliente' : 'Novo Cliente'}
+        subtitle={editing ? `Editando: ${editing.nome}` : 'Cadastre um novo cliente'}
+        initialData={editing ?? undefined}
+        onClose={close}
+        onSubmit={onSubmit}
+        loading={create.isPending || update.isPending}
+      />}\n    </div>
   )
 }

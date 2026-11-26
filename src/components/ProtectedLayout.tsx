@@ -14,6 +14,8 @@ const roleRequired: Record<string, Role[]> = {
   '/equipe':     ['escritorio'],
   '/clientes':   ['admin', 'advogado', 'juridico', 'escritorio'],
   '/admin':      ['admin'],
+  '/gestao/dashboard': ['admin'],
+  '/gestao/creditos': ['admin'],
   '/analise-documentos': ['advogado'],
   '/cobranca':   ['admin', 'advogado', 'juridico', 'escritorio'],
   '/intimacoes': ['admin', 'advogado', 'juridico', 'escritorio'],
@@ -23,6 +25,7 @@ const roleRequired: Record<string, Role[]> = {
   '/processos':  ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
   '/documentos': ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
   '/integracao-orgaos': ['admin', 'advogado', 'juridico', 'escritorio'],
+  '/acompanhar-processo': ['admin', 'advogado', 'juridico', 'escritorio'],
   '/kea-store': ['admin', 'advogado', 'juridico', 'escritorio'],
 }
 const planControlledMenus = [
@@ -64,7 +67,7 @@ export function ProtectedLayout() {
     return <Navigate to="/processos" replace />
   }
   if (location.pathname === '/meus-agents' && role !== 'advogado') return <Navigate to="/processos" replace />
-  const planMenuPath = planControlledMenus.includes(location.pathname) ? location.pathname : null
+  const planMenuPath = planControlledMenus.includes(location.pathname) && !(location.pathname === '/processos' && role === 'advogado') ? location.pathname : null
   if (planMenuPath && aiPolicy && !aiPolicy.allowed_menus.includes(planMenuPath)) return <Navigate to="/processos" replace />
 
   const toggleSidebar = () => {

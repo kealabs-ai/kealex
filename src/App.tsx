@@ -33,6 +33,9 @@ import { EquipeEscritorioPage } from './pages/EquipeEscritorioPage'
 import { PerfilPage } from './pages/PerfilPage'
 import { IntegracaoOrgaosPage } from './pages/IntegracaoOrgaosPage'
 import { KeaStorePage } from './pages/KeaStorePage'
+import { GestaoDashboardPage } from './pages/GestaoDashboardPage'
+import { GestaoCreditosPage } from './pages/GestaoCreditosPage'
+import { AcompanharProcessoPage } from './pages/AcompanharProcessoPage'
 import { CertificatesPage } from './pages/CertificatesPage'
 import { ConsultaJusticaEleitoralPage, ConsultaJusticaEstadualPage, ConsultaJusticaFederalPage, ConsultaJusticaMilitarPage, ConsultaJusticaTrabalhoPage, ConsultaTribunaisSuperioresPage } from './pages/ConsultaTribunaisSuperioresPage'
 import { AssinaturaPage } from './pages/site/AssinaturaPage'
@@ -79,6 +82,9 @@ export default function App() {
                   <Route path="/equipe" element={<EquipeEscritorioPage />} />
                   <Route path="/clientes" element={<ClientesPage />} />
                   <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/gestao/dashboard" element={<GestaoDashboardPage />} />
+                  <Route path="/gestao/creditos" element={<GestaoCreditosPage />} />
+                  <Route path="/acompanhar-processo" element={<AcompanharProcessoPage />} />
                   <Route path="/ia" element={<IAPage />} />
                   <Route path="/configuracoes/ia" element={<MinhaIAPage />} />
                   <Route path="/meus-agents" element={<MeusAgentsPage />} />

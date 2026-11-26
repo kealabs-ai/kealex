@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useMutation } from '@tanstack/react-query'
-import { useNavigate, useLocation, Navigate, Link } from 'react-router-dom'
+import { useNavigate, useLocation, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { authApi } from '../api/auth'
 import { useAuth } from '../context/AuthContext'
@@ -21,7 +21,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>
 
 export function LoginPage() {
-  const { user, login } = useAuth()
+  const { login } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const from = (location.state as any)?.from?.pathname
@@ -64,8 +64,6 @@ export function LoginPage() {
       if (isTimeout) toastError('Servidor não está respondendo. Verifique se o backend está rodando.')
     },
   })
-
-  if (user) return <Navigate to={user.role === 'escritorio' ? '/equipe' : '/processos'} replace />
 
   return (
     <main className="login-page" style={{ backgroundImage: `url("${background}")` }}>

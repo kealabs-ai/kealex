@@ -71,7 +71,22 @@ export interface Cliente extends BaseEntity {
   email: string
   telefone?: string
   cpfCnpj?: string
+  cep?: string
   endereco?: string
+  cidade?: string
+  estado?: string
+  rg?: string
+  orgaoExpedidor?: string
+  nacionalidade?: string
+  estadoCivil?: string
+  profissao?: string
+  dataNascimento?: string
+  razaoSocial?: string
+  nomeFantasia?: string
+  inscricaoEstadual?: string
+  inscricaoMunicipal?: string
+  representanteLegal?: string
+  whatsapp?: string
   observacoes?: string
 }
 
