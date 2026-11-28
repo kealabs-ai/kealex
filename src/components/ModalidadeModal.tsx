@@ -4,9 +4,10 @@ import { Building2, User, CheckCircle2, Loader2 } from 'lucide-react'
 import { Modal } from './Modal'
 import { escritoriosApi } from '../api/escritorios'
 import { api } from '../api/client'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { useToast } from './Toast'
 import { useTrial } from '../hooks/useTrial'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 interface Props {
   open: boolean
@@ -64,7 +65,7 @@ export function ModalidadeModal({ open, onClose, onContinueToPayment }: Props) {
       success(selected === 'escritorio' ? 'Associado ao escritório com sucesso!' : 'Modo autônomo ativado com sucesso!')
       onClose()
     },
-    onError: (err: any) => error(err.response?.data?.detail ?? err.message ?? 'Erro ao alterar modalidade. Tente novamente.'),
+    onError: (err: unknown) => error(safeApiErrorMessage(err, 'Não foi possível alterar a modalidade. Tente novamente.')),
   })
 
   const canSave = selected === 'autonomo'

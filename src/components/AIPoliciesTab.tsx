@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Bot, Save, Users } from 'lucide-react'
@@ -13,6 +12,7 @@ import {
 import { aiPolicyApi, type AIUserPolicy, type AIPolicy } from '../api/aiPolicy'
 import { useUsuarios } from '../hooks/useUsuarios'
 import { useToast } from './Toast'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 import type { Role } from '../types'
 
 const modelOptions = [
@@ -46,10 +46,7 @@ const menuGroups = [
 const roles: Role[] = ['advogado', 'juridico', 'escritorio', 'cliente']
 
 function getErrorMessage(error: unknown) {
-  if (axios.isAxiosError<{ detail?: string; message?: string }>(error)) {
-    return error.response?.data?.detail || error.response?.data?.message || error.message
-  }
-  return error instanceof Error ? error.message : 'Não foi possível salvar as permissões.'
+  return safeApiErrorMessage(error, 'Não foi possível carregar ou salvar as permissões de IA.')
 }
 
 export function AIPoliciesTab() {

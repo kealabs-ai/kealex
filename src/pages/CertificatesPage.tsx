@@ -1,11 +1,11 @@
 import { useState, type FormEvent } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { isAxiosError } from 'axios'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ArrowUpRight, Download, ExternalLink, FileCheck2, FileText, RefreshCw, ShieldCheck, Upload, Eye } from 'lucide-react'
 import { api } from '../api/client'
 import { KEA_CREDITS_QUERY_KEY } from '../api/keaCredits'
 import { PageBanner } from '../components/PageBanner'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 type Provider = { id: string; name: string; type: string; integrationMode: string; portalUrl: string; apiAvailable: boolean }
 type Availability = { available: boolean; integrationMode: string; apiAvailable?: boolean; message: string; portalUrl: string }
@@ -41,8 +41,7 @@ export function CertificatesPage() {
   const fieldValues = fields.providerId === providerId ? fields.values : {}
 
   function getErrorMessage(error: unknown, fallback: string) {
-    if (isAxiosError(error) && typeof error.response?.data?.detail === 'string') return error.response.data.detail
-    return fallback
+    return safeApiErrorMessage(error, fallback)
   }
 
   async function pollCnd(pending: PendingCndQuery, attempts = 40): Promise<RequestRow | null> {

@@ -3,14 +3,20 @@ import type { Processo } from '../types'
 import type { Cliente } from '../types'
 import { logger } from '../utils/logger'
 
+export type ProcessoMutationInput = Pick<Processo, 'numero' | 'titulo' | 'descricao' | 'clienteId' | 'vara' | 'tribunal'> & {
+  status?: Processo['status']
+  fases?: string[]
+  clientesVinculados?: ProcessoClienteInput[]
+}
+
 export const processosApi = {
   list: async () => {
     const response = await api.get<Processo[]>('/k1/lex/processos')
     return response.data
   },
   get: (id: string) => api.post<Processo>('/k1/lex/processos/get', { id }).then((r) => r.data),
-  create: (data: any) => api.post<Processo>('/k1/lex/processos', data).then((r) => r.data),
-  update: (id: string, data: any) =>
+  create: (data: ProcessoMutationInput) => api.post<Processo>('/k1/lex/processos', data).then((r) => r.data),
+  update: (id: string, data: ProcessoMutationInput) =>
     api.post<Processo>('/k1/lex/processos/update', { id, ...data }).then((r) => r.data),
   remove: (id: string) => api.post('/k1/lex/processos/delete', { id }).then((r) => r.data),
   clients: (processId: string) => api.get<ProcessoClienteVinculado[]>(`/k1/lex/processos/${encodeURIComponent(processId)}/clients`).then((r) => r.data),
@@ -21,8 +27,8 @@ export const processosApi = {
     try {
       const response = await api.post<Processo>('/k1/lex/processos/avancar-fase', { processoId: id, faseAtual })
       return response.data
-    } catch (error: any) {
-      logger.error('avancarFase error', error)
+    } catch (error: unknown) {
+      logger.error('process.phase_advance_failed')
       throw error
     }
   }

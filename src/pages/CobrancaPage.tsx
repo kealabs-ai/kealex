@@ -11,10 +11,11 @@ import { Button } from '../components/UI'
 import { TopBar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
 import { useToast } from '../components/Toast'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { assinaturaApi } from '../api/assinatura'
-import type { CobrancaTimeline, PagamentoCartaoPayload } from '../api/cobrancas'
+import { cobrancasApi, type CobrancaTimeline, type PagamentoCartaoPayload, type PagamentoHospedadoResult } from '../api/cobrancas'
 import { fmt } from '../utils/formatters'
+import { safeAsaasCheckoutUrl } from '../utils/asaasCheckoutUrl'
 
 // Componente wrapper para carregar a timeline de cada cobrança sob demanda
 function CobrancaCard({
@@ -77,12 +78,10 @@ export function CobrancaPage() {
   const [pagamentoModal, setPagamentoModal] = useState<{ id: string; descricao: string } | null>(null)
 
   const PAGAMENTO_INICIAL = {
-    holderName: '', number: '', expiryMonth: '', expiryYear: '', ccv: '',
     name: '', email: '', cpfCnpj: '', postalCode: '', addressNumber: '', phone: '',
   }
   const [pagForm, setPagForm] = useState(PAGAMENTO_INICIAL)
 
-  function formatCard(v: string) { return v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim() }
   function formatCpf(v: string) {
     const d = v.replace(/\D/g, '').slice(0, 14)
     if (d.length <= 11) return d.replace(/(\d{3})(\d{3})(\d{3})(\d{0,2})/, '$1.$2.$3-$4').replace(/-$/, '')
@@ -97,12 +96,9 @@ export function CobrancaPage() {
   }
 
   function pagamentoValido() {
-    const num = pagForm.number.replace(/\D/g, '')
     const cpf = pagForm.cpfCnpj.replace(/\D/g, '')
     const cep = pagForm.postalCode.replace(/\D/g, '')
-    return pagForm.holderName.trim().length >= 3 && num.length >= 13
-      && /^\d{1,2}$/.test(pagForm.expiryMonth) && /^\d{4}$/.test(pagForm.expiryYear)
-      && /^\d{3,4}$/.test(pagForm.ccv) && pagForm.name.trim().length >= 3
+    return pagForm.name.trim().length >= 3
       && pagForm.email.includes('@') && [11, 14].includes(cpf.length)
       && cep.length === 8 && pagForm.addressNumber.trim().length > 0
   }
@@ -111,7 +107,8 @@ export function CobrancaPage() {
     if (!pagamentoModal) return
     try {
       // Cria ou recupera o customer no Asaas com os dados do titular preenchidos
-      const { customerId } = await assinaturaApi.criarClienteAsaas({
+      const { customerId } = await cobrancasApi.criarClientePagador({
+        cobrancaId: pagamentoModal.id,
         name: pagForm.name,
         email: pagForm.email,
         cpfCnpj: pagForm.cpfCnpj.replace(/\D/g, ''),
@@ -124,28 +121,18 @@ export function CobrancaPage() {
         customer: customerId,
         billingType: 'CREDIT_CARD',
         description: pagamentoModal.descricao,
-        creditCard: {
-          holderName: pagForm.holderName,
-          number: pagForm.number.replace(/\D/g, ''),
-          expiryMonth: pagForm.expiryMonth,
-          expiryYear: pagForm.expiryYear,
-          ccv: pagForm.ccv,
-        },
-        creditCardHolderInfo: {
-          name: pagForm.name,
-          email: pagForm.email,
-          cpfCnpj: pagForm.cpfCnpj.replace(/\D/g, ''),
-          postalCode: pagForm.postalCode.replace(/\D/g, ''),
-          addressNumber: pagForm.addressNumber,
-          phone: pagForm.phone.replace(/\D/g, '') || undefined,
-        },
       }
-      await pagar.mutateAsync(payload)
-      toastSuccess('Pagamento confirmado com sucesso!')
+      const result = await pagar.mutateAsync(payload) as PagamentoHospedadoResult
+      const invoiceUrl = result.invoiceUrl ? safeAsaasCheckoutUrl(result.invoiceUrl) : null
+      if (!invoiceUrl) {
+        throw new Error('O Asaas não retornou um link de pagamento seguro.')
+      }
+      window.location.assign(invoiceUrl)
+      toastSuccess('Redirecionando para o ambiente seguro do Asaas.')
       setPagamentoModal(null)
       setPagForm(PAGAMENTO_INICIAL)
-    } catch (err: any) {
-      toastError(err?.response?.data?.detail ?? 'Erro ao processar pagamento. Verifique os dados do cartão.')
+    } catch {
+      toastError('Nao foi possivel iniciar o pagamento seguro. Confira os dados do pagador e tente novamente.')
     }
   }
 
@@ -345,38 +332,7 @@ export function CobrancaPage() {
               </div>
 
               <div className="space-y-4">
-                {/* Dados do cartão */}
-                <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Dados do Cartão</p>
-                <div>
-                  <label className={labelCls}>Nome no cartão</label>
-                  <input value={pagForm.holderName} onChange={(e) => setPagForm((f) => ({ ...f, holderName: e.target.value.toUpperCase() }))}
-                    placeholder="NOME COMO NO CARTÃO" className={inputCls} autoComplete="cc-name" />
-                </div>
-                <div>
-                  <label className={labelCls}>Número do cartão</label>
-                  <div className="relative">
-                    <CreditCard size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input inputMode="numeric" value={pagForm.number} onChange={(e) => setPagForm((f) => ({ ...f, number: formatCard(e.target.value) }))}
-                      placeholder="0000 0000 0000 0000" className={`${inputCls} pl-9`} autoComplete="cc-number" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <div>
-                    <label className={labelCls}>Mês</label>
-                    <input inputMode="numeric" value={pagForm.expiryMonth} onChange={(e) => setPagForm((f) => ({ ...f, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) }))}
-                      placeholder="MM" maxLength={2} className={inputCls} autoComplete="cc-exp-month" />
-                  </div>
-                  <div>
-                    <label className={labelCls}>Ano</label>
-                    <input inputMode="numeric" value={pagForm.expiryYear} onChange={(e) => setPagForm((f) => ({ ...f, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
-                      placeholder="AAAA" maxLength={4} className={inputCls} autoComplete="cc-exp-year" />
-                  </div>
-                  <div>
-                    <label className={labelCls}>CVV</label>
-                    <input inputMode="numeric" value={pagForm.ccv} onChange={(e) => setPagForm((f) => ({ ...f, ccv: e.target.value.replace(/\D/g, '').slice(0, 4) }))}
-                      placeholder="000" maxLength={4} className={inputCls} autoComplete="cc-csc" />
-                  </div>
-                </div>
+                <p className="text-sm text-gray-600 dark:text-slate-300">Informe os dados do pagador. Os dados do cartao serao preenchidos somente no ambiente seguro do Asaas.</p>
 
                 {/* Dados do titular */}
                 <p className="text-xs font-bold text-gray-500 dark:text-slate-400 uppercase tracking-wide pt-1">Dados do Titular</p>
@@ -414,7 +370,7 @@ export function CobrancaPage() {
                 </div>
 
                 <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                  <ShieldCheck size={12} className="text-green-500" /> Pagamento processado com segurança via Asaas.
+                  <ShieldCheck size={12} className="text-green-500" /> Cartao informado diretamente no ambiente seguro do Asaas.
                 </div>
               </div>
 
@@ -425,7 +381,7 @@ export function CobrancaPage() {
                 </button>
                 <button onClick={handlePagar} disabled={pagar.isPending || !pagamentoValido()}
                   className="flex-1 px-4 py-2.5 text-sm font-semibold text-white bg-green-600 hover:bg-green-700 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2">
-                  {pagar.isPending ? 'Processando...' : <><CreditCard size={14} /> Confirmar Pagamento</>}
+                  {pagar.isPending ? 'Preparando...' : <><CreditCard size={14} /> Continuar para pagamento seguro</>}
                 </button>
               </div>
             </motion.div>

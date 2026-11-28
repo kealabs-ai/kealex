@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type CSSProperties } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import axios from 'axios'
 import { ArrowDown, ArrowUp, CalendarDays, Check, ClipboardList, Clock3, GripVertical, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useActivities, useActivityColumns, useCreateActivity, useCreateActivityColumn, useDeleteActivity, useDeleteActivityColumn, useUpdateActivity, useUpdateActivityColumn, ACTIVITY_COLUMNS_KEY } from '../hooks/useActivities'
 import type { ActivityColumnPayload, ActivityPayload } from '../api/activities'
@@ -10,7 +9,8 @@ import { Button } from '../components/UI'
 import { Modal } from '../components/Modal'
 import { useToast } from '../components/Toast'
 import type { Activity, ActivityColumn, ActivityPriority, ActivityStatus } from '../types'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 const DEFAULT_COLUMNS: ActivityColumn[] = [
   { id: 'todo', title: 'A Fazer', color: '#087E96', position: 0, createdAt: '', updatedAt: '' },
@@ -77,20 +77,6 @@ function reorderColumnList(columns: ActivityColumn[], draggedId: string, targetI
   const [draggedColumn] = reordered.splice(fromIndex, 1)
   reordered.splice(toIndex, 0, draggedColumn)
   return reordered
-}
-
-function activityErrorMessage(error: unknown, fallback: string) {
-  if (!axios.isAxiosError(error)) return fallback
-  const status = error.response?.status
-  const detail = error.response?.data?.detail
-  const message = typeof detail === 'string'
-    ? detail
-    : Array.isArray(detail)
-      ? detail.map((item: { msg?: string }) => item.msg).filter(Boolean).join('; ')
-      : undefined
-  if (message) return `${fallback} (${message}${status ? ` · HTTP ${status}` : ''})`
-  if (status) return `${fallback} (HTTP ${status})`
-  return `${fallback} (${error.message})`
 }
 
 function ActivityCard({
@@ -259,7 +245,7 @@ export function ActivitiesPage() {
         setEditingColumn(null)
         success(editingColumn ? 'Coluna atualizada.' : 'Coluna criada.')
       },
-      onError: (error: unknown) => toastError(activityErrorMessage(error, 'Não foi possível salvar a coluna.')),
+      onError: (error: unknown) => toastError(safeApiErrorMessage(error, 'Não foi possível salvar a coluna.')),
     }
     if (editingColumn) updateColumn.mutate({ id: editingColumn.id, data: payload }, options)
     else createColumn.mutate(payload, options)
@@ -269,7 +255,7 @@ export function ActivitiesPage() {
     if (!columnDeleteTarget) return
     deleteColumn.mutate(columnDeleteTarget.id, {
       onSuccess: () => success('Coluna excluída.'),
-      onError: (error) => toastError(activityErrorMessage(error, 'Não foi possível excluir a coluna.')),
+      onError: (error) => toastError(safeApiErrorMessage(error, 'Não foi possível excluir a coluna.')),
       onSettled: () => setColumnDeleteTarget(null),
     })
   }
@@ -308,7 +294,7 @@ export function ActivitiesPage() {
         setEditing(null)
         success(editing ? 'Atividade atualizada.' : 'Atividade criada.')
       },
-      onError: (error: unknown) => toastError(activityErrorMessage(error, 'Não foi possível salvar a atividade.')),
+      onError: (error: unknown) => toastError(safeApiErrorMessage(error, 'Não foi possível salvar a atividade.')),
     }
     if (editing) updateActivity.mutate({ id: editing.id, data: payload }, options)
     else createActivity.mutate(payload, options)
@@ -317,7 +303,7 @@ export function ActivitiesPage() {
   const moveActivity = (activity: Activity, status: ActivityStatus) => {
     if (activity.status === status) return
     updateActivity.mutate({ id: activity.id, data: { status } }, {
-      onError: (error) => toastError(activityErrorMessage(error, 'Não foi possível mover a atividade.')),
+      onError: (error) => toastError(safeApiErrorMessage(error, 'Não foi possível mover a atividade.')),
     })
   }
 
@@ -328,7 +314,7 @@ export function ActivitiesPage() {
         success('Atividade excluída.')
         setDeleteTarget(null)
       },
-      onError: (error) => toastError(activityErrorMessage(error, 'Não foi possível excluir a atividade.')),
+      onError: (error) => toastError(safeApiErrorMessage(error, 'Não foi possível excluir a atividade.')),
     })
   }
 
@@ -360,7 +346,7 @@ export function ActivitiesPage() {
           </div>
         ) : isError ? (
           <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/30 dark:text-red-200" role="alert">
-            <p>{activityErrorMessage(loadError, 'Não foi possível carregar suas atividades.')}</p>
+            <p>{safeApiErrorMessage(loadError, 'Não foi possível carregar suas atividades.')}</p>
             <button type="button" className="mt-3 font-semibold underline" onClick={() => void refetch()}>Tentar novamente</button>
           </div>
         ) : (

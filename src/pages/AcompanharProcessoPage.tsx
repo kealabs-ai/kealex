@@ -6,6 +6,7 @@ import { Modal } from '../components/Modal'
 import { EmptyState, SkeletonRow } from '../components/Cards'
 import { useToast } from '../components/Toast'
 import { processosAcompanhadosApi, type ProcessoAcompanhado } from '../api/processosAcompanhados'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 const PAGE_SIZE = 20
 const KEY = ['processos-acompanhados']
@@ -20,12 +21,7 @@ interface Fonte {
 interface DetalheProcesso { fontes?: Fonte[]; envolvidos?: Envolvido[]; data_inicio?: string }
 
 function mensagemErro(error: unknown, fallback: string): string {
-  if (typeof error !== 'object' || error === null || !('response' in error)) return fallback
-  const response = (error as { response?: { data?: { detail?: unknown } } }).response
-  const detail = response?.data?.detail
-  if (typeof detail === 'string') return detail
-  if (typeof detail === 'object' && detail !== null && 'message' in detail && typeof detail.message === 'string') return detail.message
-  return fallback
+  return safeApiErrorMessage(error, fallback)
 }
 
 function FilterSelect({ value, label, options, onChange }: { value: string; label: string; options: string[]; onChange: (value: string) => void }) {

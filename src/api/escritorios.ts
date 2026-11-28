@@ -1,9 +1,7 @@
 import { api } from './client'
 
-const ESCRITORIOS_API_BASE_URL = import.meta.env.KEALEX_API_BASE_URL || 'https://srv1023256.hstgr.cloud'
-
 const postEscritorio = <T,>(path: string, data: unknown) =>
-  api.post<T>(path, data, { baseURL: ESCRITORIOS_API_BASE_URL }).then((r) => r.data)
+  api.post<T>(path, data).then((r) => r.data)
 
 export interface Escritorio {
   id: string
@@ -25,7 +23,7 @@ export interface Escritorio {
 
 export const escritoriosApi = {
   list: () =>
-    api.get<Escritorio[]>('/v1/lex/escritorios', { baseURL: ESCRITORIOS_API_BASE_URL }).then((r) => r.data),
+    api.get<Escritorio[]>('/v1/lex/escritorios').then((r) => r.data),
 
   get: (id: string) =>
     postEscritorio<Escritorio>('/v1/lex/escritorios/get', { id }),

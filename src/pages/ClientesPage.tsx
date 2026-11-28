@@ -10,6 +10,7 @@ import { TopBar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
 import { useToast } from '../components/Toast'
 import type { Cliente } from '../types'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 export function ClientesPage() {
   const { data: clientes, isLoading, error } = useClientes()
@@ -43,8 +44,7 @@ export function ClientesPage() {
       representanteLegal: clean(data.representanteLegal), whatsapp: clean(data.whatsapp),
     }
     const options = { onSuccess: close, onError: (error: unknown) => {
-      const detail = (error as { response?: { data?: { detail?: unknown } } }).response?.data?.detail
-      showError(typeof detail === 'string' ? detail : 'Não foi possível salvar as informações do cliente.')
+      showError(safeApiErrorMessage(error, 'Não foi possível salvar as informações do cliente.'))
     } }
     if (editing) update.mutate({ id: editing.id, data: clientData }, options)
     else create.mutate(clientData, options)

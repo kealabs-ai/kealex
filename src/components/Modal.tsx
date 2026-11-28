@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { X } from 'lucide-react'
@@ -19,8 +19,11 @@ const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:n
 export function Modal({ title, subtitle, onClose, children, size = 'md', closeOnBackdrop = true }: ModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null)
   const onCloseRef = useRef(onClose)
-  onCloseRef.current = onClose
-  const titleId = useRef(`modal-title-${Math.random().toString(36).slice(2)}`)
+  const titleId = useId()
+
+  useEffect(() => {
+    onCloseRef.current = onClose
+  }, [onClose])
 
   // Focus trap + Escape
   useEffect(() => {
@@ -64,7 +67,7 @@ export function Modal({ title, subtitle, onClose, children, size = 'md', closeOn
         exit={{ opacity: 0 }}
         role="dialog"
         aria-modal="true"
-        aria-labelledby={titleId.current}
+        aria-labelledby={titleId}
       >
         <motion.div
           className="absolute inset-0 bg-black/40 backdrop-blur-sm"
@@ -83,7 +86,7 @@ export function Modal({ title, subtitle, onClose, children, size = 'md', closeOn
           <div className="h-1 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-cyan-500" />
           <div className="flex shrink-0 items-start justify-between px-4 pb-4 pt-5 sm:px-6">
             <div>
-              <h2 id={titleId.current} className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
+              <h2 id={titleId} className="text-lg font-semibold text-slate-900 dark:text-white">{title}</h2>
               {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{subtitle}</p>}
             </div>
             <button

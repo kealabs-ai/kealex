@@ -57,17 +57,15 @@ export async function sendMessage(
   onChunk: (chunk: string) => void,
   agentId?: string,
 ): Promise<void> {
-  logger.info('AI request:', messages.length, 'msgs') // no keys, provider secrets, or user content logged
+  logger.info('ai.request', { messageCount: messages.length })
   try {
     const { data } = await api.post<{ content: string }>('/k1/lex/configuracoes/ia/chat', {
       messages: messages.slice(-50).map(({ role, content }) => ({ role, content: content.slice(0, 32000) })),
       ...(agentId ? { agente_id: agentId } : {}),
     }, { timeout: 130000 })
     onChunk(data.content || '')
-  } catch (error: any) {
-    const status = error?.response?.status
-    const detail = error?.response?.data?.detail
-    logger.error('AI request failed', `${status ? `HTTP ${status}: ` : ''}${typeof detail === 'string' ? detail : error?.message || 'erro desconhecido'}`)
+  } catch (error: unknown) {
+    logger.error('ai.request_failed')
     throw error
   }
 }

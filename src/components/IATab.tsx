@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { Save, CheckCircle, ExternalLink, Eye, EyeOff, AlertTriangle, RefreshCw } from 'lucide-react'
@@ -6,6 +6,7 @@ import { Button, Input, Textarea } from '../components/UI'
 import { DataCard } from '../components/Cards'
 import { configuracoesApi, type IaProvider } from '../api/configuracoes'
 import { useToast } from '../components/Toast'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 const PROVIDERS: { id: IaProvider; label: string; url: string; docs: string; keyPrefix: string; models: string[] }[] = [
   { id: 'cerebras', label: 'Cerebras', url: 'https://cloud.cerebras.ai', docs: 'https://inference-docs.cerebras.ai/quickstart', keyPrefix: 'csk-', models: ['llama-3.3-70b', 'llama-3.1-70b', 'llama-3.1-8b'] },
@@ -17,6 +18,8 @@ const PROVIDERS: { id: IaProvider; label: string; url: string; docs: string; key
 ]
 
 type Fields = { api_key: string; endpoint_url: string; modelo: string; max_tokens: string; system_prompt: string; ativo: boolean }
+type ProviderModel = { id?: unknown; name?: unknown; baseModelId?: unknown; supportedGenerationMethods?: unknown }
+type ProviderModelsResponse = { models?: ProviderModel[]; data?: ProviderModel[] }
 const defaults: Record<IaProvider, Fields> = {
   cerebras: { api_key: '', endpoint_url: '', modelo: 'llama-3.3-70b', max_tokens: '8192', system_prompt: '', ativo: true },
   groq: { api_key: '', endpoint_url: '', modelo: 'llama-3.3-70b-versatile', max_tokens: '8192', system_prompt: '', ativo: true },
@@ -31,55 +34,46 @@ export function IATab() {
   const { success, error: toastError, warning } = useToast()
   const { data, isLoading, isError } = useQuery({ queryKey: ['configuracoes', 'ia', 'provedores'], queryFn: configuracoesApi.getIaProviders })
   const { data: availableModels } = useQuery({ queryKey: ['configuracoes', 'ia', 'modelos'], queryFn: configuracoesApi.getModelosDisponiveis })
-  const [provider, setProvider] = useState<IaProvider>('cerebras')
-  const [fieldsByProvider, setFieldsByProvider] = useState<Record<IaProvider, Fields>>(defaults)
+  const [selectedProvider, setSelectedProvider] = useState<IaProvider | null>(null)
+  const provider = selectedProvider ?? data?.active_provider ?? 'cerebras'
+  const [fieldsByProvider, setFieldsByProvider] = useState<Partial<Record<IaProvider, Partial<Fields>>>>({})
   const [showKey, setShowKey] = useState(false)
   const [dynamicModels, setDynamicModels] = useState<Partial<Record<IaProvider, string[]>>>({})
   const [loadingModels, setLoadingModels] = useState(false)
   const [saved, setSaved] = useState(false)
-  const initializedProvider = useRef(false)
   const current = PROVIDERS.find((item) => item.id === provider)!
-
-  useEffect(() => {
-    if (!data) return
-    if (!initializedProvider.current) {
-      setProvider(data.active_provider)
-      initializedProvider.current = true
-    }
-    setFieldsByProvider((prev) => {
-      const next = { ...prev }
-      for (const item of PROVIDERS) {
-        const savedConfig = data.providers[item.id]
-        if (savedConfig) next[item.id] = {
-          // O backend omite o segredo da resposta. Preserve o valor digitado
-          // em memória para este provedor durante refetches e salvamentos.
-          api_key: prev[item.id].api_key || savedConfig.api_key || '', endpoint_url: savedConfig.endpoint_url || defaults[item.id].endpoint_url, modelo: savedConfig.modelo || defaults[item.id].modelo,
-          max_tokens: String(savedConfig.max_tokens || 8192), system_prompt: savedConfig.system_prompt || '', ativo: savedConfig.ativo ?? true,
-        }
-      }
-      return next
-    })
-  }, [data])
+  const savedConfig = data?.providers[provider]
+  const fields: Fields = {
+    api_key: savedConfig?.api_key || '',
+    endpoint_url: savedConfig?.endpoint_url || defaults[provider].endpoint_url,
+    modelo: savedConfig?.modelo || defaults[provider].modelo,
+    max_tokens: String(savedConfig?.max_tokens || 8192),
+    system_prompt: savedConfig?.system_prompt || '',
+    ativo: savedConfig?.ativo ?? true,
+    ...fieldsByProvider[provider],
+  }
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const values = fieldsByProvider[provider]
+      const values = fields
       const key = values.api_key.trim()
       const validKey = !key || (provider === 'cerebras' ? key.startsWith('csk-') : provider === 'groq' ? key.startsWith('gsk-') || key.startsWith('gsk_') : provider === 'openai' || provider === 'deepseek' ? key.startsWith('sk-') : provider === 'google' ? key.startsWith('AIza') : key.startsWith('sk-ant-'))
       if (!validKey) throw new Error(`A chave informada não corresponde ao formato esperado para ${current.label}.`)
       return configuracoesApi.saveIaProvider(provider, { ...values, api_key: key, max_tokens: Number.parseInt(values.max_tokens, 10) || 8192 })
     },
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['configuracoes', 'ia'] }); setSaved(true); success('Configuração salva com sucesso!'); setTimeout(() => setSaved(false), 3000) },
-    onError: (error: any) => toastError(error.response?.data?.detail || error.message || 'Erro ao salvar configuração'),
+    onError: (error: unknown) => {
+      const localValidation = error instanceof Error && error.message.startsWith('A chave informada não corresponde')
+      toastError(localValidation ? error.message : safeApiErrorMessage(error, 'Não foi possível salvar a configuração de IA.'))
+    },
   })
   const activateMutation = useMutation({
     mutationFn: () => configuracoesApi.activateIaProvider(provider),
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['configuracoes', 'ia'] }); success(`${current.label} ativado como provedor de IA.`) },
-    onError: (error: any) => toastError(error.response?.data?.detail || 'Salve uma chave API válida antes de ativar este provedor.'),
+    onError: (error: unknown) => toastError(safeApiErrorMessage(error, 'Não foi possível ativar este provedor. Confira a chave e tente novamente.')),
   })
 
   const models = useMemo(() => dynamicModels[provider]?.length ? dynamicModels[provider]! : availableModels?.[provider]?.length ? availableModels[provider] : current.models, [availableModels, dynamicModels, provider, current])
-  const fields = fieldsByProvider[provider]
   const setField = (key: keyof Fields, value: string | boolean) => setFieldsByProvider((prev) => ({ ...prev, [provider]: { ...prev[provider], [key]: value } }))
 
   const refreshModels = async () => {
@@ -92,37 +86,45 @@ export function IATab() {
     setLoadingModels(true)
     try {
       let response: Response
-      let result: any
+      let result: ProviderModelsResponse
       if (provider === 'google') {
         response = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000', { headers: { 'x-goog-api-key': fields.api_key } })
-        result = await response.json()
-        if (!response.ok) throw new Error(result.error?.message || 'Não foi possível consultar modelos Gemini.')
-        const ids: string[] = (result.models || []).filter((m: any) => m.supportedGenerationMethods?.includes('generateContent') && /gemini/i.test(m.name || '')).map((m: any) => String(m.baseModelId || m.name.replace(/^models\//, ''))).filter((id: string) => !/(embedding|image|audio|tts|live|robotics)/i.test(id))
+        result = await response.json() as ProviderModelsResponse
+        if (!response.ok) throw new Error('A consulta ao provedor falhou.')
+        const ids = (result.models || [])
+          .filter((model) => Array.isArray(model.supportedGenerationMethods)
+            && model.supportedGenerationMethods.includes('generateContent')
+            && typeof model.name === 'string'
+            && /gemini/i.test(model.name))
+          .map((model) => typeof model.baseModelId === 'string' && model.baseModelId
+            ? model.baseModelId
+            : (model.name as string).replace(/^models\//, ''))
+          .filter((id) => !/(embedding|image|audio|tts|live|robotics)/i.test(id))
         const models: string[] = Array.from(new Set<string>(ids)).sort()
         setDynamicModels((prev) => ({ ...prev, google: models }))
         if (models.length && !models.includes(fields.modelo)) setField('modelo', models[0])
       } else if (provider === 'claude') {
         response = await fetch('https://api.anthropic.com/v1/models?limit=100', { headers: { 'x-api-key': fields.api_key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' } })
-        result = await response.json()
-        if (!response.ok) throw new Error(result.error?.message || 'Não foi possível consultar modelos Claude.')
-        const models = (result.data || []).map((m: any) => m.id as string).filter((id: string) => /claude/i.test(id)).sort()
+        result = await response.json() as ProviderModelsResponse
+        if (!response.ok) throw new Error('A consulta ao provedor falhou.')
+        const models = (result.data || []).map((m) => m.id as string).filter((id) => /claude/i.test(id)).sort()
         setDynamicModels((prev) => ({ ...prev, claude: models }))
         if (models.length && !models.includes(fields.modelo)) setField('modelo', models[0])
       } else {
         const base = provider === 'groq' ? 'https://api.groq.com/openai/v1' : provider === 'cerebras' ? 'https://api.cerebras.ai/v1' : 'https://api.openai.com/v1'
         response = await fetch(`${base}/models`, { headers: { Authorization: `Bearer ${fields.api_key}` } })
-        result = await response.json()
-        if (!response.ok) throw new Error(result.error?.message || 'Não foi possível consultar modelos do provedor.')
-        let ids = (result.data || []).map((m: any) => m.id as string).filter(Boolean)
-        if (provider === 'openai') ids = ids.filter((id: string) => /^(gpt-|o[134]-)/i.test(id))
-        if (provider === 'groq') ids = ids.filter((id: string) => !/(whisper|guard|tts|vision)/i.test(id))
+        result = await response.json() as ProviderModelsResponse
+        if (!response.ok) throw new Error('A consulta ao provedor falhou.')
+        let ids = (result.data || []).map((m) => m.id as string).filter(Boolean)
+        if (provider === 'openai') ids = ids.filter((id) => /^(gpt-|o[134]-)/i.test(id))
+        if (provider === 'groq') ids = ids.filter((id) => !/(whisper|guard|tts|vision)/i.test(id))
         ids.sort()
         setDynamicModels((prev) => ({ ...prev, [provider]: ids }))
         if (ids.length && !ids.includes(fields.modelo)) setField('modelo', ids[0])
       }
       success('Lista de modelos atualizada.')
-    } catch (error: any) {
-      toastError(error.message || 'Não foi possível carregar os modelos. Confira a chave e tente novamente.')
+    } catch (error) {
+      toastError(safeApiErrorMessage(error, `Não foi possível carregar os modelos de ${current.label}. Confira a chave e tente novamente.`))
     } finally { setLoadingModels(false) }
   }
 
@@ -142,7 +144,7 @@ export function IATab() {
           {PROVIDERS.map((item) => {
             const selected = provider === item.id
             const active = data?.active_provider === item.id
-            return <button key={item.id} type="button" onClick={() => { setProvider(item.id); setShowKey(false); setSaved(false) }} className={`p-3 border-2 rounded-xl text-left transition-colors ${selected ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
+            return <button key={item.id} type="button" onClick={() => { setSelectedProvider(item.id); setShowKey(false); setSaved(false) }} className={`p-3 border-2 rounded-xl text-left transition-colors ${selected ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'}`}>
               <span className="flex items-center justify-between gap-2"><span className="font-semibold text-sm text-gray-900">{item.label}</span>{active && <span className="text-[10px] font-semibold uppercase text-emerald-700">Ativo</span>}</span>
               <span className="block mt-1 text-xs text-gray-500">{data?.providers[item.id]?.configured ? 'Chave salva' : 'Adicione sua chave API'}</span>
             </button>

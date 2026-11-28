@@ -10,7 +10,6 @@ import { useUsuarios, useCreateUsuario, useUpdateUsuario, useDeleteUsuario } fro
 import { IATab } from '../components/IATab'
 import { AgentesTab } from '../components/AgentesTab'
 import { AIPoliciesTab } from '../components/AIPoliciesTab'
-import { AgentesDebugPanel } from '../components/AgentesDebugPanel'
 import { Modal } from '../components/Modal'
 import { StatCard, DataCard, SkeletonRow } from '../components/Cards'
 import { Button, Input, Select, Textarea } from '../components/UI'
@@ -18,8 +17,9 @@ import type { Role, Usuario } from '../types'
 import { useEscritorios } from '../hooks/useEscritorios'
 import { EscritoriosTab } from '../components/EscritoriosTab'
 import { McpConfigPanel, NotebookLlmConfigPanel } from '../components/IntegrationConfigPanels'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
-type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'politicas-ia' | 'debug' | 'usuarios' | 'escritorios' | 'seguranca' | 'notificacoes' | 'mcp' | 'notebook-llm'
+type Tab = 'geral' | 'cdn' | 'database' | 'ia' | 'agentes' | 'politicas-ia' | 'usuarios' | 'escritorios' | 'seguranca' | 'notificacoes' | 'mcp' | 'notebook-llm'
 type ConfigOption = { tab: Tab; title: string; description: string; icon: LucideIcon; accent: string }
 
 const configOptions: ConfigOption[] = [
@@ -29,7 +29,6 @@ const configOptions: ConfigOption[] = [
   { tab: 'ia', title: 'Configurações de IA', description: 'Provedores, modelos e parâmetros dos recursos de inteligência artificial.', icon: Bot, accent: 'from-fuchsia-500 to-purple-600' },
   { tab: 'agentes', title: 'Agentes IA', description: 'Gerencie os agentes e suas especializações disponíveis na plataforma.', icon: Bot, accent: 'from-indigo-500 to-violet-600' },
   { tab: 'politicas-ia', title: 'Permissões de acesso', description: 'Organize os módulos e recursos de IA liberados por plano e personalize exceções para usuários.', icon: Bot, accent: 'from-violet-500 to-fuchsia-600' },
-  { tab: 'debug', title: 'Debug API', description: 'Inspecione integrações e ferramentas de diagnóstico da API.', icon: Activity, accent: 'from-emerald-500 to-teal-600' },
   { tab: 'usuarios', title: 'Usuários', description: 'Consulte, cadastre e gerencie os acessos dos usuários do sistema.', icon: Users, accent: 'from-orange-500 to-amber-600' },
   { tab: 'escritorios', title: 'Escritório', description: 'Consulte os escritórios e ajuste os limites de usuários associados.', icon: Building2, accent: 'from-teal-500 to-emerald-600' },
   { tab: 'seguranca', title: 'Segurança', description: 'Ajuste recursos e políticas de segurança da plataforma.', icon: Shield, accent: 'from-rose-500 to-red-600' },
@@ -108,7 +107,6 @@ export function AdminPage() {
           {activeTab === 'ia' && <IATab />}
           {activeTab === 'agentes' && <AgentesTab />}
           {activeTab === 'politicas-ia' && <AIPoliciesTab />}
-          {activeTab === 'debug' && <AgentesDebugPanel />}
           {activeTab === 'geral' && <GeralTab />}
           {activeTab === 'cdn' && <CdnTab />}
           {activeTab === 'database' && <DatabaseTab />}
@@ -436,7 +434,7 @@ function DatabaseTab() {
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
     } catch (error) {
-      console.error('Erro ao salvar configuração:', error)
+      console.error('Erro ao salvar configuração')
     }
   }
 
@@ -449,13 +447,6 @@ function DatabaseTab() {
       </DataCard>
     )
   }
-
-  // Extrair informações da connection string (se existir)
-  const connectionInfo = dbConfig?.connection_string ? {
-    host: dbConfig.connection_string.match(/(?:@|:\/\/)([^:\/]+)/)?.[1] || 'N/A',
-    port: dbConfig.connection_string.match(/:([0-9]+)\//)?.[1] || 'N/A',
-    database: dbConfig.connection_string.match(/\/([^?]+)/)?.[1] || 'N/A'
-  } : null
 
   return (
     <div className="space-y-6">
@@ -517,19 +508,9 @@ function DatabaseTab() {
                 <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.name || 'N/A'}</p>
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Usuário</label>
-                <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.user || 'N/A'}</p>
+                <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Credenciais</label>
+                <p className="mt-1 text-sm text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.configured ? 'Configuradas' : 'Não configuradas'}</p>
               </div>
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Senha</label>
-              <p className="mt-1 text-sm font-mono text-gray-900 bg-gray-50 px-3 py-2 rounded-lg">{dbEnv.password ? '•'.repeat(dbEnv.password.length) : 'N/A'}</p>
-            </div>
-
-            <div>
-              <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Connection String</label>
-              <p className="mt-1 text-xs font-mono text-gray-700 bg-gray-50 px-3 py-2 rounded-lg break-all">{dbEnv.connection_string || 'N/A'}</p>
             </div>
           </div>
         ) : (
@@ -553,23 +534,8 @@ function DatabaseTab() {
             </div>
           </div>
 
-          {connectionInfo && (
-            <>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Host</label>
-                  <p className="mt-1 text-sm font-mono text-gray-900">{connectionInfo.host}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Porta</label>
-                  <p className="mt-1 text-sm font-mono text-gray-900">{connectionInfo.port}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-gray-500 uppercase tracking-wide">Database</label>
-                  <p className="mt-1 text-sm font-mono text-gray-900">{connectionInfo.database}</p>
-                </div>
-              </div>
-            </>
+          {dbConfig?.connection_string_configured && (
+            <p className="text-sm text-gray-600">String de conexão configurada; o conteúdo é protegido.</p>
           )}
 
           {dbConfig?.updated_at && (
@@ -923,8 +889,8 @@ function UsuariosTab() {
               {escritorios.map((escritorio) => <option key={escritorio.id} value={escritorio.id}>{escritorio.nome} ({escritorio.usuariosAtivos ?? 0}/{escritorio.limiteAdvogados ?? 3})</option>)}
             </Select>
             {officeLimitReached && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800" role="alert">Limite de {selectedEscritorio?.limiteAdvogados ?? 3} advogados atingido para este escritório. Entre em contato com o suporte/admin para alterar o limite.</p>}
-            {create.isError && <p className="text-sm text-rose-600" role="alert">{(create.error as any)?.response?.data?.detail ?? 'Não foi possível criar o usuário.'}</p>}
-            {update.isError && <p className="text-sm text-rose-600" role="alert">{(update.error as any)?.response?.data?.detail ?? 'Não foi possível atualizar o usuário.'}</p>}
+            {create.isError && <p className="text-sm text-rose-600" role="alert">{safeApiErrorMessage(create.error, 'Não foi possível criar o usuário.')}</p>}
+            {update.isError && <p className="text-sm text-rose-600" role="alert">{safeApiErrorMessage(update.error, 'Não foi possível atualizar o usuário.')}</p>}
             <label className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
               <input {...register('ativo')} type="checkbox" defaultChecked className="w-4 h-4 rounded accent-indigo-600" />
               <span className="text-sm font-medium text-gray-700">Usuário ativo</span>

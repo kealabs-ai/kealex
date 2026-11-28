@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { CheckCircle2, Clock, XCircle, AlertCircle, Loader2, RefreshCw, Copy, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { assinaturaApi, PLANOS_CONFIG, ASAAS_STATUS_APROVADO } from '../api/assinatura'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { useToast } from './Toast'
 
 interface Props {

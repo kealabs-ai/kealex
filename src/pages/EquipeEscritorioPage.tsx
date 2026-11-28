@@ -3,13 +3,14 @@ import { useForm } from 'react-hook-form'
 import { Check, Copy, Link2, Pencil, ToggleLeft, ToggleRight } from 'lucide-react'
 import { useUsuarios, useUpdateUsuario } from '../hooks/useUsuarios'
 import { useEscritorios } from '../hooks/useEscritorios'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { Modal } from '../components/Modal'
 import { Badge } from '../components/Badge'
 import { Button, Input } from '../components/UI'
 import { Topbar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
 import type { Usuario } from '../types'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 type FormData = { nome: string; email: string; senha?: string; oab?: string }
 
@@ -45,7 +46,7 @@ export function EquipeEscritorioPage() {
   }
 
   return <div className="flex h-screen flex-col bg-gray-50">
-    {isError && <p className="mx-6 mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-700" role="alert">{(usuariosError as any)?.response?.data?.detail ?? 'A conta precisa ter permissao e vinculo com um escritorio para carregar a equipe.'}</p>}
+    {isError && <p className="mx-6 mt-4 rounded-xl bg-rose-50 p-3 text-sm text-rose-700" role="alert">{safeApiErrorMessage(usuariosError, 'A conta precisa ter permissao e vinculo com um escritorio para carregar a equipe.')}</p>}
     <Topbar title="" hideModuleBar />
     <div className="flex-1 space-y-5 overflow-y-auto p-6 md:p-8">
       <PageBanner
@@ -94,7 +95,7 @@ export function EquipeEscritorioPage() {
         <Input label="E-mail de acesso" {...register('email', { required: true })} type="email" required />
         <Input label="Nova senha (opcional)" {...register('senha', { minLength: 6 })} type="password" minLength={6} />
         <Input label="OAB (opcional)" {...register('oab')} />
-        {update.isError && <p className="text-sm text-rose-600" role="alert">{(update.error as any)?.response?.data?.detail ?? 'Não foi possível salvar o advogado.'}</p>}
+        {update.isError && <p className="text-sm text-rose-600" role="alert">{safeApiErrorMessage(update.error, 'Não foi possível salvar o advogado.')}</p>}
         <div className="flex justify-end gap-2 border-t border-slate-100 pt-3"><Button type="button" variant="secondary" onClick={close}>Cancelar</Button><Button type="submit" loading={update.isPending}>Salvar</Button></div>
       </form>
     </Modal>}

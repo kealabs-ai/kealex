@@ -8,21 +8,20 @@ interface Props {
 
 interface State {
   hasError: boolean
-  error: Error | null
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props)
-    this.state = { hasError: false, error: null }
+    this.state = { hasError: false }
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error }
+  static getDerivedStateFromError(): State {
+    return { hasError: true }
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
-    logger.error('ErrorBoundary caught: ' + error.message, errorInfo?.componentStack)
+  componentDidCatch() {
+    logger.error('ui.render_failed')
   }
 
   render() {
@@ -37,14 +36,6 @@ export class ErrorBoundary extends Component<Props, State> {
             <p className="text-sm text-gray-600 mb-4">
               Ocorreu um erro ao carregar esta página.
             </p>
-            {this.state.error && (
-              <details className="text-left mb-4">
-                <summary className="text-xs text-gray-500 cursor-pointer mb-2">Detalhes do erro</summary>
-                <pre className="text-xs bg-gray-100 p-3 rounded overflow-auto max-h-32">
-                  {this.state.error.message}
-                </pre>
-              </details>
-            )}
             <button
               onClick={() => window.location.reload()}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"

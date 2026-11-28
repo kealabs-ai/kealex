@@ -3,8 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Building2, ChevronDown, Coins, History, Loader2, LogOut, Menu, Moon, Search, Store, Sun, UserRound, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
+import { useAuth } from '../context/useAuth'
+import { useTheme } from '../context/useTheme'
 import { api } from '../api/client'
 import { escritoriosApi } from '../api/escritorios'
 import type { Escritorio } from '../api/escritorios'
@@ -12,6 +12,8 @@ import { ProfileAvatar } from './ProfileAvatar'
 import { Modal } from './Modal'
 import { useToast } from './Toast'
 import { keaCreditsApi, KEA_CREDITS_QUERY_KEY } from '../api/keaCredits'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
+import { clearNotices } from '../utils/sessionNoticeStorage'
 
 const destinations = [
   { to: '/processos', label: 'Processos & Fases', keywords: 'processo casos' },
@@ -68,7 +70,7 @@ export function AppHeader({ onMenuClick }: Props) {
       setOfficeCode('')
       success('Associação ao escritório concluída com sucesso.')
     },
-    onError: (err: any) => error(err.response?.data?.detail ?? 'Não foi possível associar ao escritório. Confira o código e tente novamente.'),
+    onError: (err: unknown) => error(safeApiErrorMessage(err, 'Não foi possível associar ao escritório. Confira o código e tente novamente.')),
   })
   const inputRef = useRef<HTMLInputElement>(null)
   const visibleDestinations = useMemo(() => {
@@ -100,7 +102,7 @@ export function AppHeader({ onMenuClick }: Props) {
   }
 
   const handleLogout = () => {
-    Object.keys(sessionStorage).filter((key) => key.startsWith('subscription-expiration-notice:')).forEach((key) => sessionStorage.removeItem(key))
+    clearNotices('subscription-expiration-notice:')
     logout()
   }
 

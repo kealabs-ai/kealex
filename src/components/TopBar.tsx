@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, LogOut, ExternalLink, Building2, User, UserRound, AlertCircle, CalendarDays, type LucideIcon } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
+import { clearNotices, dismissNotice, isNoticeDismissed } from '../utils/sessionNoticeStorage'
 import { useTrial } from '../hooks/useTrial'
 import { assinaturaApi, PLANOS_CONFIG } from '../api/assinatura'
 import { AssinaturaModal } from './AssinaturaModal'
@@ -39,6 +40,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
   const [showModalidade, setShowModalidade] = useState(false)
   const [showAssinatura, setShowAssinatura] = useState(false)
   const [showExpirationNotice, setShowExpirationNotice] = useState(false)
+  const [currentTime, setCurrentTime] = useState(0)
   const { user, logout } = useAuth()
   const { isTrial, daysLeft } = useTrial()
   const isEscritorioContext = user?.role === 'escritorio' || user?.modalidade === 'escritorio'
@@ -66,8 +68,8 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
           : null
       })()
     : null
-  const subscriptionDaysLeft = subscriptionExpiresAt
-    ? Math.ceil((new Date(subscriptionExpiresAt).getTime() - Date.now()) / 86_400_000)
+  const subscriptionDaysLeft = subscriptionExpiresAt && currentTime
+    ? Math.ceil((new Date(subscriptionExpiresAt).getTime() - currentTime) / 86_400_000)
     : null
   const isSubscriptionExpiring = billingStatus?.status === 'active'
     && subscriptionDaysLeft !== null
@@ -75,22 +77,34 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
     && subscriptionDaysLeft <= 10
 
   useEffect(() => {
-    if (
+    const initial = window.setTimeout(() => setCurrentTime(Date.now()), 0)
+    const interval = window.setInterval(() => setCurrentTime(Date.now()), 60_000)
+    return () => {
+      window.clearTimeout(initial)
+      window.clearInterval(interval)
+    }
+  }, [])
+
+  useEffect(() => {
+    const shouldCheckNotice = Boolean(
       !user?.tenantId
       || billingStatus?.status !== 'active'
       || !subscriptionExpiresAt
       || subscriptionDaysLeft === null
       || subscriptionDaysLeft < 1
       || subscriptionDaysLeft > 10
-    ) return
-
-    const noticeKey = `subscription-expiration-notice:${user.tenantId}:${subscriptionExpiresAt}`
-    if (sessionStorage.getItem(noticeKey) !== 'shown') setShowExpirationNotice(true)
+    )
+    const noticeKey = user?.tenantId && subscriptionExpiresAt
+      ? `subscription-expiration-notice:${user.tenantId}:${subscriptionExpiresAt}`
+      : null
+    const shouldShow = !shouldCheckNotice && noticeKey !== null && !isNoticeDismissed(noticeKey)
+    const timer = window.setTimeout(() => setShowExpirationNotice(shouldShow), 0)
+    return () => window.clearTimeout(timer)
   }, [billingStatus?.status, subscriptionDaysLeft, subscriptionExpiresAt, user?.tenantId])
 
   function dismissExpirationNotice() {
     if (user?.tenantId && subscriptionExpiresAt) {
-      sessionStorage.setItem(`subscription-expiration-notice:${user.tenantId}:${subscriptionExpiresAt}`, 'shown')
+      dismissNotice(`subscription-expiration-notice:${user.tenantId}:${subscriptionExpiresAt}`)
     }
     setShowExpirationNotice(false)
   }
@@ -101,9 +115,7 @@ export function TopBar({ title, subtitle, icon, actions, rightContent, hideModul
   }
 
   function handleLogout() {
-    Object.keys(sessionStorage)
-      .filter((key) => key.startsWith('subscription-expiration-notice:'))
-      .forEach((key) => sessionStorage.removeItem(key))
+    clearNotices('subscription-expiration-notice:')
     logout()
   }
 

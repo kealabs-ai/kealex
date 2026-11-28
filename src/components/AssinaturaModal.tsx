@@ -1,15 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import axios from 'axios'
+import * as bwipjs from 'bwip-js/browser'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { CheckCircle2, CreditCard, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, XCircle, Copy, Check, QrCode } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { assinaturaApi, PLANOS_CONFIG, PERIODICIDADES_CONFIG, calcularValores, ASAAS_STATUS_APROVADO, type AssinarPayload, type HolderInfo, type CreditCardData, type Periodicidade } from '../api/assinatura'
-import { useAuth } from '../context/AuthContext'
+import { assinaturaApi, redirectToAsaasCheckout, PLANOS_CONFIG, PERIODICIDADES_CONFIG, calcularValores, ASAAS_STATUS_APROVADO, type AssinarPayload, type HolderInfo, type Periodicidade } from '../api/assinatura'
+import { useAuth } from '../context/useAuth'
 import { useToast } from './Toast'
 import { useTrial } from '../hooks/useTrial'
 import { AssinaturaExistente } from './AssinaturaExistente'
-import { CardBrandIndicator } from './CardBrandIndicator'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 interface Props {
   open: boolean
@@ -23,6 +25,32 @@ interface Props {
 type MetodoPagamento = 'cartao' | 'pix'
 type Step = 'plano' | 'titular' | 'metodo' | 'cartao' | 'pix' | 'confirmacao' | 'sucesso'
 
+function PixQrCode({ value }: { value: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const fallbackRef = useRef<HTMLParagraphElement>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const fallback = fallbackRef.current
+    if (!canvas || !fallback) return
+    try {
+      bwipjs.toCanvas(canvas, { bcid: 'qrcode', text: value, scale: 5 })
+      canvas.hidden = false
+      fallback.hidden = true
+    } catch {
+      canvas.hidden = true
+      fallback.hidden = false
+    }
+  }, [value])
+
+  return (
+    <div className="w-44 h-44 flex items-center justify-center">
+      <canvas ref={canvasRef} role="img" aria-label="QR Code PIX" className="max-w-full max-h-full" />
+      <p ref={fallbackRef} hidden className="text-center text-xs text-slate-500">QR indisponível. Copie e cole a chave PIX abaixo.</p>
+    </div>
+  )
+}
+
 const STEP_LABELS: Record<string, string> = {
   plano: 'Plano',
   titular: 'Titular',
@@ -33,10 +61,6 @@ const STEP_LABELS: Record<string, string> = {
 
 const STEPS: Step[] = ['plano', 'titular', 'metodo', 'confirmacao', 'sucesso']
 
-function formatCardNumber(v: string) {
-  return v.replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim()
-}
-
 function formatCpfCnpj(v: string) {
   const d = v.replace(/\D/g, '').slice(0, 14)
   if (d.length <= 11) {
@@ -46,14 +70,6 @@ function formatCpfCnpj(v: string) {
     return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
   }
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
-}
-
-function validadeCartaoOk(month: string, year: string) {
-  if (!/^\d{1,2}$/.test(month) || !/^\d{4}$/.test(year)) return false
-  const m = Number(month)
-  const y = Number(year)
-  const now = new Date()
-  return m >= 1 && m <= 12 && (y > now.getFullYear() || (y === now.getFullYear() && m >= now.getMonth() + 1))
 }
 
 function formatCep(v: string) {
@@ -140,12 +156,13 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
   // Quando pending: mantém na step plano para o usuário escolher novamente
   useEffect(() => {
     if (!open) return
-    if (billingStatus?.status === 'pending' && step === 'plano') {
-      const plan = (billingStatus.plano as 'starter' | 'professional') ?? planoInicial ?? 'professional'
+    if ((billingStatus?.status === 'pending' || billingStatus?.checkoutUrl) && step === 'plano') {
+      const plan = (billingStatus.plano === 'starter' || billingStatus.plano === 'professional')
+        ? billingStatus.plano : planoInicial ?? 'professional'
       setPlanoId(plan)
-      setPeriodicidade('mensal')
+      setPeriodicidade(billingStatus.periodicidade ?? 'mensal')
     }
-  }, [open, billingStatus?.status])
+  }, [open, step, planoInicial, billingStatus?.status, billingStatus?.plano, billingStatus?.periodicidade, billingStatus?.checkoutUrl])
   const {
     data: existingSubscription,
     isLoading: loadingExistingSubscription,
@@ -197,15 +214,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
         setCidadeQuery(`${billingProfile.city}, ${billingProfile.state}`)
       }
     }
-  }, [billingProfile])
-
-  const [cartao, setCartao] = useState<CreditCardData>({
-    holderName: user?.nome ?? '',
-    number: '',
-    expiryMonth: '',
-    expiryYear: '',
-    ccv: '',
-  })
+  }, [billingProfile, titular.cpfCnpj])
 
   const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number; status?: string } | null>(null)
   const [erroCartao, setErroCartao] = useState<string | null>(null)
@@ -244,8 +253,8 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
       queryClient.invalidateQueries({ queryKey: ['billing-status'] })
       queryClient.invalidateQueries({ queryKey: ['assinatura-existente', user?.tenantId] })
     },
-    onError: (err: any) => {
-      const msg = err.response?.data?.detail ?? 'Erro ao gerar PIX. Tente novamente.'
+    onError: (err: unknown) => {
+      const msg = safeApiErrorMessage(err, 'Não foi possível gerar o PIX. Tente novamente.')
       setErroCartao(msg)
       toastError(msg)
     },
@@ -258,12 +267,18 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
       const payload: AssinarPayload = {
         plano: planoId, periodicidade,
         asaasCustomerId: customerId,
-        creditCard: cartao,
-        holderInfo: formTitular,
       }
       return assinaturaApi.assinar(payload)
     },
     onSuccess: (data) => {
+      if (data.checkoutUrl) {
+        try { redirectToAsaasCheckout(data.checkoutUrl) } catch {
+          const message = 'O link de checkout não pôde ser validado. Tente novamente.'
+          setErroCartao(message)
+          toastError(message)
+        }
+        return
+      }
       if (!ASAAS_STATUS_APROVADO.has(data.status?.toUpperCase())) {
         if (['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(data.status?.toUpperCase())) {
           updateUser({ plano: data.plano, subscriptionStatus: 'pending', tenantAtivo: true })
@@ -293,12 +308,13 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
       setStep('sucesso')
       if (obrigatorio) setTimeout(() => navigate('/processos', { replace: true }), 2500)
     },
-    onError: (err: any) => {
-      if (err.response?.status === 409 || /assinatura.*vinculada|ja existe.*assinatura/i.test(err.response?.data?.detail ?? '')) {
+    onError: (err: unknown) => {
+      const status = axios.isAxiosError(err) ? err.response?.status : undefined
+      if (status === 409) {
         setAssinaturaExistente(true)
         return
       }
-      const msg = err.response?.data?.detail ?? 'Erro ao processar assinatura. Verifique os dados e tente novamente.'
+      const msg = safeApiErrorMessage(err, 'Não foi possível processar a assinatura. Verifique os dados e tente novamente.')
       setErroCartao(msg)
       toastError(msg)
     },
@@ -373,12 +389,6 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
     setTitular((t) => ({ ...t, city: cidade.nome, state: cidade.uf }))
     setCidadeQuery(`${cidade.nome}, ${cidade.uf}`)
     setShowCidadeSugestoes(false)
-  }
-
-  function cartaoValido() {
-    const number = cartao.number.replace(/\D/g, '')
-    return cartao.holderName.trim().length >= 3 && number.length >= 13 && number.length <= 19
-      && validadeCartaoOk(cartao.expiryMonth, cartao.expiryYear) && /^\d{3,4}$/.test(cartao.ccv)
   }
 
   if (!open) return null
@@ -662,69 +672,18 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
             {/* STEP: CARTAO */}
             {step === 'cartao' && (
               <motion.div key="cartao" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
-                <p className="text-sm text-slate-500 mb-4">Dados do cartao de credito</p>
-                <div className="bg-slate-50 rounded-xl p-3 mb-4 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-slate-500">Plano</p>
-                    <p className="font-bold text-[#081B33] text-sm">{planoSelecionado.nome} · {periodicidade === 'mensal' ? 'Mensal' : 'Trimestral'}</p>
-                  </div>
-                  {valores.valorDesconto > 0 && (
-                    <div className="flex items-center justify-between text-xs text-[#00C2A8]">
-                      <span>Desconto ({(valores.percentualDesconto * 100).toFixed(0)}%)</span>
-                      <span>- R$ {valores.valorDesconto.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between border-t border-slate-200 pt-1.5">
-                    <p className="text-xs font-bold text-[#081B33]">Total</p>
-                    <p className="font-extrabold text-[#081B33]">R$ {valores.valorFinal.toFixed(2).replace('.', ',')}</p>
-                  </div>
+                <p className="text-sm text-slate-600 mb-4">O pagamento recorrente será concluído no checkout seguro do Asaas. Os dados do cartão não passam pelo Kealex.</p>
+                <div className="bg-slate-50 rounded-xl p-3 mb-5 space-y-2">
+                  <Row label="Plano" value={`${planoSelecionado.nome} · ${periodicidade === 'mensal' ? 'Mensal' : 'Trimestral'}`} />
+                  <Row label="Total da primeira cobrança" value={`R$ ${valores.valorFinal.toFixed(2).replace('.', ',')}`} />
                 </div>
-                <div className="space-y-3 mb-5">
-                  <Field label="Nome no cartao">
-                    <input autoComplete="cc-name" value={cartao.holderName} onChange={(e) => setCartao({ ...cartao, holderName: e.target.value.toUpperCase() })} placeholder="NOME COMO NO CARTAO" className={inputCls} />
-                  </Field>
-                  <Field label="Numero do cartao">
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 flex h-5 w-7 -translate-y-1/2 items-center justify-center"><CardBrandIndicator number={cartao.number} /></span>
-                      <input inputMode="numeric" autoComplete="cc-number" value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: formatCardNumber(e.target.value) })} placeholder="0000 0000 0000 0000" className={`${inputCls} pl-12`} />
-                    </div>
-                  </Field>
-                  <div className="grid grid-cols-3 gap-3">
-                    <Field label="Mes"><input inputMode="numeric" autoComplete="cc-exp-month" value={cartao.expiryMonth} onChange={(e) => setCartao({ ...cartao, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) })} placeholder="MM" maxLength={2} className={inputCls} /></Field>
-                    <Field label="Ano"><input inputMode="numeric" autoComplete="cc-exp-year" value={cartao.expiryYear} onChange={(e) => setCartao({ ...cartao, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="AAAA" maxLength={4} className={inputCls} /></Field>
-                    <Field label="CVV"><input inputMode="numeric" autoComplete="cc-csc" value={cartao.ccv} onChange={(e) => setCartao({ ...cartao, ccv: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="000" maxLength={4} className={inputCls} /></Field>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-slate-400 mb-3">
-                  <ShieldCheck size={12} className="text-[#00C2A8]" /> Pagamento processado com seguranca via Asaas.
-                </div>
-                {erroCartao && (
-                  <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl px-3 py-2.5 mb-3">
-                    <XCircle size={14} className="shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold mb-1">{erroCartao}</p>
-                      <ul className="space-y-1 text-[11px] opacity-90">
-                        <li>• Verifique se o número do cartão está correto</li>
-                        <li>• Confirme a validade (mês e ano)</li>
-                        <li>• Verifique o CVV (3 dígitos no verso)</li>
-                        <li>• Certifique-se de que o cartão tem limite disponível</li>
-                        <li>• Tente com outro cartão ou forma de pagamento</li>
-                      </ul>
-                    </div>
-                  </div>
-                )}
+                {erroCartao && <p className="text-xs text-red-600 mb-3">{erroCartao}</p>}
                 <div className="flex gap-2">
-                  <button onClick={() => setStep('metodo')} className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-sm">
-                    <ArrowLeft size={15} /> Voltar
-                  </button>
-                  <button onClick={() => { setErroCartao(null); setStep('confirmacao') }} disabled={!cartaoValido()}
-                    className="flex-1 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
-                    Confirmar <ArrowRight size={15} />
-                  </button>
+                  <button onClick={() => setStep('metodo')} className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl flex items-center justify-center gap-2 text-sm"><ArrowLeft size={15} /> Voltar</button>
+                  <button onClick={() => { setErroCartao(null); setStep('confirmacao') }} className="flex-1 bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">Continuar <ArrowRight size={15} /></button>
                 </div>
               </motion.div>
             )}
-
 {/* STEP: PIX */}
             {step === 'pix' && (
               <motion.div key="pix" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
@@ -738,11 +697,9 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                     <p className="text-sm text-slate-500 mb-4 text-center">Escaneie o QR Code ou copie a chave PIX</p>
                     <div className="flex justify-center mb-4">
                       <div className="bg-white border-2 border-[#00C2A8]/30 rounded-2xl p-3">
-                        <img
-                          src={pixData.qrCode ? `data:image/png;base64,${pixData.qrCode}` : `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pixData.key)}`}
-                          alt="QR Code PIX"
-                          className="w-44 h-44"
-                        />
+                        {pixData.qrCode
+                          ? <img src={`data:image/png;base64,${pixData.qrCode}`} alt="QR Code PIX" className="w-44 h-44" />
+                          : <PixQrCode value={pixData.key} />}
                       </div>
                     </div>
                     <div className="bg-slate-50 rounded-xl p-3 mb-4">
@@ -806,7 +763,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                     </div>
                     <div className="border-b border-slate-200 pb-3">
                       <p className="text-xs text-slate-500 mb-1">Forma de Pagamento</p>
-                      <p className="font-bold text-[#081B33]">{metodo === 'cartao' ? `Cartão (${cartao.number.slice(-4)})` : 'PIX'}</p>
+                      <p className="font-bold text-[#081B33]">{metodo === 'cartao' ? 'Cartão via checkout seguro Asaas' : 'PIX'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-slate-500 mb-2">Resumo do Pagamento</p>
@@ -829,7 +786,7 @@ export function AssinaturaModal({ open, onClose, planoInicial, periodicidadeInic
                   <button onClick={() => setStep(metodo)} className="flex-1 py-3 border border-slate-200 text-slate-600 font-semibold rounded-xl hover:bg-slate-50 flex items-center justify-center gap-2 text-sm">
                     <ArrowLeft size={15} /> Voltar
                   </button>
-                  <button onClick={() => { setErroCartao(null); metodo === 'cartao' ? mutation.mutate() : mutationPix.mutate() }} disabled={mutation.isPending || mutationPix.isPending}
+                  <button onClick={() => { setErroCartao(null); if (metodo === 'cartao') mutation.mutate(); else mutationPix.mutate() }} disabled={mutation.isPending || mutationPix.isPending}
                     className="flex-1 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 text-sm">
                     {mutation.isPending || mutationPix.isPending ? <><Loader2 size={15} className="animate-spin" /> Processando...</> : <>Confirmar Pagamento <ArrowRight size={15} /></>}
                   </button>

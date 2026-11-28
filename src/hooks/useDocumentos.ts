@@ -4,8 +4,8 @@ import type { Documento } from '../types'
 
 export const DOCUMENTOS_KEY = ['documentos']
 
-export function useDocumentos() {
-  return useQuery({ queryKey: DOCUMENTOS_KEY, queryFn: documentosApi.list })
+export function useDocumentos(enabled = true) {
+  return useQuery({ queryKey: DOCUMENTOS_KEY, queryFn: documentosApi.list, enabled })
 }
 
 export function useDocumentosByProcesso(processoId: string) {

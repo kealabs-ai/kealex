@@ -8,7 +8,8 @@ import { Button } from '../components/UI'
 import { useToast } from '../components/Toast'
 import { analiseDocumentosApi, type AnaliseConversa } from '../api/analiseDocumentos'
 import { useAgentesPublicos, useMeusAgentes } from '../hooks/useAgentes'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 const ACCEPTED_EXTENSIONS = ['pdf', 'doc', 'docx', 'txt', 'md']
 const MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -22,8 +23,7 @@ const QUICK_ACTIONS = [
 ]
 
 function errorDetail(error: unknown) {
-  const response = error as { response?: { data?: { detail?: string; message?: string } } }
-  return response?.response?.data?.detail ?? response?.response?.data?.message ?? 'Não foi possível concluir a operação. Tente novamente.'
+  return safeApiErrorMessage(error, 'Não foi possível concluir a operação. Tente novamente.')
 }
 
 function formatBytes(bytes: number) {

@@ -28,9 +28,10 @@ src/
 ### CSP (index.html)
 ```
 worker-src blob:
-script-src 'self' 'unsafe-eval' 'unsafe-inline'
+script-src 'self'
 connect-src 'self' localhost https://srv1023256.hstgr.cloud https://api.openai.com https://api.groq.com
 ```
+O `vite.config.ts` habilita `unsafe-inline` somente no HTML servido em modo de desenvolvimento para o preâmbulo React Fast Refresh. O build de produção conserva `script-src 'self'`.
 
 ---
 

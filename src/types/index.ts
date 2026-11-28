@@ -202,7 +202,8 @@ export interface AgenteIA extends BaseEntity {
   nome: string
   descricao?: string
   provider: AIProvider
-  api_key: string
+  api_key?: string
+  configured?: boolean
   modelo: string
   max_tokens: number
   system_prompt?: string

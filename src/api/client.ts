@@ -1,4 +1,6 @@
 import axios from 'axios'
+import { clearStoredSession, readAccessToken } from '../utils/authSessionStorage'
+import { readAuthRoutingText } from '../utils/authRoutingText'
 
 const baseURL = import.meta.env.KEALEX_API_BASE_URL
 
@@ -8,8 +10,8 @@ export const api = axios.create({
 })
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('kealex_token')
-  if (token) config.headers.Authorization = `Bearer ${token}`
+  const token = readAccessToken()
+  if (token && !config.headers.Authorization) config.headers.Authorization = `Bearer ${token}`
   return config
 })
 
@@ -17,11 +19,10 @@ api.interceptors.response.use(
   (r) => r,
   (err) => {
     if (err.response?.status === 401) {
-      const msg = err.response?.data?.message ?? ''
-      const isExpired = msg === 'Unauthorized' || msg === '' || msg.toLowerCase().includes('token')
+      const msg = readAuthRoutingText(err.response?.data, 'message').toLowerCase()
+      const isExpired = msg === 'unauthorized' || msg === '' || msg.includes('token')
       if (isExpired) {
-        localStorage.removeItem('kealex_token')
-        localStorage.removeItem('kealex_user')
+        clearStoredSession()
         if (window.location.pathname !== '/entrar') {
           window.location.href = '/entrar'
         }
@@ -29,8 +30,7 @@ api.interceptors.response.use(
     }
 
     if (err.response?.status === 403) {
-      const detail = err.response?.data?.detail ?? ''
-      const reason = String(detail).toLowerCase()
+      const reason = readAuthRoutingText(err.response?.data, 'detail').toLowerCase()
       // Redireciona para /processos e deixa o ProtectedLayout exibir o modal de pagamento
       if (/(trial|assinatura|conta inativa)/.test(reason) && window.location.pathname !== '/processos') {
         window.location.href = '/processos'

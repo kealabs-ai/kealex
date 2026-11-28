@@ -4,6 +4,7 @@ import { Check, Clipboard, LoaderCircle, QrCode, WalletCards } from 'lucide-reac
 import { Modal } from '../Modal'
 import { creditPackages } from '../../data/keaStoreServices'
 import { keaCreditsApi, KEA_CREDITS_QUERY_KEY, type KeaCreditsRecharge } from '../../api/keaCredits'
+import { safeApiErrorMessage } from '../../utils/safeApiErrorMessage'
 
 interface CreditsTopUpModalProps {
   onClose: () => void
@@ -47,8 +48,7 @@ export function CreditsTopUpModal({ onClose }: CreditsTopUpModalProps) {
       setRecharge(created)
       await queryClient.invalidateQueries({ queryKey: KEA_CREDITS_QUERY_KEY })
     } catch (error) {
-      const response = error as { response?: { data?: { detail?: string } } }
-      setErrorMessage(response.response?.data?.detail ?? 'Não foi possível gerar o PIX. Tente novamente em instantes.')
+      setErrorMessage(safeApiErrorMessage(error, 'Não foi possível gerar o PIX. Tente novamente em instantes.'))
     } finally {
       setCreating(false)
     }

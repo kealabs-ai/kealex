@@ -7,7 +7,7 @@ export function useIntimacoes() {
   return useQuery({
     queryKey: ['intimacoes'],
     queryFn: async () => {
-      const { data } = await api.get('/intimacoes')
+      const { data } = await api.get('/k1/lex/intimacoes')
       return data as Intimacao[]
     },
   })
@@ -17,7 +17,7 @@ export function useCreateIntimacao() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (data: Omit<Intimacao, 'id' | 'createdAt' | 'updatedAt'>) => {
-      const { data: res } = await api.post('/intimacoes', data)
+      const { data: res } = await api.post('/k1/lex/intimacoes', data)
       return res
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['intimacoes'] }),
@@ -28,7 +28,7 @@ export function useUpdateIntimacao() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<Intimacao> }) => {
-      const { data: res } = await api.patch(`/intimacoes/${id}`, data)
+      const { data: res } = await api.patch(`/k1/lex/intimacoes/${id}`, data)
       return res
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['intimacoes'] }),
@@ -39,7 +39,7 @@ export function useDeleteIntimacao() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      await api.delete(`/intimacoes/${id}`)
+      await api.delete(`/k1/lex/intimacoes/${id}`)
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['intimacoes'] }),
   })

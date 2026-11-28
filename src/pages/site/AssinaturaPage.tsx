@@ -1,18 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
+import axios from 'axios'
 import type { ReactNode } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check, CheckCircle2, ArrowRight, ArrowLeft, Loader2, ShieldCheck, Star, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react'
-import { assinaturaApi, PLANOS_CONFIG, PERIODICIDADES_CONFIG, calcularValores, ASAAS_STATUS_APROVADO, type HolderInfo, type CreditCardData, type Periodicidade } from '../../api/assinatura'
+import { assinaturaApi, redirectToAsaasCheckout, PLANOS_CONFIG, PERIODICIDADES_CONFIG, calcularValores, ASAAS_STATUS_APROVADO, type HolderInfo, type Periodicidade } from '../../api/assinatura'
 import { Modal } from '../../components/Modal'
 import { AssinaturaExistente } from '../../components/AssinaturaExistente'
-import { CardBrandIndicator } from '../../components/CardBrandIndicator'
+import { saveCheckoutToken } from '../../utils/checkoutTokenStorage'
 import logo from '../../assets/logotipo_kealex.png'
-
-function fmtCard(v: string) {
-  return v.replace(/\D/g, '').slice(0, 19).replace(/(.{4})/g, '$1 ').trim()
-}
+import { safeApiErrorMessage } from '../../utils/safeApiErrorMessage'
 
 function fmtCpfCnpj(v: string) {
   const d = v.replace(/\D/g, '').slice(0, 14)
@@ -23,14 +21,6 @@ function fmtCpfCnpj(v: string) {
     return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`
   }
   return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`
-}
-
-function validadeCartaoOk(month: string, year: string) {
-  if (!/^\d{1,2}$/.test(month) || !/^\d{4}$/.test(year)) return false
-  const m = Number(month)
-  const y = Number(year)
-  const now = new Date()
-  return m >= 1 && m <= 12 && (y > now.getFullYear() || (y === now.getFullYear() && m >= now.getMonth() + 1))
 }
 
 function fmtCep(v: string) {
@@ -100,7 +90,6 @@ export function AssinaturaPage() {
     phone: '',
     mobilePhone: '',
   })
-  const [cartao, setCartao] = useState<CreditCardData>({ holderName: '', number: '', expiryMonth: '', expiryYear: '', ccv: '' })
   const [resultado, setResultado] = useState<{ subscriptionId: string; nextDueDate: string; value: number; periodicidade: Periodicidade; status: string } | null>(null)
   const [apiError, setApiError] = useState('')
   const [assinaturaExistente, setAssinaturaExistente] = useState(false)
@@ -111,11 +100,14 @@ export function AssinaturaPage() {
 
   useEffect(() => {
     const cepDigitos = titular.postalCode.replace(/\D/g, '')
-    if (cepDigitos.length === 8) {
-      setCepLoading(true)
-      setCepError('')
-      fetch(`https://viacep.com.br/ws/${cepDigitos}/json/`)
-        .then((res) => res.json())
+    if (cepDigitos.length !== 8) return
+
+    const controller = new AbortController()
+    fetch(`https://viacep.com.br/ws/${cepDigitos}/json/`, { signal: controller.signal })
+        .then((res) => {
+          if (!res.ok) throw new Error('Falha ao consultar CEP')
+          return res.json()
+        })
         .then((data) => {
           if (data.erro) {
             setCepError('CEP não encontrado')
@@ -128,16 +120,18 @@ export function AssinaturaPage() {
             setCepError('')
           }
         })
-        .catch(() => setCepError('Erro ao buscar CEP'))
-        .finally(() => setCepLoading(false))
-    }
+        .catch(() => {
+          if (!controller.signal.aborted) setCepError('Erro ao buscar CEP')
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setCepLoading(false)
+        })
+
+    return () => controller.abort()
   }, [titular.postalCode])
 
   const contaOk = conta.nome.trim().length >= 3 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(conta.email) && conta.senha.length >= 8 && conta.senha === conta.confirmar
   const titularOk = titular.name && titular.email && [11, 14].includes(titular.cpfCnpj.replace(/\D/g, '').length) && titular.postalCode.replace(/\D/g, '').length === 8 && titular.addressNumber
-  const numeroCartao = cartao.number.replace(/\D/g, '')
-  const cartaoOk = cartao.holderName.trim().length >= 3 && numeroCartao.length >= 13 && numeroCartao.length <= 19
-    && validadeCartaoOk(cartao.expiryMonth, cartao.expiryYear) && /^\d{3,4}$/.test(cartao.ccv)
 
   const pagar = useMutation({
     mutationFn: async () => {
@@ -146,35 +140,36 @@ export function AssinaturaPage() {
         try {
           const cadastro = await assinaturaApi.preRegister({ nome: conta.nome, email: conta.email, senha: conta.senha })
           tokenRef.current = cadastro.token
-        } catch (err: any) {
-          const detail = String(err.response?.data?.detail ?? '')
-          if (err.response?.status === 409 || /(e-?mail|usuario).*(cadastrad|existente|ja existe)|(cadastrad|existente|ja existe).*(e-?mail|usuario)/i.test(detail)) {
+        } catch (err: unknown) {
+          const responseError = axios.isAxiosError(err) ? err : null
+          if (responseError?.response?.status === 409) {
             setEmailJaCadastrado(true)
             throw err
           }
-          throw new Error(detail || 'Não foi possível criar sua conta. Tente novamente.')
+          throw new Error('Não foi possível criar sua conta. Tente novamente.', { cause: err })
         }
       }
-      const prev = localStorage.getItem('kealex_token')
-      localStorage.setItem('kealex_token', tokenRef.current)
-      try {
-        const { customerId } = await assinaturaApi.criarClienteAsaas(titular)
-        return await assinaturaApi.assinar({
-          plano: planoId,
-          periodicidade,
-          asaasCustomerId: customerId,
-          creditCard: cartao,
-          holderInfo: titular,
-        })
-      } finally {
-        if (prev) {
-          localStorage.setItem('kealex_token', prev)
-        } else {
-          localStorage.removeItem('kealex_token')
-        }
-      }
+      const accessToken = tokenRef.current
+      const { customerId } = await assinaturaApi.criarClienteAsaas(titular, accessToken)
+      return await assinaturaApi.assinar({
+        plano: planoId,
+        periodicidade,
+        asaasCustomerId: customerId,
+      }, accessToken)
     },
     onSuccess: (data) => {
+      if (data?.checkoutUrl) {
+        if (!tokenRef.current || !saveCheckoutToken(tokenRef.current)) {
+          setApiError('Não foi possível preservar a sessão segura do cadastro neste navegador. Libere o armazenamento de sessão e tente novamente.')
+          return
+        }
+        try {
+          redirectToAsaasCheckout(data.checkoutUrl)
+        } catch {
+          setApiError('O link de checkout não pôde ser validado. Tente novamente.')
+        }
+        return
+      }
       if (!data?.subscriptionId || !data.status) {
         setApiError('O servidor retornou uma resposta incompleta. Consulte o suporte antes de tentar novamente para evitar criar outra assinatura.')
         return
@@ -195,12 +190,14 @@ export function AssinaturaPage() {
       })
       setStep(4)
     },
-    onError: (err: any) => {
-      if (err.response?.status === 409 || /assinatura.*vinculada|ja existe.*assinatura/i.test(err.response?.data?.detail ?? '')) {
+    onError: (err: unknown) => {
+      const responseError = axios.isAxiosError(err) ? err : null
+      const status = responseError?.response?.status
+      if (status === 409) {
         setAssinaturaExistente(true)
         return
       }
-      if (err.response?.status !== 409) setApiError(err.response?.data?.detail ?? err.message ?? 'Não foi possível concluir a contratação. Confira os dados ou tente novamente.')
+      if (status !== 409) setApiError(safeApiErrorMessage(err, 'Não foi possível concluir a contratação. Confira os dados ou tente novamente.'))
     },
   })
 
@@ -267,7 +264,7 @@ export function AssinaturaPage() {
                   {apiError && <p className="text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{apiError}</p>}
                 </div>
               </Card>
-              <button onClick={() => { setTitular((p) => ({ ...p, name: conta.nome, email: conta.email })); setCartao((p) => ({ ...p, holderName: conta.nome.toUpperCase() })); setStep(1) }} disabled={!contaOk} className="w-full mt-4 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-lg shadow-orange-900/30">
+              <button onClick={() => { setTitular((p) => ({ ...p, name: conta.nome, email: conta.email })); setStep(1) }} disabled={!contaOk} className="w-full mt-4 bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm transition-all shadow-lg shadow-orange-900/30">
                 Continuar para escolha do plano <ArrowRight size={15} />
               </button>
               <p className="text-center text-xs text-white/30 mt-3">Ja tem conta? <Link to="/entrar" className="text-[#00C2A8] hover:underline">Entrar</Link></p>
@@ -324,12 +321,17 @@ export function AssinaturaPage() {
               <p className="text-sm text-white/50 text-center mb-6">Informacoes do responsavel pelo pagamento</p>
               <Card>
                 <div className="grid sm:grid-cols-2 gap-4">
-                  <div className="sm:col-span-2"><F label="Nome completo"><input value={titular.name} onChange={(e) => setTitular({ ...titular, name: e.target.value })} placeholder="Como aparece no cartao" className={inp} /></F></div>
+                  <div className="sm:col-span-2"><F label="Nome completo"><input value={titular.name} onChange={(e) => setTitular({ ...titular, name: e.target.value })} placeholder="Nome do titular da conta" className={inp} /></F></div>
                   <F label="E-mail"><input type="email" autoComplete="email" value={titular.email} onChange={(e) => setTitular({ ...titular, email: e.target.value })} placeholder="email@exemplo.com" className={inp} /></F>
                   <F label="CPF ou CNPJ"><input inputMode="numeric" autoComplete="off" value={titular.cpfCnpj} onChange={(e) => setTitular({ ...titular, cpfCnpj: fmtCpfCnpj(e.target.value) })} placeholder="CPF ou CNPJ" className={inp} /></F>
                   <F label="CEP">
                     <div className="relative">
-                      <input inputMode="numeric" autoComplete="postal-code" value={titular.postalCode} onChange={(e) => setTitular({ ...titular, postalCode: fmtCep(e.target.value) })} placeholder="00000-000" className={inp} />
+                      <input inputMode="numeric" autoComplete="postal-code" value={titular.postalCode} onChange={(e) => {
+                        const postalCode = fmtCep(e.target.value)
+                        setTitular({ ...titular, postalCode })
+                        setCepError('')
+                        setCepLoading(postalCode.replace(/\D/g, '').length === 8)
+                      }} placeholder="00000-000" className={inp} />
                       {cepLoading && <Loader2 size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 animate-spin" />}
                     </div>
                     {cepError && <p className="text-xs text-red-500 mt-1 flex items-center gap-1"><AlertCircle size={12} />{cepError}</p>}
@@ -351,68 +353,23 @@ export function AssinaturaPage() {
             <motion.div key="s3" initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }}>
               <Steps cur={3} />
               <h1 className="text-2xl font-extrabold text-white text-center mb-1">Pagamento</h1>
-              <p className="text-sm text-white/50 text-center mb-6">Finalize a assinatura com cartao de credito</p>
-
+              <p className="text-sm text-white/60 text-center mb-6">O pagamento recorrente será concluído no checkout seguro do Asaas.</p>
               <Card>
-                <div className="bg-slate-50 rounded-xl p-3 mb-4 border border-slate-200 space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500">Plano</p>
-                    <p className="font-bold text-[#081B33] text-sm">{plano.nome} · {periodicidade === 'mensal' ? 'Mensal' : 'Trimestral'}</p>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-500">
-                    <span>Valor mensal de referência</span>
-                    <span>R$ {plano.valor.toFixed(2).replace('.', ',')}</span>
-                  </div>
-                  {valores.meses > 1 && (
-                    <div className="flex items-center justify-between text-xs text-slate-500">
-                      <span>Valor bruto ({valores.meses} meses)</span>
-                      <span>R$ {valores.valorBruto.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                  )}
-                  {valores.valorDesconto > 0 && (
-                    <div className="flex items-center justify-between text-xs text-[#00C2A8]">
-                      <span>Desconto ({(valores.percentualDesconto * 100).toFixed(0)}%)</span>
-                      <span>- R$ {valores.valorDesconto.toFixed(2).replace('.', ',')}</span>
-                    </div>
-                  )}
-                  <div className="flex items-center justify-between border-t border-slate-200 pt-1.5">
-                    <p className="text-xs font-bold text-[#081B33]">Total a pagar</p>
-                    <p className="font-extrabold text-[#081B33]">R$ {valores.valorFinal.toFixed(2).replace('.', ',')}</p>
-                  </div>
+                <div className="bg-slate-50 rounded-xl p-4 border border-slate-200 space-y-2">
+                  <div className="flex justify-between"><span className="text-slate-500">Plano</span><strong>{plano.nome} · {periodicidade === 'mensal' ? 'Mensal' : 'Trimestral'}</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-500">Total da primeira cobrança</span><strong>R$ {valores.valorFinal.toFixed(2).replace('.', ',')}</strong></div>
                 </div>
-
-                <div className="space-y-4">
-                  <F label="Nome no cartão"><input autoComplete="cc-name" value={cartao.holderName} onChange={(e) => setCartao({ ...cartao, holderName: e.target.value.toUpperCase() })} placeholder="NOME COMO NO CARTÃO" className={inp} /></F>
-                  <F label="Numero do cartao">
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 flex h-5 w-7 -translate-y-1/2 items-center justify-center"><CardBrandIndicator number={cartao.number} /></span>
-                      <input inputMode="numeric" autoComplete="cc-number" value={cartao.number} onChange={(e) => setCartao({ ...cartao, number: fmtCard(e.target.value) })} placeholder="0000 0000 0000 0000" className={`${inp} pl-12`} />
-                    </div>
-                  </F>
-                  <div className="grid grid-cols-3 gap-3">
-                    <F label="Mês"><input inputMode="numeric" autoComplete="cc-exp-month" value={cartao.expiryMonth} onChange={(e) => setCartao({ ...cartao, expiryMonth: e.target.value.replace(/\D/g, '').slice(0, 2) })} placeholder="MM" maxLength={2} className={inp} /></F>
-                    <F label="Ano"><input inputMode="numeric" autoComplete="cc-exp-year" value={cartao.expiryYear} onChange={(e) => setCartao({ ...cartao, expiryYear: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="AAAA" maxLength={4} className={inp} /></F>
-                    <F label="CVV"><input inputMode="numeric" autoComplete="cc-csc" value={cartao.ccv} onChange={(e) => setCartao({ ...cartao, ccv: e.target.value.replace(/\D/g, '').slice(0, 4) })} placeholder="000" maxLength={4} className={inp} /></F>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-xs text-slate-300 mt-4">
-                  <ShieldCheck size={12} className="text-[#00C2A8]" />
-                  <span>Pagamento processado com seguranca via Asaas.</span>
-                </div>
-
+                <div className="flex items-center gap-2 text-xs text-slate-500 mt-4"><ShieldCheck size={14} className="text-[#00C2A8]" /><span>Os dados do cartão são informados diretamente ao Asaas e não passam pelo Kealex.</span></div>
                 {apiError && <p className="mt-4 text-xs text-red-500 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{apiError}</p>}
               </Card>
-
               <div className="flex gap-3 mt-4">
-                <button onClick={() => setStep(2)} className="flex-1 py-3.5 border border-white/20 text-white/70 font-semibold rounded-xl hover:bg-white/5 flex items-center justify-center gap-2 text-sm"><ArrowLeft size={15} />Voltar</button>
-                <button onClick={() => pagar.mutate()} disabled={!cartaoOk || pagar.isPending} className="flex-[2] bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-orange-900/30">
-                  {pagar.isPending ? <><Loader2 size={15} className="animate-spin" />Processando...</> : <>Confirmar assinatura <ArrowRight size={15} /></>}
+                <button onClick={() => setStep(2)} className="flex-1 py-3.5 border border-white/20 text-white/70 font-semibold rounded-xl flex items-center justify-center gap-2 text-sm"><ArrowLeft size={15} />Voltar</button>
+                <button onClick={() => pagar.mutate()} disabled={pagar.isPending} className="flex-[2] bg-[#F96313] hover:bg-[#e0550f] disabled:opacity-50 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 text-sm shadow-lg shadow-orange-900/30">
+                  {pagar.isPending ? <><Loader2 size={15} className="animate-spin" />Preparando checkout...</> : <>Continuar para o Asaas <ArrowRight size={15} /></>}
                 </button>
               </div>
             </motion.div>
           )}
-
           {!assinaturaExistente && step === 4 && resultado && (
             <motion.div key="s4" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.96 }} className="text-center">
               <Steps cur={4} />

@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Gavel, Plus, Calendar, MapPin, Users, Sparkles, ChevronDown, ChevronUp, Clock } from 'lucide-react'
+import { Gavel, Plus, Calendar, MapPin, Users, ClipboardList, ChevronDown, ChevronUp, Clock } from 'lucide-react'
 import { TopBar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
 import { DataCard, EmptyState, StatCard, SkeletonRow } from '../components/Cards'
 import { Modal } from '../components/Modal'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { useAudiencias, useCreateAudiencia, useUpdateAudiencia } from '../hooks/useIntimacoes'
-import type { StatusAudiencia } from '../types'
+import type { Audiencia, StatusAudiencia } from '../types'
 
 const statusConfig: Record<StatusAudiencia, { label: string; color: string }> = {
   agendada: { label: 'Agendada', color: 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20' },
@@ -28,7 +28,7 @@ export function AudienciasPage() {
   const update = useUpdateAudiencia()
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
-  const [gerandoRoteiro, setGerandoRoteiro] = useState<string | null>(null)
+  const [salvandoRoteiro, setSalvandoRoteiro] = useState<string | null>(null)
   const { register, handleSubmit, reset } = useForm<FormData>()
 
   const audiencias = Array.isArray(data) ? data : []
@@ -41,23 +41,35 @@ export function AudienciasPage() {
   ]
 
   const onSubmit = (data: FormData) => {
+    const audiencia: Omit<Audiencia, 'id' | 'createdAt' | 'updatedAt'> = {
+      processoId: '',
+      processoTitulo: data.processoTitulo,
+      tipo: data.tipo,
+      dataHora: data.dataHora,
+      local: data.local,
+      juiz: data.juiz,
+      partes: data.partes,
+      observacoes: data.observacoes,
+      status: 'agendada',
+    }
     create.mutate(
-      { processoId: '', ...data, status: 'agendada' } as any,
+      audiencia,
       { onSuccess: () => { reset(); setOpen(false) } }
     )
   }
 
-  const gerarRoteiro = (id: string) => {
+  const criarRoteiroBase = (id: string) => {
     const aud = audiencias.find((a) => a.id === id)
     if (!aud) return
-    setGerandoRoteiro(id)
-    const roteiro = `## Roteiro Gerado por IA — ${aud.tipo}\n\n**Processo:** ${aud.processoTitulo}\n\n### Objetivos da Audiência:\n1. Apresentar teses principais\n2. Ouvir testemunhas arroladas\n3. Requerer produção de provas\n\n### Perguntas para Testemunhas:\n- Descreva os fatos ocorridos\n- Confirma que estava presente no local?\n- Qual sua relação com as partes?\n\n### Teses de Blindagem:\n- Documentação probatória robusta\n- Precedentes favoráveis no STJ/STF\n\n### Pedidos a Formular:\n- Juntada de documentos\n- Oitiva de testemunhas\n- Perícia técnica (se cabível)`
-    setTimeout(() => {
-      update.mutate(
-        { id, data: { roteiro } },
-        { onSuccess: () => { setGerandoRoteiro(null); setExpanded(id) } }
-      )
-    }, 1500)
+    setSalvandoRoteiro(id)
+    const roteiro = `## Modelo genérico de referência — revisar e adequar\n\n**Audiência:** ${aud.tipo}\n**Processo / título:** ${aud.processoTitulo}\n\nEste modelo não foi gerado por inteligência artificial e não considera os fatos, documentos ou teses do caso. Revise e adapte todo o conteúdo antes de usar.\n\n### Objetivos a avaliar\n- Defina os objetivos conforme os fatos e os pedidos do caso.\n- Confirme quais pessoas precisam ser ouvidas e em que condição.\n- Verifique as provas requeridas e as decisões já proferidas.\n\n### Perguntas a preparar\n- Elabore perguntas específicas após revisar os autos e os documentos.\n- Confirme pertinência, clareza e adequação jurídica de cada pergunta.\n\n### Pontos para revisão profissional\n- Teses e fundamentos aplicáveis ao caso.\n- Documentos e demais provas disponíveis ou pendentes.\n- Pedidos que podem ser formulados, conforme o andamento processual.`
+    update.mutate(
+      { id, data: { roteiro } },
+      {
+        onSuccess: () => setExpanded(id),
+        onSettled: () => setSalvandoRoteiro(null),
+      },
+    )
   }
 
   return (
@@ -66,7 +78,7 @@ export function AudienciasPage() {
       <div className="kea-process-content">
         <PageBanner
           title="Audiências Estratégicas"
-          description="Prepare audiências com roteiros inteligentes e acompanhe os próximos compromissos."
+          description="Acompanhe compromissos e crie modelos genéricos de roteiro para revisão profissional."
           action={<Button icon={<Plus size={15} />} onClick={() => setOpen(true)}>Nova Audiência</Button>}
         />
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -150,8 +162,8 @@ export function AudienciasPage() {
                               >
                                 <div className="mt-3 p-4 bg-indigo-950/30 border border-indigo-500/15 rounded-xl">
                                   <div className="flex items-center gap-2 mb-2">
-                                    <Sparkles size={13} className="text-indigo-400" />
-                                    <span className="text-xs font-semibold text-indigo-400">Roteiro Estratégico</span>
+                                    <ClipboardList size={13} className="text-indigo-400" />
+                                    <span className="text-xs font-semibold text-indigo-400">Modelo genérico — requer revisão</span>
                                   </div>
                                   <pre className="text-xs text-slate-300 whitespace-pre-wrap font-sans leading-relaxed">
                                     {aud.roteiro}
@@ -172,12 +184,12 @@ export function AudienciasPage() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => gerarRoteiro(aud.id)}
-                              disabled={gerandoRoteiro === aud.id}
+                              onClick={() => criarRoteiroBase(aud.id)}
+                              disabled={salvandoRoteiro === aud.id}
                               className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-medium text-violet-600 dark:text-violet-400 border border-violet-200 dark:border-violet-500/30 hover:bg-violet-50 dark:hover:bg-violet-500/10 rounded-lg transition-all disabled:opacity-60"
                             >
-                              <Sparkles size={11} className={gerandoRoteiro === aud.id ? 'animate-spin' : ''} />
-                              {gerandoRoteiro === aud.id ? 'Gerando...' : 'Gerar IA'}
+                              <ClipboardList size={11} />
+                              {salvandoRoteiro === aud.id ? 'Salvando...' : 'Criar roteiro-base'}
                             </button>
                           )}
                         </div>

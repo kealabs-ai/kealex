@@ -1,12 +1,5 @@
 import { api } from './client'
-
-export interface CreditCardData {
-  holderName: string
-  number: string
-  expiryMonth: string
-  expiryYear: string
-  ccv: string
-}
+import { safeAsaasCheckoutUrl } from '../utils/asaasCheckoutUrl'
 
 export interface HolderInfo {
   name: string
@@ -29,9 +22,6 @@ export interface AssinarPayload {
   plano: 'starter' | 'professional'
   periodicidade: Periodicidade
   asaasCustomerId: string
-  creditCard: CreditCardData
-  holderInfo: HolderInfo
-  remoteIp?: string
 }
 
 export interface AssinarPixPayload {
@@ -42,6 +32,7 @@ export interface AssinarPixPayload {
 
 export interface AssinarResult {
   subscriptionId: string
+  checkoutUrl?: string
   plano: string
   periodicidade: Periodicidade
   status: string
@@ -68,14 +59,12 @@ export interface AssinarPixResult {
 /** Status Asaas que representam pagamento aprovado/ativo */
 export const ASAAS_STATUS_APROVADO = new Set(['ACTIVE', 'CONFIRMED', 'RECEIVED'])
 
-async function getPayerIp(): Promise<string> {
-  const response = await fetch('https://api.ipify.org?format=json', {
-    signal: AbortSignal.timeout(5000),
-  })
-  if (!response.ok) throw new Error('Não foi possível identificar o IP do pagador para processar o cartão.')
-  const data: { ip?: string } = await response.json()
-  if (!data.ip) throw new Error('O serviço de identificação do IP não retornou um endereço válido.')
-  return data.ip
+export function redirectToAsaasCheckout(rawUrl: string): void {
+  const safeUrl = safeAsaasCheckoutUrl(rawUrl)
+  if (!safeUrl) {
+    throw new Error('O Asaas nao retornou um link HTTPS de checkout valido.')
+  }
+  window.location.assign(safeUrl)
 }
 
 export function calcularValores(valorMensal: number, periodicidade: Periodicidade) {
@@ -94,6 +83,8 @@ export interface BillingStatus {
   nextDueDate: string | null
   trialExpiresAt: string | null
   subscriptionExpiresAt: string | null
+  periodicidade?: Periodicidade
+  checkoutUrl?: string | null
 }
 
 export interface AssinaturaExistente {
@@ -137,13 +128,16 @@ export const assinaturaApi = {
   preRegister: (data: { nome: string; email: string; senha: string }) =>
     api.post<PreRegisterResult>('/k1/lex/auth/pre-register', data).then((r) => r.data),
 
-  criarClienteAsaas: (holderInfo: HolderInfo) =>
-    api.post<{ customerId: string }>('/k1/lex/auth/criar-cliente-asaas', holderInfo).then((r) => r.data),
+  criarClienteAsaas: (holderInfo: HolderInfo, accessToken?: string) =>
+    api.post<{ customerId: string }>('/k1/lex/auth/criar-cliente-asaas', holderInfo, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    }).then((r) => r.data),
 
-  assinar: (payload: AssinarPayload) =>
-    getPayerIp().then((remoteIp) =>
-      api.post<AssinarResult>('/k1/lex/auth/assinar', { ...payload, remoteIp }, { timeout: 60_000 }).then((r) => r.data),
-    ),
+  assinar: (payload: AssinarPayload, accessToken?: string) =>
+    api.post<AssinarResult>('/k1/lex/auth/assinar', payload, {
+      timeout: 60_000,
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    }).then((r) => r.data),
 
   assinarPix: (payload: AssinarPixPayload) =>
     api.post<AssinarPixResult>('/k1/lex/auth/assinar-pix', payload).then((r) => r.data),
@@ -151,11 +145,16 @@ export const assinaturaApi = {
   billingStatus: () =>
     api.get<BillingStatus>('/k1/lex/auth/billing-status').then((r) => r.data),
 
+  billingStatusWithToken: (accessToken: string) =>
+    api.get<BillingStatus>('/k1/lex/auth/billing-status', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }).then((r) => r.data),
+
   billingProfile: () =>
     api.get<BillingProfile>('/k1/lex/auth/billing-profile').then((r) => r.data),
 
   updateBillingProfile: (data: BillingProfile) =>
-    api.put<BillingProfile>('/k1/lex/auth/billing-profile', data).then((r) => r.data),
+    api.patch<BillingProfile>('/k1/lex/auth/billing-profile', data).then((r) => r.data),
 
   getAssinatura: () =>
     api.get<AssinaturaExistente>('/k1/lex/auth/assinatura').then((r) => r.data),

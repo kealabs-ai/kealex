@@ -1,14 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { processosApi } from '../api/processos'
+import { processosApi, type ProcessoMutationInput } from '../api/processos'
 import { logger } from '../utils/logger'
-import type { Processo } from '../types'
 
 export const PROCESSOS_KEY = ['processos']
 
-export function useProcessos() {
+export function useProcessos(enabled = true) {
   return useQuery({
     queryKey: PROCESSOS_KEY,
     queryFn: () => processosApi.list(),
+    enabled,
   })
 }
 
@@ -27,7 +27,7 @@ export function useCreateProcesso() {
 export function useUpdateProcesso() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<Processo> }) => processosApi.update(id, data),
+    mutationFn: ({ id, data }: { id: string; data: ProcessoMutationInput }) => processosApi.update(id, data),
     onSuccess: () => qc.invalidateQueries({ queryKey: PROCESSOS_KEY }),
   })
 }
@@ -46,6 +46,6 @@ export function useAvancarFase() {
     mutationFn: ({ id, faseAtual }: { id: string; faseAtual: number }) =>
       processosApi.avancarFase(id, faseAtual),
     onSuccess: () => qc.invalidateQueries({ queryKey: PROCESSOS_KEY }),
-    onError: (error: any) => logger.error('useAvancarFase error', error),
+    onError: () => logger.error('process.phase_advance_mutation_failed'),
   })
 }

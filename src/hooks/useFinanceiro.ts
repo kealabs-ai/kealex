@@ -4,12 +4,12 @@ import type { Honorario } from '../types'
 
 export const FINANCEIRO_KEY = ['financeiro']
 
-export function useHonorarios() {
-  return useQuery({ queryKey: FINANCEIRO_KEY, queryFn: financeiroApi.list })
+export function useHonorarios(enabled = true) {
+  return useQuery({ queryKey: FINANCEIRO_KEY, queryFn: financeiroApi.list, enabled })
 }
 
-export function useDashboardFinanceiro() {
-  return useQuery({ queryKey: [...FINANCEIRO_KEY, 'dashboard'], queryFn: financeiroApi.dashboard })
+export function useDashboardFinanceiro(enabled = true) {
+  return useQuery({ queryKey: [...FINANCEIRO_KEY, 'dashboard'], queryFn: financeiroApi.dashboard, enabled })
 }
 
 export function useCreateHonorario() {

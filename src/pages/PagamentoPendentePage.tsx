@@ -3,12 +3,13 @@ import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { AlertCircle, CheckCircle2, Clock, XCircle, RefreshCw, ShieldCheck } from 'lucide-react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { useTrial } from '../hooks/useTrial'
 import logo from '../assets/logotipo_kealex.png'
-import { assinaturaApi, PLANOS_CONFIG } from '../api/assinatura'
+import { assinaturaApi, redirectToAsaasCheckout, PLANOS_CONFIG } from '../api/assinatura'
 import type { Periodicidade } from '../api/assinatura'
 import { AssinaturaModal } from '../components/AssinaturaModal'
+import { clearCheckoutToken, readCheckoutToken } from '../utils/checkoutTokenStorage'
 
 type LocationState = { plano?: 'starter' | 'professional'; periodicidade?: Periodicidade; statusGateway?: string } | null
 
@@ -30,20 +31,27 @@ export function PagamentoPendentePage() {
   const { logout, user, updateUser } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const checkoutReturn = new URLSearchParams(location.search).get('checkout') === 'retorno'
   const state = (location.state as LocationState) ?? {}
   const planoPreservado = state.plano ?? 'professional'
   const periodicidadePreservada = state.periodicidade ?? 'mensal'
   const statusGateway = state.statusGateway
-  const statusInfo = getStatusInfo(statusGateway)
+  const checkoutToken = checkoutReturn ? readCheckoutToken() : null
+  const hasPendingCheckoutToken = Boolean(checkoutToken)
+  const statusInfo = checkoutReturn
+    ? { icon: Clock, cor: 'amber', titulo: 'Aguardando confirmação do Asaas', msg: 'O checkout foi concluído ou retornou ao Kealex. A ativação depende da confirmação recebida por webhook; esta página atualizará o status automaticamente.' }
+    : getStatusInfo(statusGateway)
   const StatusIcon = statusInfo.icon
   const corClasse = statusInfo.cor === 'amber' ? { bg: 'bg-amber-50', border: 'border-amber-200', icon: 'text-amber-500', titulo: 'text-amber-800', msg: 'text-amber-700' } : { bg: 'bg-red-50', border: 'border-red-200', icon: 'text-red-500', titulo: 'text-red-800', msg: 'text-red-700' }
-  const [assinaturaOpen, setAssinaturaOpen] = useState(Boolean(user))
+  const [assinaturaOpen, setAssinaturaOpen] = useState(Boolean(user) && !checkoutReturn)
 
   const { isTrial, daysLeft } = useTrial()
   const { data: billingStatus, isFetching } = useQuery({
-    queryKey: ['billing-status'],
-    queryFn: assinaturaApi.billingStatus,
-    enabled: Boolean(user),
+    queryKey: ['billing-status', hasPendingCheckoutToken ? 'checkout' : 'session'],
+    queryFn: () => checkoutToken
+      ? assinaturaApi.billingStatusWithToken(checkoutToken)
+      : assinaturaApi.billingStatus(),
+    enabled: Boolean(user) || hasPendingCheckoutToken,
     refetchInterval: 10_000,
   })
 
@@ -58,12 +66,20 @@ export function PagamentoPendentePage() {
 
   useEffect(() => {
     if (billingStatus?.status !== 'active') return
+    if (!user && hasPendingCheckoutToken) {
+      // The pre-registration token is intentionally not a full app session.
+      // Once the webhook activates the tenant, require a normal login.
+      clearCheckoutToken()
+      navigate('/entrar?pagamento=confirmado', { replace: true })
+      return
+    }
     updateUser({ plano: billingStatus.plano, subscriptionStatus: 'active', tenantAtivo: true })
     navigate('/processos', { replace: true })
-  }, [billingStatus, navigate, updateUser])
+  }, [billingStatus, hasPendingCheckoutToken, navigate, updateUser, user])
 
   function handleLogout() {
     logout()
+    clearCheckoutToken()
     navigate('/entrar', { replace: true })
   }
 
@@ -133,7 +149,7 @@ export function PagamentoPendentePage() {
               </div>
             )}
 
-            {!['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(statusGateway?.toUpperCase() ?? '') && (
+            {!checkoutReturn && !['PENDING', 'AWAITING_RISK_ANALYSIS'].includes(statusGateway?.toUpperCase() ?? '') && (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left space-y-2">
                 <p className="text-xs font-bold text-slate-700 uppercase tracking-wide">O que pode ter ocorrido</p>
                 <ul className="space-y-1.5 text-xs text-slate-600">
@@ -145,10 +161,14 @@ export function PagamentoPendentePage() {
             )}
 
             <button
-              onClick={() => setAssinaturaOpen(true)}
+              onClick={() => {
+                if (billingStatus?.checkoutUrl) {
+                  try { redirectToAsaasCheckout(billingStatus.checkoutUrl) } catch { setAssinaturaOpen(true) }
+                } else setAssinaturaOpen(true)
+              }}
               className="w-full bg-[#F96313] hover:bg-[#e0550f] text-white font-bold py-3 rounded-xl text-sm flex items-center justify-center gap-2 mb-3"
             >
-              Tentar novamente
+              {checkoutReturn ? 'Continuar checkout existente' : 'Tentar novamente'}
             </button>
 
             <button

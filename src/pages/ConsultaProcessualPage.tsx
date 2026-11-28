@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { ArrowUpRight, CalendarDays, CircleAlert, FileSearch, Gavel, LoaderCircle, Search } from 'lucide-react'
 import { PageBanner } from '../components/PageBanner'
 import { escavadorApi, type EscavadorProcesso } from '../api/escavador'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 function formatDate(value?: string) {
   if (!value) return 'Não informado'
@@ -68,9 +69,7 @@ export function ConsultaProcessualPage() {
     try {
       setProcesso(await escavadorApi.consultarProcesso(numeroCnj))
     } catch (error) {
-      const responseError = error as { response?: { data?: { detail?: string | { message?: string } } }; message?: string }
-      const detail = responseError.response?.data?.detail
-      setErro(typeof detail === 'string' ? detail : detail?.message || responseError.message || 'Não foi possível consultar o processo.')
+      setErro(safeApiErrorMessage(error, 'Não foi possível consultar o processo.'))
     } finally {
       setIsLoading(false)
     }

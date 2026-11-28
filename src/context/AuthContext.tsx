@@ -1,61 +1,38 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import type { AuthUser, Role } from '../types'
-
-interface AuthContextType {
-  user: AuthUser | null
-  role: Role | null
-  login: (user: AuthUser) => void
-  logout: () => void
-  updateUser: (partial: Partial<AuthUser>) => void
-}
-
-const AuthContext = createContext<AuthContextType>(null!)
-
-function isTokenValid(token: string): boolean {
-  try {
-    const payload = JSON.parse(atob(token.split('.')[1]))
-    return payload.exp * 1000 > Date.now()
-  } catch {
-    return false
-  }
-}
-
-function restoreSession(): AuthUser | null {
-  try {
-    const token = localStorage.getItem('kealex_token')
-    const stored = localStorage.getItem('kealex_user')
-    if (!token || !stored) return null
-    if (!isTokenValid(token)) {
-      localStorage.removeItem('kealex_token')
-      localStorage.removeItem('kealex_user')
-      return null
-    }
-    return JSON.parse(stored)
-  } catch {
-    return null
-  }
-}
+import { useState, useEffect, useCallback, type ReactNode } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { AuthContext } from './auth-context'
+import type { AuthUser } from '../types'
+import { clearStoredSession, isTokenValid, readAccessToken, restoreStoredSession, saveAccessToken, saveUserProfile } from '../utils/authSessionStorage'
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(restoreSession)
+  const queryClient = useQueryClient()
+  const [user, setUser] = useState<AuthUser | null>(restoreStoredSession)
 
   const login = (u: AuthUser) => {
-    localStorage.setItem('kealex_token', u.accessToken)
-    localStorage.setItem('kealex_user', JSON.stringify(u))
-    setUser(u)
+    queryClient.clear()
+    clearStoredSession()
+    try {
+      saveUserProfile(u)
+      saveAccessToken(u.accessToken)
+      setUser(u)
+    } catch (error) {
+      clearStoredSession()
+      setUser(null)
+      throw error
+    }
   }
 
-  const logout = () => {
-    localStorage.removeItem('kealex_token')
-    localStorage.removeItem('kealex_user')
+  const logout = useCallback(() => {
+    queryClient.clear()
+    clearStoredSession()
     setUser(null)
-  }
+  }, [queryClient])
 
   const updateUser = (partial: Partial<AuthUser>) => {
     setUser((prev) => {
       if (!prev) return prev
       const updated = { ...prev, ...partial }
-      localStorage.setItem('kealex_user', JSON.stringify(updated))
+      saveUserProfile(updated)
       return updated
     })
   }
@@ -63,8 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // verifica expiração a cada minuto e ao focar a janela
   useEffect(() => {
     const check = () => {
-      const token = localStorage.getItem('kealex_token')
-      if (token && !isTokenValid(token)) logout()
+      try {
+        const token = readAccessToken()
+        if ((!token && user) || (token && !isTokenValid(token))) logout()
+      } catch {
+        logout()
+      }
     }
     check()
     const interval = setInterval(check, 60_000)
@@ -73,7 +54,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearInterval(interval)
       window.removeEventListener('focus', check)
     }
-  }, [])
+  }, [logout, user])
+
+  useEffect(() => {
+    const synchronizeSession = (event: StorageEvent) => {
+      if (event.key !== null && event.key !== 'kealex_token' && event.key !== 'kealex_user') return
+      const restored = restoreStoredSession()
+      queryClient.clear()
+      setUser(restored)
+    }
+    window.addEventListener('storage', synchronizeSession)
+    return () => window.removeEventListener('storage', synchronizeSession)
+  }, [queryClient])
 
   return (
     <AuthContext.Provider value={{ user, role: user?.role ?? null, login, logout, updateUser }}>
@@ -81,5 +73,3 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     </AuthContext.Provider>
   )
 }
-
-export const useAuth = () => useContext(AuthContext)

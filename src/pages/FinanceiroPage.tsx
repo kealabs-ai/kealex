@@ -6,14 +6,14 @@ import { useHonorarios, useDashboardFinanceiro, useCreateHonorario, useUpdateHon
 import { useProcessos } from '../hooks/useProcessos'
 import { useClientes } from '../hooks/useClientes'
 import { AreaChart } from '../components/AreaChart'
-import { useTheme } from '../context/ThemeContext'
+import { useTheme } from '../context/useTheme'
 import { Modal } from '../components/Modal'
 import { DataCard, SkeletonRow, EmptyState, StatCard } from '../components/Cards'
 import { statusHonorarioBadge } from '../components/Badge'
 import { Button, Input, Select } from '../components/UI'
 import { TopBar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import type { Honorario, StatusHonorario } from '../types'
 
 type FormData = {
@@ -28,10 +28,10 @@ export function FinanceiroPage() {
   const { user } = useAuth()
   const { isDark } = useTheme()
   const isCliente = user?.role === 'cliente'
-  const { data: honorarios, isLoading, error } = useHonorarios()
-  const { data: dashboard } = useDashboardFinanceiro()
-  const { data: processos } = useProcessos()
-  const { data: clientes } = useClientes()
+  const { data: honorarios, isLoading, error } = useHonorarios(!isCliente)
+  const { data: dashboard } = useDashboardFinanceiro(!isCliente)
+  const { data: processos } = useProcessos(!isCliente)
+  const { data: clientes } = useClientes(!isCliente)
   const create = useCreateHonorario()
   const update = useUpdateHonorario()
   const remove = useDeleteHonorario()
@@ -42,7 +42,7 @@ export function FinanceiroPage() {
   const { register, handleSubmit, reset } = useForm<FormData>()
 
   if (error) {
-    console.error('Erro ao carregar honorários:', error)
+    console.error('Erro ao carregar honorários')
   }
 
   const honorariosList = Array.isArray(honorarios) ? honorarios : []
@@ -140,6 +140,22 @@ export function FinanceiroPage() {
     stats[3].label = 'Atrasado'
   }
 
+  if (isCliente) {
+    return (
+      <div className="kea-process-page">
+        <TopBar title="" hideModuleBar />
+        <div className="kea-process-content">
+          <PageBanner
+            title="Gestão Financeira"
+            description="A consulta individual de honorários ainda não está disponível."
+          />
+          <section role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
+            O acesso depende de um vínculo seguro entre seu login e o cadastro de cliente. Entre em contato com o escritório para consultar seus honorários enquanto esse vínculo é configurado.
+          </section>
+        </div>
+      </div>
+    )
+  }
   return (
     <div className="kea-process-page">
       <TopBar title="" hideModuleBar />

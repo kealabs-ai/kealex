@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Plus, Edit2, Trash2, Eye, EyeOff, Bot, Globe, Lock, CheckCircle, RefreshCw } from 'lucide-react'
+import { Plus, Edit2, Trash2, Bot, Globe, Lock, CheckCircle, RefreshCw } from 'lucide-react'
 import { DataCard } from './Cards'
 import { Button, Input, Textarea, Select } from './UI'
 import { Modal } from './Modal'
@@ -9,6 +9,11 @@ import { useModelosDisponiveis } from '../hooks/useConfiguracoes'
 import type { AgenteIA, AIProvider } from '../types'
 import { isModelCompatibleWithProvider } from '../utils/aiModels'
 
+type ProviderModelResponse = {
+  models?: Array<{ supportedGenerationMethods?: string[]; name?: string; baseModelId?: string }>
+  data?: Array<{ id?: string }>
+}
+
 export function AgentesTab() {
   const { data: agentes = [], isLoading } = useAgentes()
   const createAgente = useCreateAgente()
@@ -16,7 +21,6 @@ export function AgentesTab() {
   const deleteAgente = useDeleteAgente()
 
   const [modal, setModal] = useState<{ type: 'create' | 'edit'; agente?: AgenteIA } | null>(null)
-  const [showKeys, setShowKeys] = useState<Record<string, boolean>>({})
   const [saved, setSaved] = useState<string | null>(null)
 
   const handleSave = async (data: Partial<AgenteIA>) => {
@@ -129,19 +133,8 @@ export function AgentesTab() {
                   </div>
                 </div>
 
-                <div className="relative">
-                  <div className="text-xs text-gray-400 mb-1">API Key</div>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-xs bg-gray-50 px-3 py-2 rounded-lg font-mono">
-                      {showKeys[agente.id] ? agente.api_key : '••••••••••••••••••••'}
-                    </code>
-                    <button
-                      onClick={() => setShowKeys(prev => ({ ...prev, [agente.id]: !prev[agente.id] }))}
-                      className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
-                    >
-                      {showKeys[agente.id] ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                  </div>
+                <div className="text-xs text-gray-500" role="status">
+                  Credencial do provedor: {agente.configured || agente.api_key ? 'configurada' : 'não configurada'}
                 </div>
               </motion.div>
             ))}
@@ -210,6 +203,8 @@ function AgenteModal({
     ativo: agente?.ativo ?? true,
     publico: agente?.publico ?? true,
   })
+  const credentialConfigured = Boolean(agente?.configured || agente?.api_key)
+  const keyRequired = !agente || form.provider !== agente.provider || !credentialConfigured
 
   const loadModels = async (provider: AIProvider, apiKey: string) => {
     const normalizedKey = apiKey.trim()
@@ -238,18 +233,18 @@ function AgenteModal({
       }
 
       const response = await fetch(url, { headers })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error?.message || result.message || `O provedor respondeu com status ${response.status}.`)
+      const result = await response.json() as ProviderModelResponse
+      if (!response.ok) throw new Error(`provider-request-failed-${response.status}`)
 
       let ids: string[]
       if (provider === 'google') {
-        ids = (result.models || []).filter((item: any) => item.supportedGenerationMethods?.includes('generateContent') && /gemini/i.test(item.name || ''))
-          .map((item: any) => String(item.baseModelId || item.name.replace(/^models\//, '')))
+        ids = (result.models || []).filter((item) => item.supportedGenerationMethods?.includes('generateContent') && /gemini/i.test(item.name || ''))
+          .map((item) => String(item.baseModelId || item.name?.replace(/^models\//, '') || ''))
           .filter((id: string) => !/(embedding|image|audio|tts|live|robotics)/i.test(id))
       } else if (provider === 'claude') {
-        ids = (result.data || []).map((item: any) => String(item.id || '')).filter((id: string) => /claude/i.test(id))
+        ids = (result.data || []).map((item) => String(item.id || '')).filter((id) => /claude/i.test(id))
       } else {
-        ids = (result.data || []).map((item: any) => String(item.id || '')).filter(Boolean)
+        ids = (result.data || []).map((item) => String(item.id || '')).filter(Boolean)
         if (provider === 'openai') ids = ids.filter((id) => /^(gpt-|o[134]-)/i.test(id))
         if (provider === 'groq') ids = ids.filter((id) => !/(whisper|guard|tts|vision)/i.test(id))
         if (provider === 'deepseek') ids = ids.filter((id) => /^deepseek-/i.test(id))
@@ -258,8 +253,8 @@ function AgenteModal({
       if (!ids.length) throw new Error('O provedor não retornou modelos compatíveis com chat.')
       setModelsByProvider((current) => ({ ...current, [provider]: ids }))
       setForm((current) => ({ ...current, modelo: current.provider === provider && ids.includes(current.modelo) ? current.modelo : ids[0] }))
-    } catch (error: any) {
-      window.alert(error.message || `Não foi possível consultar modelos de ${provider}.`)
+    } catch {
+      window.alert(`Não foi possível consultar modelos de ${provider}. Confira a chave e tente novamente.`)
     } finally {
       setLoadingModels(false)
     }
@@ -283,22 +278,22 @@ function AgenteModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (!form.nome || !form.api_key) return
+    if (!form.nome || (keyRequired && !form.api_key.trim())) return
     if (!isModelCompatibleWithProvider(form.provider, form.modelo)) {
       window.alert(`O modelo ${form.modelo} não corresponde ao fabricante ${form.provider}.`)
       return
     }
     const key = form.api_key.trim()
-    const validKey = form.provider === 'cerebras' ? key.startsWith('csk-')
+    const validKey = !key || (form.provider === 'cerebras' ? key.startsWith('csk-')
       : form.provider === 'groq' ? key.startsWith('gsk-') || key.startsWith('gsk_')
       : form.provider === 'claude' ? key.startsWith('sk-ant-')
       : form.provider === 'google' ? key.startsWith('AIza')
-      : key.startsWith('sk-') && (form.provider !== 'openai' || !key.startsWith('sk-ant-'))
+      : key.startsWith('sk-') && (form.provider !== 'openai' || !key.startsWith('sk-ant-')))
     if (!validKey) {
       window.alert(`A chave informada não corresponde ao provedor ${form.provider}.`)
       return
     }
-    onSave(form)
+    onSave({ ...form, api_key: key || undefined })
   }
 
   const models = modelsByProvider[form.provider]?.length ? modelsByProvider[form.provider]! : modelosPorProvider[form.provider]
@@ -362,8 +357,10 @@ function AgenteModal({
           value={form.api_key}
           onChange={(e) => setForm({ ...form, api_key: e.target.value })}
           autoComplete="new-password"
-          placeholder={({ groq: 'gsk-...', cerebras: 'csk-...', openai: 'sk-...', claude: 'sk-ant-...', google: 'AIza...', deepseek: 'sk-...' } as Record<AIProvider, string>)[form.provider]}
-          required
+          placeholder={credentialConfigured && form.provider === agente?.provider
+            ? 'Chave salva; deixe em branco para manter ou informe uma nova'
+            : ({ groq: 'gsk-...', cerebras: 'csk-...', openai: 'sk-...', claude: 'sk-ant-...', google: 'AIza...', deepseek: 'sk-...' } as Record<AIProvider, string>)[form.provider]}
+          required={keyRequired}
         />
 
         <div className="flex gap-2">

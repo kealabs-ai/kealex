@@ -11,7 +11,7 @@ import { statusPrazoBadge } from '../components/Badge'
 import { Button, Input, Select, Textarea } from '../components/UI'
 import { TopBar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import type { Prazo, StatusPrazo } from '../types'
 
 type FormData = { processoId: string; titulo: string; descricao: string; dataVencimento: string; status?: StatusPrazo }
@@ -20,9 +20,10 @@ import { diasRestantes } from '../utils/formatters'
 
 export function PrazosPage() {
   const { user } = useAuth()
-  const { data: prazos, isLoading, error } = usePrazos()
-  const { data: vencendo } = usePrazosVencendo(7)
-  const { data: processos } = useProcessos()
+  const isCliente = user?.role === 'cliente'
+  const { data: prazos, isLoading, error } = usePrazos(!isCliente)
+  const { data: vencendo } = usePrazosVencendo(7, !isCliente)
+  const { data: processos } = useProcessos(!isCliente)
   const create = useCreatePrazo()
   const update = useUpdatePrazo()
   const remove = useDeletePrazo()
@@ -32,10 +33,8 @@ export function PrazosPage() {
   const [search, setSearch] = useState('')
   const { register, handleSubmit, reset } = useForm<FormData>()
 
-  const isCliente = user?.role === 'cliente'
-
   if (error) {
-    console.error('Erro ao carregar prazos:', error)
+    console.error('Erro ao carregar prazos')
   }
 
   const prazosList = Array.isArray(prazos) ? prazos : []
@@ -57,6 +56,20 @@ export function PrazosPage() {
     { label: 'Concluídos', value: prazosList.filter((p) => p?.status === 'concluido').length, gradient: 'linear-gradient(135deg,#10b981,#059669)', icon: <CheckCircle size={18} /> },
     { label: 'Vencidos', value: prazosList.filter((p) => p?.status === 'vencido').length, gradient: 'linear-gradient(135deg,#ef4444,#dc2626)', icon: <AlertTriangle size={18} /> },
   ]
+
+  if (isCliente) {
+    return (
+      <div className="kea-process-page kea-deadline-page">
+        <TopBar title="" hideModuleBar />
+        <div className="kea-process-content">
+          <PageBanner title="Prazos" description="A consulta individual ainda não está disponível." />
+          <section role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
+            O acesso depende de um vínculo seguro entre seu login e o cadastro de cliente. Entre em contato com o escritório para consultar seus prazos enquanto esse vínculo é configurado.
+          </section>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="kea-process-page kea-deadline-page">

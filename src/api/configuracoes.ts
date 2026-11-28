@@ -23,6 +23,8 @@ export interface CfgCdn {
   region?: string
   access_key_id?: string
   secret_access_key?: string
+  access_key_id_configured?: boolean
+  secret_access_key_configured?: boolean
   cdn_url?: string
   tamanho_max_mb: number
   tipos_permitidos: string
@@ -37,6 +39,7 @@ export interface CfgDatabase {
   escritorio_id?: string
   tipo: string
   connection_string?: string
+  connection_string_configured?: boolean
   pool_size: number
   timeout_segundos: number
   ssl_enabled: boolean
@@ -156,9 +159,7 @@ export interface DatabaseEnv {
   host: string
   port: string
   name: string
-  user: string
-  password: string
-  connection_string: string
+  configured: boolean
 }
 
 export const configuracoesApi = {

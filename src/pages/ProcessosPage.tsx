@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Pencil, Trash2, Briefcase, Search, FileText, Download, CircleCheck, Archive, CircleX, FolderOpen } from 'lucide-react'
 import { useProcessos, useCreateProcesso, useUpdateProcesso, useDeleteProcesso, useAvancarFase } from '../hooks/useProcessos'
@@ -12,7 +12,8 @@ import { Button, Input, Select, Textarea } from '../components/UI'
 import { ClienteFormModal, type ClienteFormData } from '../components/ClienteFormModal'
 import { TopBar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 import { useToast } from '../components/Toast'
 import { gerarGuiaTJMG } from '../utils/guiaGenerator'
 import { gerarDocumentoWord } from '../utils/documentGenerator'
@@ -28,6 +29,7 @@ type FormData = {
   clienteId: string; vara: string; tribunal: string
   status?: StatusProcesso
 }
+type GuiaFormData = { tipo: 'custas' | 'honorarios' | 'deposito' | 'multa' | 'outro'; valor: string; vencimento: string; descricao: string }
 
 const PROCESS_STEPS = [
   { title: 'Dados do processo', description: 'Identificação, tribunal e fase inicial.' },
@@ -91,8 +93,8 @@ function gerarQualificacao(cliente: Cliente) {
 export function ProcessosPage() {
   const { user } = useAuth()
   const { success, error: toastError } = useToast()
-  const { data: processos, isLoading, isError } = useProcessos()
   const isCliente = user?.role === 'cliente'
+  const { data: processos, isLoading, isError } = useProcessos(!isCliente)
   const create = useCreateProcesso()
   const update = useUpdateProcesso()
   const createClient = useCreateCliente()
@@ -126,11 +128,9 @@ export function ProcessosPage() {
   const [processParties, setProcessParties] = useState<ProcessoParte[]>([])
   const [newParty, setNewParty] = useState<ProcessoParteInput>({ name: '', personType: 'fisica', proceduralRole: 'Réu', isUnknown: false })
   const lastLookup = useRef('')
-  const { register, handleSubmit, reset, watch, setValue, getValues, trigger } = useForm<FormData>()
-  const numeroProcesso = watch('numero')
-  const { register: registerGuia, handleSubmit: handleSubmitGuia, reset: resetGuia } = useForm<{
-    tipo: string; valor: string; vencimento: string; descricao: string
-  }>()
+  const { register, handleSubmit, reset, control, setValue, getValues, trigger } = useForm<FormData>()
+  const numeroProcesso = useWatch({ control, name: 'numero' })
+  const { register: registerGuia, handleSubmit: handleSubmitGuia, reset: resetGuia } = useForm<GuiaFormData>()
 
   const openCreate = () => { reset({}); setActiveStep(0); lastLookup.current = ''; setConsultaStatus(''); setEditing(null); setCustomFases([]); setNovaFase(''); setSelectedProcessClients([]); setProcessParties([]); setNewParty({ name: '', personType: 'fisica', proceduralRole: 'Réu', isUnknown: false }); setClientSearch(''); setClientResults([]); setClientSearchPage(1); setClientLinkError(''); setClientLinksLoading(false); setOpen(true) }
   const openEdit = (p: Processo) => { reset({ numero: p.numero, titulo: p.titulo, descricao: p.descricao, clienteId: p.clienteId, vara: p.vara, tribunal: p.tribunal, status: p.status }); setActiveStep(0); setSelectedProcessClients([]); setProcessParties([]); setNewParty({ name: '', personType: 'fisica', proceduralRole: 'Réu', isUnknown: false }); setClientLinkError(''); setClientLinksLoading(true); setEditing(p); setOpen(true) }
@@ -172,7 +172,6 @@ export function ProcessosPage() {
   useEffect(() => {
     if (!open || !editing) return
     let cancelled = false
-    setClientLinksLoading(true)
     Promise.all([processosApi.clients(editing.id), processosApi.parties(editing.id)]).then(([links, parties]) => {
       if (!cancelled) {
         setSelectedProcessClients(links)
@@ -278,33 +277,36 @@ export function ProcessosPage() {
     if (numero.length !== 20 || lastLookup.current === numero) return
     const tribunal = identificarTribunal(numero)
     if (!tribunal) {
-      setConsultaStatus('Não foi possível identificar automaticamente o tribunal deste número. Você pode preencher os dados manualmente.')
-      return
+      const timer = window.setTimeout(() => {
+        setConsultaStatus('Não foi possível identificar automaticamente o tribunal deste número. Você pode preencher os dados manualmente.')
+      }, 0)
+      return () => window.clearTimeout(timer)
     }
     const timer = window.setTimeout(async () => {
       lastLookup.current = numero
       setConsultaStatus('Consultando dados do processo…')
       try {
-        const response = await usuariosApi.consultarProcessoDataJud({ tribunal, numeroProcesso: numero }) as any
+        const response = await usuariosApi.consultarProcessoDataJud({ tribunal, numeroProcesso: numero })
         if (String(getValues('numero') ?? '').replace(/\D/g, '') !== numero) return
         const processo = response?.hits?.hits?.[0]?._source
         if (!processo) {
           setConsultaStatus('Nenhum processo encontrado para esse número. Você pode preencher os dados manualmente.')
           return
         }
-        const assuntos = Array.isArray(processo.assuntos) ? processo.assuntos.map((a: any) => a.nome).filter(Boolean) : []
+        const assuntos = Array.isArray(processo.assuntos)
+          ? processo.assuntos.map((assunto) => assunto.nome).filter((nome): nome is string => Boolean(nome))
+          : []
         const descricao = [assuntos.length ? `Assuntos: ${assuntos.join(', ')}` : '', processo.dataAjuizamento ? `Data de ajuizamento: ${new Date(processo.dataAjuizamento).toLocaleDateString('pt-BR')}` : ''].filter(Boolean).join('\n')
-        const preencheSeVazio = (campo: keyof FormData, valor?: string) => {
-          if (valor && !String(getValues(campo) ?? '').trim()) setValue(campo, valor as never, { shouldDirty: false })
+        const preencheSeVazio = (campo: 'titulo' | 'vara' | 'tribunal' | 'descricao', valor?: string) => {
+          if (valor && !String(getValues(campo) ?? '').trim()) setValue(campo, valor, { shouldDirty: false })
         }
         preencheSeVazio('titulo', processo.classe?.nome)
         preencheSeVazio('vara', processo.orgaoJulgador?.nome)
         preencheSeVazio('tribunal', processo.tribunal)
         preencheSeVazio('descricao', descricao)
         setConsultaStatus('Dados encontrados no DataJud. Confira e complete o cadastro do processo.')
-      } catch (error: any) {
-        const mensagem = error?.response?.data?.detail ?? error?.response?.data?.message
-        setConsultaStatus(typeof mensagem === 'string' ? mensagem : 'Não foi possível consultar o DataJud. Confira a chave pública no Perfil e preencha os dados manualmente.')
+      } catch (error: unknown) {
+        setConsultaStatus(safeApiErrorMessage(error, 'Não foi possível consultar o DataJud. Confira a chave pública no Perfil e preencha os dados manualmente.'))
       }
     }, 500)
     return () => window.clearTimeout(timer)
@@ -397,7 +399,7 @@ export function ProcessosPage() {
 
   const closeGuia = () => setGuiaOpen(false)
 
-  const onSubmitGuia = async (data: any) => {
+  const onSubmitGuia = async (data: GuiaFormData) => {
     if (!selectedProcesso) return
     
     try {
@@ -414,7 +416,7 @@ export function ProcessosPage() {
       })
       success('Guia gerada e baixada com sucesso!')
       closeGuia()
-    } catch (error) {
+    } catch {
       toastError('Erro ao gerar guia. Tente novamente.')
     }
   }
@@ -433,7 +435,7 @@ export function ProcessosPage() {
       return
     }
     const payload = { ...data, ...(customFases.length > 0 ? { fases: customFases } : {}), clientesVinculados: links }
-    if (editing) update.mutate({ id: editing.id, data: payload as any }, { onSuccess: async () => {
+    if (editing) update.mutate({ id: editing.id, data: payload }, { onSuccess: async () => {
       try {
         if (links.length) await processosApi.replaceClients(editing.id, links)
         await persistNewParties(editing.id, processParties)
@@ -442,7 +444,7 @@ export function ProcessosPage() {
         setClientLinkError('O processo foi atualizado, mas não foi possível salvar uma das demais partes. Confira a conexão e tente novamente.')
       }
     } })
-    else create.mutate(payload as any, { onSuccess: async (process) => {
+    else create.mutate(payload, { onSuccess: async (process) => {
       try {
         await persistNewParties(process.id, processParties)
         close()
@@ -473,6 +475,20 @@ export function ProcessosPage() {
     { label: 'Arquivados', value: allProcessos.filter((p) => p.status === 'arquivado').length, description: 'Processos arquivados', tone: 'orange', icon: <Archive size={20} /> },
     { label: 'Encerrados', value: allProcessos.filter((p) => p.status === 'encerrado').length, description: 'Processos finalizados', tone: 'red', icon: <CircleX size={20} /> },
   ]
+
+  if (isCliente) {
+    return (
+      <div className="kea-process-page">
+        <TopBar title="" hideModuleBar />
+        <div className="kea-process-content">
+          <PageBanner title="Processos" description="A consulta individual ainda não está disponível." />
+          <section role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/20 dark:text-amber-100">
+            O acesso depende de um vínculo seguro entre seu login e o cadastro de cliente. Entre em contato com o escritório para consultar seus processos enquanto esse vínculo é configurado.
+          </section>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="kea-process-page">

@@ -6,21 +6,23 @@ export interface PagamentoCartaoPayload {
   customer: string
   billingType: 'CREDIT_CARD'
   description: string
-  creditCard: {
-    holderName: string
-    number: string
-    expiryMonth: string
-    expiryYear: string
-    ccv: string
-  }
-  creditCardHolderInfo: {
-    name: string
-    email: string
-    cpfCnpj: string
-    postalCode: string
-    addressNumber: string
-    phone?: string
-  }
+}
+
+export interface PagamentoHospedadoResult {
+  cobrancaId: string
+  asaasId: string
+  status: string
+  invoiceUrl: string | null
+}
+
+export interface ClientePagadorPayload {
+  cobrancaId: string
+  name: string
+  email: string
+  cpfCnpj: string
+  postalCode: string
+  addressNumber: string
+  phone?: string
 }
 
 export const cobrancasApi = {
@@ -33,7 +35,9 @@ export const cobrancasApi = {
   marcarPago: (id: string, observacao?: string) =>
     api.post<Cobranca>('/k1/lex/cobrancas/marcar-pago', { id, observacao }).then((r) => r.data),
   pagarComCartao: (payload: PagamentoCartaoPayload) =>
-    api.post<Cobranca>('/v1/lex/cobrancas/pagamento', payload).then((r) => r.data),
+    api.post<PagamentoHospedadoResult>('/v1/lex/cobrancas/pagamento', payload).then((r) => r.data),
+  criarClientePagador: (payload: ClientePagadorPayload) =>
+    api.post<{ customerId: string }>('/v1/lex/cobrancas/pagador', payload).then((r) => r.data),
   cancelar: (id: string, motivo?: string) =>
     api.post<Cobranca>('/k1/lex/cobrancas/cancelar', { id, motivo }).then((r) => r.data),
   timeline: (id: string) =>

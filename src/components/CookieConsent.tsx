@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Cookie, X, ShieldCheck } from 'lucide-react'
 import { Link } from 'react-router-dom'
-
-const STORAGE_KEY = 'kealex_cookie_consent'
+import { hasSavedCookieConsent, saveCookieConsent } from '../utils/cookieConsentStorage'
 
 type ConsentState = { analytics: boolean; functional: boolean } | null
 
@@ -14,12 +13,11 @@ export function CookieConsent() {
   const [functional, setFunctional] = useState(true)
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (!stored) setTimeout(() => setVisible(true), 1200)
+    if (!hasSavedCookieConsent()) setTimeout(() => setVisible(true), 1200)
   }, [])
 
   const save = (consent: ConsentState) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(consent))
+    if (consent) saveCookieConsent(consent)
     setVisible(false)
   }
 

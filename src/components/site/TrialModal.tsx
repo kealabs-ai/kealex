@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowRight, CheckCircle2, X, Loader2, Eye, EyeOff } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { authApi } from '../../api/auth'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
+import { safeApiErrorMessage } from '../../utils/safeApiErrorMessage'
 
 const PERFIS = [
   { value: 'advogado',    label: 'Autônomo (Advogado)' },
@@ -71,22 +72,17 @@ export function TrialModal({ open, onClose }: Props) {
     setLoading(true)
     try {
       const user = await authApi.register({
-        ...form,
-        confirmarSenha: undefined,
-      } as any)
+        nome: form.nome,
+        email: form.email,
+        cpfCnpj: form.cpfCnpj,
+        whatsapp: form.whatsapp,
+        perfil: form.perfil,
+        senha: form.senha,
+      })
       login(user)
       setDone(true)
-    } catch (err: any) {
-      const detail = err.response?.data?.detail
-      if (detail) {
-        setErro(String(detail))
-      } else if (err.response?.status) {
-        setErro(`Não foi possível criar a conta (HTTP ${err.response.status}). Tente novamente.`)
-      } else if (err.code === 'ECONNABORTED') {
-        setErro('O servidor demorou para responder. Aguarde um instante e tente novamente.')
-      } else {
-        setErro('Não foi possível conectar ao serviço de cadastro. Verifique sua conexão e tente novamente.')
-      }
+    } catch (err: unknown) {
+      setErro(safeApiErrorMessage(err, 'Não foi possível criar a conta. Verifique os dados e tente novamente.'))
     } finally {
       setLoading(false)
     }
@@ -126,10 +122,10 @@ export function TrialModal({ open, onClose }: Props) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="trial-modal-form p-7 space-y-4">
-                  {[
+                  {([
                     { label: 'Nome completo',       key: 'nome',  type: 'text',  placeholder: 'Dr. Rafael Mendes' },
                     { label: 'E-mail profissional', key: 'email', type: 'email', placeholder: 'rafael@escritorio.com.br' },
-                  ].map((f) => (
+                  ] satisfies { label: string; key: 'nome' | 'email'; type: string; placeholder: string }[]).map((f) => (
                     <div key={f.key}>
                       <label className="block text-xs font-semibold text-slate-600 mb-1.5">{f.label}</label>
                       <input
@@ -137,8 +133,8 @@ export function TrialModal({ open, onClose }: Props) {
                         placeholder={f.placeholder}
                         required
                         disabled={loading}
-                        value={(form as any)[f.key]}
-                        onChange={(e) => setForm({ ...form, [f.key]: e.target.value })}
+                        value={form[f.key]}
+                        onChange={(e) => setForm((current) => ({ ...current, [f.key]: e.target.value }))}
                         className="w-full px-4 py-2.5 border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#00C2A8] focus:ring-2 focus:ring-[#00C2A8]/10 transition-all disabled:opacity-50"
                       />
                     </div>

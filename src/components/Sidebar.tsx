@@ -2,10 +2,11 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import type { LucideIcon } from 'lucide-react'
 import { Briefcase, Bell, Calendar, Gavel, DollarSign, FileText, Users, Sparkles, Settings, Shield, ChevronRight, TrendingUp, X, ClipboardList, UserRoundCog, Landmark, FileBadge2, FileSearch, KeyRound, Bot, Store, LayoutDashboard, Coins } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import logo from '../assets/logotipo_kealex.png'
 import { ProfileAvatar } from './ProfileAvatar'
 import { useAIPolicy } from '../hooks/useAIPolicy'
+import { isPlanMenuAllowed } from '../utils/roleAccess'
 
 const officeLinks = [
   { to: '/clientes', label: 'Clientes & CRM', icon: Users },
@@ -55,8 +56,8 @@ export function Sidebar({ collapsed, mobileOpen, onClose, onToggle }: Props) {
   const isEscritorio = user?.role === 'escritorio'
   const isCollapsed = collapsed && !mobileOpen
   const links = isEscritorio ? escritorioLinks : isClient ? clientLinks : officeLinks
-  const nav = (items: typeof officeLinks) => items.filter(({ to }) => (to === '/processos' && user?.role === 'advogado') || !aiPolicy || aiPolicy.allowed_menus.includes(to)).map(({ to, label, icon, badge }) => <NavItem key={to} to={to} label={label} icon={icon} badge={badge} collapsed={isCollapsed} onNavigate={onClose} />)
-  const aiMenuAllowed = (path: string) => !aiPolicy || aiPolicy.allowed_menus.includes(path)
+  const nav = (items: typeof officeLinks) => items.filter(({ to }) => isPlanMenuAllowed(to, user?.role, aiPolicy?.allowed_menus)).map(({ to, label, icon, badge }) => <NavItem key={to} to={to} label={label} icon={icon} badge={badge} collapsed={isCollapsed} onNavigate={onClose} />)
+  const aiMenuAllowed = (path: string) => isPlanMenuAllowed(path, user?.role, aiPolicy?.allowed_menus)
 
   return (
     <>

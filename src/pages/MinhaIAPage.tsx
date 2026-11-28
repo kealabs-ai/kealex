@@ -6,6 +6,10 @@ import { Button, Input, Select } from '../components/UI'
 import { DataCard } from '../components/Cards'
 import { Modal } from '../components/Modal'
 import { useToast } from '../components/Toast'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
+
+type ProviderModel = { id?: unknown; name?: unknown; baseModelId?: unknown; supportedGenerationMethods?: unknown }
+type ProviderModelsResponse = { models?: ProviderModel[]; data?: ProviderModel[] }
 
 const PROVIDERS: { id: IaProvider; label: string; prefix: string; models: string[] }[] = [
   { id: 'openai', label: 'OpenAI', prefix: 'sk-', models: ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'] },
@@ -48,19 +52,22 @@ export function MinhaIAPage() {
       return configuracoesApi.createMyIaKey({ provider: form.provider, model: form.model, api_key: apiKey, is_active: form.is_active })
     },
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['minhas-chaves-ia'] }); closeModal(); success('Configuração pessoal de IA salva.') },
-    onError: (err: any) => toastError(err.response?.data?.detail || err.message || 'Não foi possível salvar a configuração.'),
+    onError: (error: unknown) => {
+      const missingKey = error instanceof Error && error.message === 'Informe a chave API para cadastrar esta configuração.'
+      toastError(missingKey ? error.message : safeApiErrorMessage(error, 'Não foi possível salvar a configuração de IA.'))
+    },
   })
 
   const updateMutation = useMutation({
     mutationFn: ({ id, is_active }: { id: string; is_active: boolean }) => configuracoesApi.updateMyIaKey(id, { is_active }),
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['minhas-chaves-ia'] }); success('Status da chave atualizado.') },
-    onError: (err: any) => toastError(err.response?.data?.detail || 'Não foi possível atualizar o status.'),
+    onError: (error: unknown) => toastError(safeApiErrorMessage(error, 'Não foi possível atualizar o status da chave.')),
   })
 
   const deleteMutation = useMutation({
     mutationFn: configuracoesApi.deleteMyIaKey,
     onSuccess: async () => { await queryClient.invalidateQueries({ queryKey: ['minhas-chaves-ia'] }); success('Chave removida.') },
-    onError: (err: any) => toastError(err.response?.data?.detail || 'Não foi possível excluir a chave.'),
+    onError: (error: unknown) => toastError(safeApiErrorMessage(error, 'Não foi possível excluir a chave.')),
   })
 
   const selectedProvider = PROVIDERS.find((item) => item.id === form.provider)!
@@ -85,19 +92,19 @@ export function MinhaIAPage() {
       }
 
       const response = await fetch(url, { headers })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error?.message || result.message || `O provedor respondeu com status ${response.status}.`)
+      const result = await response.json() as ProviderModelsResponse
+      if (!response.ok) throw new Error('A consulta ao provedor falhou.')
 
       let ids: string[]
       if (form.provider === 'google') {
         ids = (result.models || [])
-          .filter((item: any) => item.supportedGenerationMethods?.includes('generateContent') && /gemini/i.test(item.name || ''))
-          .map((item: any) => String(item.baseModelId || item.name.replace(/^models\//, '')))
+          .filter((item) => (Array.isArray(item.supportedGenerationMethods) && item.supportedGenerationMethods.includes('generateContent')) && /gemini/i.test((typeof item.name === 'string' ? item.name : '') || ''))
+          .map((item) => String((typeof item.baseModelId === 'string' ? item.baseModelId : '') || String(item.name).replace(/^models\//, '')))
           .filter((id: string) => !/(embedding|image|audio|tts|live|robotics)/i.test(id))
       } else if (form.provider === 'claude') {
-        ids = (result.data || []).map((item: any) => String(item.id || '')).filter((id: string) => /claude/i.test(id))
+        ids = (result.data || []).map((item) => String((typeof item.id === 'string' ? item.id : '') || '')).filter((id: string) => /claude/i.test(id))
       } else {
-        ids = (result.data || []).map((item: any) => String(item.id || '')).filter(Boolean)
+        ids = (result.data || []).map((item) => String((typeof item.id === 'string' ? item.id : '') || '')).filter(Boolean)
         if (form.provider === 'openai') ids = ids.filter((id) => /^(gpt-|o[134]-)/i.test(id))
         if (form.provider === 'groq') ids = ids.filter((id) => !/(whisper|guard|tts|vision)/i.test(id))
         if (form.provider === 'deepseek') ids = ids.filter((id) => /^deepseek-/i.test(id))
@@ -107,8 +114,8 @@ export function MinhaIAPage() {
       setModelsByProvider((current) => ({ ...current, [form.provider]: ids }))
       setForm((current) => ({ ...current, model: ids.includes(current.model) ? current.model : ids[0] }))
       success(`${ids.length} modelos carregados de ${selectedProvider.label}.`)
-    } catch (err: any) {
-      toastError(err.message || `Não foi possível consultar modelos de ${selectedProvider.label}.`)
+    } catch (error) {
+      toastError(error instanceof Error && error.message === 'A chave foi aceita, mas o provedor não retornou modelos compatíveis.' ? error.message : safeApiErrorMessage(error, `Não foi possível consultar modelos de ${selectedProvider.label}.`))
     } finally {
       setLoadingModels(false)
     }

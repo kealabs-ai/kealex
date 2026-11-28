@@ -1,224 +1,80 @@
-/**
- * Script de Teste - Endpoints de Agentes IA
- * 
- * Este script valida se os endpoints de agentes IA estão configurados
- * corretamente e respondendo no backend.
+﻿/**
+ * Teste manual local dos endpoints de agentes de IA.
+ * Requer API local e token de teste fornecido pelo ambiente.
+ * O script recusa hosts remotos e nunca imprime credenciais retornadas pela API.
  */
+const BASE_URL = process.env.KEALEX_TEST_API_BASE_URL || 'http://127.0.0.1:18000'
+const ADMIN_TOKEN = process.env.KEALEX_TEST_ADMIN_TOKEN
 
-const BASE_URL = 'https://srv1023256.hstgr.cloud'
+function validateTarget() {
+  const target = new URL(BASE_URL)
+  const localHosts = new Set(['localhost', '127.0.0.1', '::1'])
+  if (target.protocol !== 'http:' || !localHosts.has(target.hostname) || target.port !== '18000') {
+    throw new Error('Execucao recusada: o teste de agentes so aceita http://localhost:18000 ou loopback equivalente.')
+  }
+  if (!ADMIN_TOKEN) {
+    throw new Error('Execucao recusada: defina KEALEX_TEST_ADMIN_TOKEN com um token local de teste.')
+  }
+}
 
-// Token de autenticação do admin (você precisa fazer login primeiro e copiar o token)
-// Para obter o token:
-// 1. Acesse http://localhost:5173/login
-// 2. Faça login como admin@keahub.com / admin123
-// 3. Abra o console do navegador (F12)
-// 4. Execute: localStorage.getItem('kealex_token')
-// 5. Copie o token e cole abaixo
-const ADMIN_TOKEN = 'SEU_TOKEN_AQUI'
+function redact(value) {
+  if (Array.isArray(value)) return value.map(redact)
+  if (!value || typeof value !== 'object') return value
+  return Object.fromEntries(Object.entries(value).map(([key, entry]) => [
+    key,
+    /api[_-]?key|token|secret|authorization/i.test(key) ? '[REDACTED]' : redact(entry),
+  ]))
+}
 
 const headers = {
   'Content-Type': 'application/json',
-  'Authorization': `Bearer ${ADMIN_TOKEN}`
+  Authorization: `Bearer ${ADMIN_TOKEN || ''}`,
 }
 
-console.log('🧪 Iniciando testes dos endpoints de Agentes IA...\n')
-
-// Teste 1: Listar todos os agentes
-async function testListAgentes() {
-  console.log('📋 Teste 1: GET /v1/lex/agentes')
-  try {
-    const response = await fetch(`${BASE_URL}/v1/lex/agentes`, {
-      method: 'GET',
-      headers
-    })
-    const data = await response.json()
-    console.log('✅ Status:', response.status)
-    console.log('📦 Resposta:', data)
-    console.log('📊 Total de agentes:', Array.isArray(data) ? data.length : 'N/A')
-    console.log('')
-    return data
-  } catch (error) {
-    console.error('❌ Erro:', error.message)
-    console.log('')
-    return null
-  }
+async function request(path, method = 'GET', body) {
+  const response = await fetch(new URL(path, BASE_URL), {
+    method,
+    headers,
+    redirect: 'error',
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  })
+  const data = await response.json().catch(() => null)
+  console.log(`${method} ${path}: HTTP ${response.status}`, redact(data))
+  if (!response.ok) throw new Error(`Endpoint respondeu HTTP ${response.status}: ${path}`)
+  return data
 }
 
-// Teste 2: Listar agentes públicos
-async function testListAgentesPublicos() {
-  console.log('📋 Teste 2: GET /v1/lex/agentes/publicos')
-  try {
-    const response = await fetch(`${BASE_URL}/v1/lex/agentes/publicos`, {
-      method: 'GET',
-      headers
-    })
-    const data = await response.json()
-    console.log('✅ Status:', response.status)
-    console.log('📦 Resposta:', data)
-    console.log('📊 Total de agentes públicos:', Array.isArray(data) ? data.length : 'N/A')
-    console.log('')
-    return data
-  } catch (error) {
-    console.error('❌ Erro:', error.message)
-    console.log('')
-    return null
-  }
-}
+async function runTests() {
+  validateTarget()
+  console.log('Iniciando testes locais de agentes IA.')
+  await request('/v1/lex/agentes')
+  await request('/v1/lex/agentes/publicos')
 
-// Teste 3: Criar agente
-async function testCreateAgente() {
-  console.log('📋 Teste 3: POST /v1/lex/agentes (criar)')
-  const novoAgente = {
-    nome: 'Agente Teste Validação',
-    descricao: 'Agente criado para testar endpoints',
+  const agent = await request('/v1/lex/agentes', 'POST', {
+    nome: 'Agente Teste Local',
+    descricao: 'Agente sintetico para validar endpoints locais',
     provider: 'groq',
-    api_key: 'gsk-test-key-123',
+    api_key: `gsk-test-${Date.now()}`,
     modelo: 'llama-3.3-70b-versatile',
     max_tokens: 4096,
-    system_prompt: 'Você é um assistente de testes',
+    system_prompt: 'Assistente sintetico de testes locais',
     ativo: true,
-    publico: false
-  }
-  
-  try {
-    const response = await fetch(`${BASE_URL}/v1/lex/agentes`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(novoAgente)
-    })
-    const data = await response.json()
-    console.log('✅ Status:', response.status)
-    console.log('📦 Resposta:', data)
-    console.log('🆔 ID do agente criado:', data?.id || 'N/A')
-    console.log('')
-    return data
-  } catch (error) {
-    console.error('❌ Erro:', error.message)
-    console.log('')
-    return null
-  }
+    publico: false,
+  })
+  if (!agent?.id) throw new Error('A criacao local nao retornou o id do agente; update/delete nao executados.')
+
+  const id = encodeURIComponent(agent.id)
+  await request(`/v1/lex/agentes/${id}`)
+  await request('/v1/lex/agentes/update', 'POST', {
+    id: agent.id,
+    nome: 'Agente Teste Local Atualizado',
+    descricao: 'Atualizacao sintetica local',
+  })
+  await request('/v1/lex/agentes/delete', 'POST', { id: agent.id })
+  console.log('Testes locais de agentes finalizados.')
 }
 
-// Teste 4: Buscar agente por ID
-async function testGetAgente(id) {
-  console.log('📋 Teste 4: POST /v1/lex/agentes/get')
-  try {
-    const response = await fetch(`${BASE_URL}/v1/lex/agentes/get`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ id })
-    })
-    const data = await response.json()
-    console.log('✅ Status:', response.status)
-    console.log('📦 Resposta:', data)
-    console.log('')
-    return data
-  } catch (error) {
-    console.error('❌ Erro:', error.message)
-    console.log('')
-    return null
-  }
-}
-
-// Teste 5: Atualizar agente
-async function testUpdateAgente(id) {
-  console.log('📋 Teste 5: POST /v1/lex/agentes/update')
-  try {
-    const response = await fetch(`${BASE_URL}/v1/lex/agentes/update`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        id,
-        nome: 'Agente Teste Atualizado',
-        descricao: 'Descrição atualizada via teste'
-      })
-    })
-    const data = await response.json()
-    console.log('✅ Status:', response.status)
-    console.log('📦 Resposta:', data)
-    console.log('')
-    return data
-  } catch (error) {
-    console.error('❌ Erro:', error.message)
-    console.log('')
-    return null
-  }
-}
-
-// Teste 6: Deletar agente
-async function testDeleteAgente(id) {
-  console.log('📋 Teste 6: POST /v1/lex/agentes/delete')
-  try {
-    const response = await fetch(`${BASE_URL}/v1/lex/agentes/delete`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ id })
-    })
-    const data = await response.json()
-    console.log('✅ Status:', response.status)
-    console.log('📦 Resposta:', data)
-    console.log('')
-    return data
-  } catch (error) {
-    console.error('❌ Erro:', error.message)
-    console.log('')
-    return null
-  }
-}
-
-// Executar todos os testes
-async function runTests() {
-  if (ADMIN_TOKEN === 'SEU_TOKEN_AQUI') {
-    console.log('⚠️  ATENÇÃO: Configure o token de admin antes de executar os testes!')
-    console.log('\n📝 Para obter o token:')
-    console.log('1. Acesse http://localhost:5173/login')
-    console.log('2. Faça login como admin@keahub.com / admin123')
-    console.log('3. Abra o console do navegador (F12)')
-    console.log('4. Execute: localStorage.getItem("kealex_token")')
-    console.log('5. Copie o token e cole na variável ADMIN_TOKEN deste script\n')
-    return
-  }
-
-  console.log('🚀 Iniciando bateria de testes...\n')
-  console.log('=' .repeat(60))
-  console.log('')
-
-  // Teste 1 e 2: Listar
-  await testListAgentes()
-  await testListAgentesPublicos()
-
-  // Teste 3: Criar
-  const agenteNovo = await testCreateAgente()
-  
-  if (agenteNovo && agenteNovo.id) {
-    const agenteId = agenteNovo.id
-
-    // Teste 4: Buscar por ID
-    await testGetAgente(agenteId)
-
-    // Teste 5: Atualizar
-    await testUpdateAgente(agenteId)
-
-    // Teste 6: Deletar
-    await testDeleteAgente(agenteId)
-  } else {
-    console.log('⚠️  Não foi possível criar agente. Pulando testes de update/delete.')
-  }
-
-  console.log('=' .repeat(60))
-  console.log('\n✨ Testes finalizados!')
-}
-
-// Se executado no Node.js
-if (typeof window === 'undefined') {
-  runTests()
-}
-
-// Se executado no navegador
-if (typeof window !== 'undefined') {
-  console.log('🌐 Script carregado no navegador. Execute runTests() para iniciar.')
-  window.runTests = runTests
-  window.testListAgentes = testListAgentes
-  window.testListAgentesPublicos = testListAgentesPublicos
-  window.testCreateAgente = testCreateAgente
-}
+runTests().catch((error) => {
+  console.error(error instanceof Error ? error.message : 'Falha nos testes locais de agentes.')
+  process.exitCode = 1
+})

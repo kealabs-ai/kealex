@@ -1,44 +1,21 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { Sidebar } from './Sidebar'
 import { AppHeader } from './AppHeader'
 import { useTrial } from '../hooks/useTrial'
 import { assinaturaApi } from '../api/assinatura'
-import type { Role } from '../types'
 import { useAIPolicy } from '../hooks/useAIPolicy'
-
-const roleRequired: Record<string, Role[]> = {
-  '/usuarios':   ['admin'],
-  '/equipe':     ['escritorio'],
-  '/clientes':   ['admin', 'advogado', 'juridico', 'escritorio'],
-  '/admin':      ['admin'],
-  '/gestao/dashboard': ['admin'],
-  '/gestao/creditos': ['admin'],
-  '/analise-documentos': ['advogado'],
-  '/cobranca':   ['admin', 'advogado', 'juridico', 'escritorio'],
-  '/intimacoes': ['admin', 'advogado', 'juridico', 'escritorio'],
-  '/audiencias': ['admin', 'advogado', 'juridico', 'escritorio'],
-  '/financeiro': ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
-  '/prazos':     ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
-  '/processos':  ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
-  '/documentos': ['admin', 'advogado', 'juridico', 'cliente', 'escritorio'],
-  '/integracao-orgaos': ['admin', 'advogado', 'juridico', 'escritorio'],
-  '/acompanhar-processo': ['admin', 'advogado', 'juridico', 'escritorio'],
-  '/kea-store': ['admin', 'advogado', 'juridico', 'escritorio'],
-}
-const planControlledMenus = [
-  '/processos', '/documentos', '/prazos', '/atividades', '/financeiro', '/cobranca', '/usuarios', '/equipe',
-  '/clientes', '/intimacoes', '/audiencias', '/integracao-orgaos', '/ia', '/analise-documentos', '/meus-agents', '/configuracoes/ia',
-]
+import { isPlanMenuAllowed, isRoleAllowed, normalizeRolePath, PLAN_CONTROLLED_MENU_PATHS, ROLE_REQUIRED_BY_PATH } from '../utils/roleAccess'
+import { readSidebarCollapsed, writeSidebarCollapsed } from '../utils/sidebarPreference'
 
 export function ProtectedLayout() {
   const { user, role } = useAuth()
-  const { data: aiPolicy } = useAIPolicy()
+  const { data: aiPolicy, isLoading: isLoadingAIPolicy } = useAIPolicy()
   const location = useLocation()
   const trial = useTrial()
-  const [collapsed, setCollapsed] = useState(() => localStorage.getItem('kealex-sidebar-collapsed') === 'true')
+  const [collapsed, setCollapsed] = useState(readSidebarCollapsed)
   const [mobileOpen, setMobileOpen] = useState(false)
   const { data: billingStatus } = useQuery({
     queryKey: ['billing-status'],
@@ -61,19 +38,24 @@ export function ProtectedLayout() {
   // pending: mantém o usuário na plataforma — o banner no TopBar trata o caso
   if (isExpired) return <Navigate to="/trial-expirado" replace />
 
-  const requiredPath = location.pathname.startsWith('/kea-store/') ? '/kea-store' : location.pathname.startsWith('/certidoes/') ? '/certidoes' : location.pathname
-  const required = roleRequired[requiredPath]
-  if (required && role && !required.includes(role)) {
+  const requiredPath = normalizeRolePath(location.pathname)
+  const required = ROLE_REQUIRED_BY_PATH[requiredPath]
+  if (!isRoleAllowed(required, role)) {
     return <Navigate to="/processos" replace />
   }
   if (location.pathname === '/meus-agents' && role !== 'advogado') return <Navigate to="/processos" replace />
-  const planMenuPath = planControlledMenus.includes(location.pathname) && !(location.pathname === '/processos' && role === 'advogado') ? location.pathname : null
-  if (planMenuPath && aiPolicy && !aiPolicy.allowed_menus.includes(planMenuPath)) return <Navigate to="/processos" replace />
+  const planMenuPath = PLAN_CONTROLLED_MENU_PATHS.has(location.pathname) ? location.pathname : null
+  if (planMenuPath && !aiPolicy && isLoadingAIPolicy) {
+    return <div className="flex min-h-screen items-center justify-center text-sm text-slate-500" role="status" aria-busy="true">Carregando permissões de acesso…</div>
+  }
+  if (planMenuPath && !isPlanMenuAllowed(planMenuPath, role, aiPolicy?.allowed_menus)) {
+    return <Navigate to={planMenuPath === '/processos' ? '/perfil' : '/processos'} replace />
+  }
 
   const toggleSidebar = () => {
     setCollapsed((value) => {
       const next = !value
-      localStorage.setItem('kealex-sidebar-collapsed', String(next))
+      writeSidebarCollapsed(next)
       return next
     })
   }

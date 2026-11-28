@@ -10,6 +10,7 @@ import { roleBadge, Badge } from '../components/Badge'
 import { Button, Input, Select } from '../components/UI'
 import { Topbar } from '../components/TopBar'
 import type { Role, Usuario } from '../types'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 type FormData = { nome: string; email: string; senha?: string; role: Role; ativo?: boolean; escritorioId?: string }
 
@@ -210,7 +211,7 @@ export function UsuariosPage() {
               {escritorios.map((escritorio) => <option key={escritorio.id} value={escritorio.id}>{escritorio.nome} ({escritorio.usuariosAtivos ?? 0}/{escritorio.limiteAdvogados ?? 3})</option>)}
             </Select>
             {officeLimitReached && <p className="rounded-xl bg-amber-50 p-3 text-sm text-amber-800" role="alert">Limite de {selectedEscritorio?.limiteAdvogados ?? 3} advogados atingido para este escritório. Entre em contato com o suporte/admin para alterar o limite.</p>}
-            {(create.isError || update.isError) && <p className="text-sm text-rose-600" role="alert">{((create.error || update.error) as any)?.response?.data?.detail ?? 'Não foi possível salvar o usuário.'}</p>}
+            {(create.isError || update.isError) && <p className="text-sm text-rose-600" role="alert">{safeApiErrorMessage(create.error || update.error, 'Não foi possível salvar o usuário.')}</p>}
             {editing && (
               <label className="flex items-center gap-2.5 p-3 bg-gray-50 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
                 <input {...register('ativo')} type="checkbox" className="w-4 h-4 rounded accent-indigo-600" />

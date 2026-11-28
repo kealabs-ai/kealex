@@ -1,6 +1,15 @@
 import { api } from './client'
 import type { Usuario, Role } from '../types'
 
+export type DataJudProcessSource = {
+  assuntos?: Array<{ nome?: string }>
+  dataAjuizamento?: string
+  classe?: { nome?: string }
+  orgaoJulgador?: { nome?: string }
+  tribunal?: string
+}
+export type DataJudLookupResponse = { hits?: { hits?: Array<{ _source?: DataJudProcessSource }> } }
+
 export const usuariosApi = {
   list: (role?: Role) =>
     api.get<Usuario[]>('/k1/lex/usuarios', { params: role ? { role } : {} }).then((r) => r.data),
@@ -38,7 +47,7 @@ export const usuariosApi = {
     api.get<ChavePublicaIntegracao[]>('/v1/lex/usuarios/chaves-publicas').then((r) => r.data),
 
   consultarProcessoDataJud: (data: { tribunal: string; numeroProcesso: string }) =>
-    api.post('/v1/lex/usuarios/consultas/datajud', data).then((r) => r.data),
+    api.post<DataJudLookupResponse>('/v1/lex/usuarios/consultas/datajud', data).then((r) => r.data),
 
   salvarChavePublica: (data: { orgao: string; chavePublica: string }) =>
     api.post<ChavePublicaIntegracao>('/v1/lex/usuarios/chaves-publicas', data).then((r) => r.data),

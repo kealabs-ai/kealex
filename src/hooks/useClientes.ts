@@ -4,7 +4,7 @@ import type { Cliente } from '../types'
 
 const KEY = ['clientes']
 
-export const useClientes = () => useQuery({ queryKey: KEY, queryFn: clientesApi.list })
+export const useClientes = (enabled = true) => useQuery({ queryKey: KEY, queryFn: clientesApi.list, enabled })
 
 export const useCreateCliente = () => {
   const qc = useQueryClient()

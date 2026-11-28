@@ -5,6 +5,7 @@ import { useCreateEscritorio, useCreateEscritorioAccess, useEscritorios, useUpda
 import { Modal } from './Modal'
 import { Badge } from './Badge'
 import { Button, Input } from './UI'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 export function EscritoriosTab() {
   const { data: escritorios = [], isLoading, isError } = useEscritorios()
@@ -83,7 +84,7 @@ export function EscritoriosTab() {
     }
     update.mutate({ id: editing.id, data: { nome: nome.trim(), limiteAdvogados } }, {
       onSuccess: () => setEditing(null),
-      onError: (error: any) => setSaveError(error.response?.data?.detail ?? 'Não foi possível salvar as alterações.'),
+      onError: (error: unknown) => setSaveError(safeApiErrorMessage(error, 'Não foi possível salvar as alterações.')),
     })
   }
 
@@ -163,7 +164,7 @@ export function EscritoriosTab() {
           <form onSubmit={saveAccess} className="space-y-4">
             <Input label="E-mail de acesso" type="email" value={emailAcesso} onChange={(event) => setEmailAcesso(event.target.value)} required />
             <Input label="Senha inicial (mín. 6 caracteres)" type="password" minLength={6} value={senhaAcesso} onChange={(event) => setSenhaAcesso(event.target.value)} required />
-            {createAccess.isError && <p className="text-sm text-rose-600" role="alert">{(createAccess.error as any)?.response?.data?.detail ?? 'Não foi possível criar o acesso.'}</p>}
+            {createAccess.isError && <p className="text-sm text-rose-600" role="alert">{safeApiErrorMessage(createAccess.error, 'Não foi possível criar o acesso.')}</p>}
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800"><Button type="button" variant="secondary" onClick={() => setAccessing(null)}>Cancelar</Button><Button type="submit" loading={createAccess.isPending}>Criar credenciais</Button></div>
           </form>
         </Modal>
@@ -184,7 +185,7 @@ export function EscritoriosTab() {
               <Input label="Telefone" value={novoTelefone} onChange={(event) => setNovoTelefone(event.target.value)} />
               <Input label="Endereço" value={novoEndereco} onChange={(event) => setNovoEndereco(event.target.value)} />
             </div>
-            {create.isError && <p className="text-sm text-rose-600" role="alert">{(create.error as any)?.response?.data?.detail ?? 'Não foi possível criar o escritório.'}</p>}
+            {create.isError && <p className="text-sm text-rose-600" role="alert">{safeApiErrorMessage(create.error, 'Não foi possível criar o escritório.')}</p>}
             <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 dark:border-slate-800">
               <Button type="button" variant="secondary" onClick={() => setCreateOpen(false)}>Cancelar</Button>
               <Button type="submit" loading={create.isPending}>Criar escritório</Button>

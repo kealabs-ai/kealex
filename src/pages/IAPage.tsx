@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Send, Sparkles, RotateCcw, Copy, Check, Bot, Lightbulb, ChevronRight, AlertCircle, Download, Edit3 } from 'lucide-react'
 import { sendMessage, type ChatMessage } from '../api/ai'
 import { MarkdownRenderer } from '../components/MarkdownRenderer'
-import { useAuth } from '../context/AuthContext'
+import { aiChatErrorMessage } from '../utils/aiChatErrorMessage'
+import { useAuth } from '../context/useAuth'
 import { useAgentesPublicos, useMeusAgentes } from '../hooks/useAgentes'
 import { useAIPolicy } from '../hooks/useAIPolicy'
 import { useConfigIaAtiva } from '../hooks/useConfiguracoes'
@@ -100,17 +101,8 @@ export function IAPage() {
           prev.map((m) => m.id === assistantId ? { ...m, content: m.content + chunk } : m)
         )
       }, agenteAtivo?.id)
-    } catch (err: any) {
-      const detail = err?.response?.data?.detail
-      const status = err?.response?.status
-      const msg = err?.message?.includes('API key') || status === 401 || err?.message?.includes('401')
-        ? `Chave da API ${providerLabel(config?.provider)} inválida. Verifique as configurações.`
-        : status === 404 && detail === 'Not Found'
-          ? 'A rota de chat não foi encontrada no servidor. Atualize o serviço de configurações de IA.'
-          : typeof detail === 'string' && detail.trim()
-            ? detail
-            : 'Erro ao conectar com a IA. Verifique sua configuração.'
-      setError(msg)
+    } catch (err: unknown) {
+      setError(aiChatErrorMessage(err, providerLabel(config?.provider)))
       setMessages((prev) => prev.filter((m) => m.id !== assistantId))
     } finally {
       setStreaming(false)
@@ -134,8 +126,8 @@ export function IAPage() {
       setGeneratingDocx(true)
       const titulo = `Documento_${new Date().toISOString().split('T')[0]}`
       await gerarDocumentoWordDoChat(titulo, messages, user?.nome)
-    } catch (err) {
-      console.error('Erro ao gerar documento:', err)
+    } catch {
+      console.error('Erro ao gerar documento')
     } finally {
       setGeneratingDocx(false)
     }

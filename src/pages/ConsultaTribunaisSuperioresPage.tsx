@@ -4,8 +4,9 @@ import { ArrowLeft, CalendarDays, CircleAlert, ExternalLink, Gavel, LoaderCircle
 import { Link, useSearchParams } from 'react-router-dom'
 import { TopBar } from '../components/TopBar'
 import { PageBanner } from '../components/PageBanner'
-import { useAuth } from '../context/AuthContext'
+import { useAuth } from '../context/useAuth'
 import { usuariosApi } from '../api/usuarios'
+import { safeApiErrorMessage } from '../utils/safeApiErrorMessage'
 
 const tribunaisSuperiores = [
   { alias: 'stj', sigla: 'STJ', nome: 'Superior Tribunal de Justiça' },
@@ -209,8 +210,7 @@ function ConsultaDataJudPage({ ramo }: { ramo: ConsultaRamo }) {
       }
       setProcesso(hit)
     } catch (error) {
-      const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail
-      setErrorMessage(detail ?? (error instanceof Error ? error.message : 'Não foi possível consultar o DataJud agora.'))
+      setErrorMessage(safeApiErrorMessage(error, 'Não foi possível consultar o DataJud agora.'))
     } finally {
       setIsSearching(false)
     }

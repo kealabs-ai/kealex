@@ -4,14 +4,15 @@ import type { Prazo } from '../types'
 
 export const PRAZOS_KEY = ['prazos']
 
-export function usePrazos() {
-  return useQuery({ queryKey: PRAZOS_KEY, queryFn: prazosApi.list })
+export function usePrazos(enabled = true) {
+  return useQuery({ queryKey: PRAZOS_KEY, queryFn: prazosApi.list, enabled })
 }
 
-export function usePrazosVencendo(dias = 7) {
+export function usePrazosVencendo(dias = 7, enabled = true) {
   return useQuery({
     queryKey: [...PRAZOS_KEY, 'vencendo', dias],
     queryFn: () => prazosApi.vencendo(dias),
+    enabled,
   })
 }
 
